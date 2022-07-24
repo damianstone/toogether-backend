@@ -5,3 +5,28 @@ __pycache__/
 local_settings.py
 db.sqlite3
 venv/
+**/migrations
+*.DS_Store
+**/__pycache__
+**/.DS_Store
+.env
+
+# IDE
+.vscode/
+
+# Environment Vars
+.env
+
+# Python cache
+.pytest_cache/
+__pycache__/
+
+# Python env
+venv*
+.venv*
+
+# sqlite
+*.db
+
+# Tests
+.coverage
