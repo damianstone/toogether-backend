@@ -1,15 +1,12 @@
 *.log
 *.pot
 *.pyc
-__pycache__/
 local_settings.py
 db.sqlite3
-venv/
 **/migrations
 *.DS_Store
 **/__pycache__
 **/.DS_Store
-.env
 
 # IDE
 .vscode/
@@ -30,3 +27,6 @@ venv*
 
 # Tests
 .coverage
+
+#Images
+.static/images*

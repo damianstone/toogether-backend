@@ -105,7 +105,7 @@ MIDDLEWARE = [
 ]
 
 
-ROOT_URLCONF = 'backend.urls'
+ROOT_URLCONF = 'service.urls'
 
 TEMPLATES = [
     {
@@ -123,7 +123,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'backend.wsgi.application'
+WSGI_APPLICATION = 'service.wsgi.application'
 
 
 # Database

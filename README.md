@@ -9,3 +9,6 @@
 </p>
 
 
+## Init
+python3 -m venv venv-backend
+source venv-backend/bin/activate
