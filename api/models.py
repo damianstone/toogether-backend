@@ -22,31 +22,23 @@ class Profile(AbstractBaseUser, PermissionsMixin):
     description = models.TextField(max_length=500, null=True)
 
     blocked_profiles = models.ManyToManyField(
-        'self', symmetrical=False, related_name="blockedProfiles", blank=True)
+        "self", symmetrical=False, related_name="blockedProfiles", blank=True
+    )
 
-    USERNAME_FIELD = 'email'
+    USERNAME_FIELD = "email"
     # requred for creating user
     REQUIRED_FIELDS = []
 
     objects = CustomUserManager()
 
-    def get_full_name(self):  # que hace esto?
+    def get_full_name(self):
         return self.firstname + self.lastname
 
 
 class Photo(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    profile = models.ForeignKey(
-        Profile, default=None, on_delete=models.CASCADE)
+    profile = models.ForeignKey(Profile, default=None, on_delete=models.CASCADE)
     image = models.ImageField(null=True, blank=True)
-
-
-# class BlockedUser(models.Model):
-#     profile = models.ForeignKey(
-#         Profile, default=None, on_delete=models.CASCADE)
-#     blocked_profile = models.ManyToManyField(
-#         Profile, related_name="blocked_by")
-#     blocked_at = models.DateTimeField(default=timezone.now)
 
 
 class Like(models.Model):
@@ -54,4 +46,4 @@ class Like(models.Model):
     created_at = models.DateTimeField(default=timezone.now)
 
     def __str__(self):
-        return '{} : {}'.format(self.profile_id_1, self.profile_id_2)
+        return "{} : {}".format(self.profile_id_1, self.profile_id_2)

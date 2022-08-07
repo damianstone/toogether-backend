@@ -1,44 +1,44 @@
 from rest_framework import serializers
-from .models import Profile, Photo
+from api import models
 from rest_framework_simplejwt.tokens import RefreshToken
 
 
 class PhotoSerializer(serializers.ModelSerializer):
-    image = serializers.ImageField(
-        max_length=None, use_url=True
-    )
+    image = serializers.ImageField(max_length=None, use_url=True)
 
     class Meta:
-        model = Photo
-        fields = ['id', 'image', 'profile']
+        model = models.Photo
+        fields = ["id", "image", "profile"]
 
 
-# transform data into json
-# return las propiedades especificadas en fields cuando se llama
 class ProfileSerializer(serializers.ModelSerializer):
     token = serializers.SerializerMethodField(read_only=True)
     photos = PhotoSerializer(
-        source="photo_set", many=True, read_only=True)  # nested serializer
+        source="photo_set", many=True, read_only=True
+    )  # nested serializer
 
     class Meta:
-        model = Profile
-        fields = ['id', 'email', 'firstname', 'lastname', 'token',
-                  'birthday', 'age', 'university', 'description', 'photos', 'blocked_profiles', 'created_at']
+        model = models.Profile
+        fields = [
+            "id",
+            "email",
+            "firstname",
+            "lastname",
+            "token",
+            "birthday",
+            "age",
+            "university",
+            "description",
+            "photos",
+            "blocked_profiles",
+            "created_at",
+        ]
 
     def get_token(self, obj):
         token = RefreshToken.for_user(obj)
         return str(token.access_token)
 
 
-class BlockedProfileSerializer(ProfileSerializer):
-
-    class Meta:
-        model = Profile
-        fields = ['blocked_profiles']
-
-
-# se pasa como parametro el otro serializer asi este serializer es solo
-# una extencion del otro, el cual contiene las mismas propiedades que UserSerializer + token
 class UserSerializer(ProfileSerializer):
     id = serializers.SerializerMethodField(read_only=True)
     firstname = serializers.SerializerMethodField()
@@ -48,9 +48,8 @@ class UserSerializer(ProfileSerializer):
     created_at = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
-        model = Profile
-        fields = ['id', 'firstname', 'email',
-                  'is_superuser', 'token', 'created_at']
+        model = models.Profile
+        fields = ["id", "firstname", "email", "is_superuser", "token", "created_at"]
 
     def get_id(self, obj):
         return obj.id
