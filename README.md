@@ -12,9 +12,9 @@ python3 -m venv venv-backend
 source venv-backend/bin/activate 
 ```
 
-#### Install requeriments.txt
+#### Install requirements.txt
 ```python
-pip install -r requeriments.txt
+pip install -r requirements.txt
 ```
 
 #### Create .env for local PostgreSQL database
