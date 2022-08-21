@@ -2,6 +2,8 @@ from rest_framework import serializers
 from api import models
 from rest_framework_simplejwt.tokens import RefreshToken
 
+# -------------------------- MODELS SERIALIZERS -----------------------------
+
 
 class PhotoSerializer(serializers.ModelSerializer):
     image = serializers.ImageField(max_length=None, use_url=True)
@@ -13,9 +15,12 @@ class PhotoSerializer(serializers.ModelSerializer):
 
 class ProfileSerializer(serializers.ModelSerializer):
     token = serializers.SerializerMethodField(read_only=True)
-    photos = PhotoSerializer(
-        source="photo_set", many=True, read_only=True
-    )  # nested serializer
+    gender = serializers.CharField(source='get_gender_display')
+    show_me = serializers.CharField(source='get_show_me_display')
+    
+    # photos = PhotoSerializer(
+    #     source="photo_set", many=True, read_only=True
+    # )  # nested serializer
 
     class Meta:
         model = models.Profile
@@ -25,18 +30,25 @@ class ProfileSerializer(serializers.ModelSerializer):
             "firstname",
             "lastname",
             "token",
-            "birthday",
+            "birthdate",
             "age",
+            "gender",
+            "show_me",
             "university",
             "description",
-            "photos",
-            "blocked_profiles",
             "created_at",
+            "has_account",
         ]
 
     def get_token(self, obj):
         token = RefreshToken.for_user(obj)
         return str(token.access_token)
+
+
+class BlockedProfilesSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.Profile
+        fields = ["blocked_profiles"]
 
 
 class UserSerializer(ProfileSerializer):
@@ -46,10 +58,18 @@ class UserSerializer(ProfileSerializer):
     is_superuser = serializers.SerializerMethodField(read_only=True)
     token = serializers.SerializerMethodField(read_only=True)
     created_at = serializers.SerializerMethodField(read_only=True)
+    has_account = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = models.Profile
-        fields = ["id", "firstname", "email", "is_superuser", "token", "created_at"]
+        fields = [
+            "id",
+            "firstname",
+            "email",
+            "token",
+            "created_at",
+            "has_account",
+        ]
 
     def get_id(self, obj):
         return obj.id
@@ -64,8 +84,32 @@ class UserSerializer(ProfileSerializer):
     def get_email(self, obj):
         return obj.email
 
-    def get_is_superuser(self, obj):
-        return obj.is_superuser
-
     def get_created_at(self, obj):
         return obj.created_at
+
+    def get_has_account(self, obj):
+        return obj.has_account
+
+
+# -------------------------- DATA ACTIONS SERIALIZERS -----------------------------
+
+
+# serializer that gonna be stored in the local storage
+class CreateProfileSerializer(serializers.Serializer):
+    firstname = serializers.CharField(required=True, allow_null=False)
+    lastname = serializers.CharField(required=True, allow_null=False)
+    birthdate = serializers.DateField(required=True, allow_null=False)
+    university = serializers.CharField(required=False, allow_null=True)
+    description = serializers.CharField(required=False, allow_null=True)
+    gender = serializers.CharField(source='get_gender_display')
+    show_me = serializers.CharField(source='get_show_me_display')
+
+
+class UpdateProfileSerializer(serializers.Serializer):
+    university = serializers.CharField(required=False, allow_null=True)
+    description = serializers.CharField(required=False, allow_null=True)
+    # TODO: gender field
+    # TODO: which gender want to see in the app
+
+
+# TODO: create a profile serializer for the swipe (prevent the info that users can access)

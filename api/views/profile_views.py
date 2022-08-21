@@ -5,6 +5,7 @@ from rest_framework.response import Response
 from django.core.exceptions import ObjectDoesNotExist
 from api import models, serializers
 from django.contrib.auth.hashers import make_password
+from datetime import date
 
 # simple json token
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
@@ -18,15 +19,6 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
         data = super().validate(attrs)
-
-        """
-        se puede hacer de la siguinte manera (de forma manual)
-            data['username'] = self.user.username
-            data['email'] = self.user.email
-
-            O se puede hacer mediante un for loop usando el serializer cn el token
-        """
-
         serializer = serializers.UserSerializer(self.user).data
         for key, value in serializer.items():
             data[key] = value
@@ -42,6 +34,13 @@ class MyTokenObtainPairView(TokenObtainPairView):
 @api_view(["POST"])
 def registerUser(request):
     data = request.data
+    password = data["password"]
+    repeated_password = data["repeated_password"]
+
+    if password != repeated_password:
+        message = {"detail": "Your password does not match"}
+        return Response(message, status=status.HTTP_400_BAD_REQUEST)
+
     try:
         # create a new user data model
         user = models.Profile.objects.create(
@@ -74,47 +73,48 @@ def deleteUser(request, pk):
 # ----------------------- PROFILES VIEWS --------------------------------
 
 
-@api_view(["PUT"])
+@api_view(["POST"])
 @permission_classes([IsAuthenticated])
-def createProfile(request):
-    user = request.user
-    serializer = serializers.ProfileSerializer(user, many=False)
-
-    data = request.data
-    # {'firstname': ['DAMIAN'], 'lastname': ['STONEEE']}
-    print("THIS IS DATA ---> ", data)
-
-    if data.get("firstname"):  # when the value not exit return None
-        user.firstname = data["firstname"]
+def createProfile(request, pk):
+    
+    def age(birthdate):
+        today = date.today()
+        age = today.year - birthdate.year - ((today.month, today.day) < (birthdate.month, birthdate.day))
+        return age
+    
+    user = models.Profile.objects.get(id=pk)
+    fields_serializer = serializers.CreateProfileSerializer(data=request.data)
+    fields_serializer.is_valid(raise_exception=True)
+    
+    user.firstname = fields_serializer.validated_data["firstname"]
+    user.lastname = fields_serializer.validated_data["lastname"]
+    user.birthdate = fields_serializer.validated_data["birthdate"]
+    user.university = fields_serializer.validated_data["university"]
+    user.description = fields_serializer.validated_data["description"]
+    
+    if age(user.birthdate) < 18:
+        return Response({"detail": "You must be over 18 years old to use this app"}, status=status.HTTP_400_BAD_REQUEST)
     else:
-        return Response(
-            {"detail": "problem with firstname"}, status=status.HTTP_400_BAD_REQUEST
-        )
-    if data.get("lastname"):
-        user.lastname = data["lastname"]
-    else:
-        return Response(
-            {"detail": "problem with lastname"}, status=status.HTTP_400_BAD_REQUEST
-        )
-
-    user.save()
-
-    return Response(serializer.data)
+        user.age = age(user.birthdate)
+        user.has_account = True
+    
+    user_serializer = serializers.ProfileSerializer(user, many=False)
+    return Response(user_serializer.data)
 
 
 # Get all the profile users
 
 
-@api_view(["PUT"])
+@api_view(["PATCH"])
 @permission_classes([IsAuthenticated])
-def updateProfile(request):
-    profile = request.user
-    serializer = serializers.ProfileSerializer(profile, many=False)
-    data = request.data
-    profile.university = data["university"]
-    profile.description = data["description"]
-    profile.save()
-    return Response(serializer.data)
+def updateProfile(request, pk):
+    user = models.Profile.objects.get(id=pk)
+    fields_serializer = serializers.UpdateProfileSerializer(data=request.data)
+    fields_serializer.is_valid(raise_exception=True)
+    user.university = fields_serializer.validated_data["university"]
+    user.description = fields_serializer.validated_data["description"]
+    user_serializer = serializers.ProfileSerializer(user, many=False)
+    return Response(user_serializer.data)
 
 
 # Get all the profile users
@@ -206,4 +206,11 @@ def disblockProfile(request):
         return Response({"Error": "Profile does not exist"})
     profile.blocked_profiles.remove(blocked_profile)
     serializer = serializers.ProfileSerializer(blocked_profile, many=False)
+    return Response(serializer.data)
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def getBlockedProfiles(request, pk):
+    profile = models.Profile.objects.get(id=pk)
+    serializer = serializers.BlockedProfilesSerializer(profile, many=False)
     return Response(serializer.data)
