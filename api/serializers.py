@@ -6,7 +6,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 
 class PhotoSerializer(serializers.ModelSerializer):
-    image = serializers.ImageField(max_length=None, use_url=True)
+    image = serializers.ImageField(required=True, allow_null=False, max_length=None, use_url=True)
 
     class Meta:
         model = models.Photo
@@ -15,12 +15,13 @@ class PhotoSerializer(serializers.ModelSerializer):
 
 class ProfileSerializer(serializers.ModelSerializer):
     token = serializers.SerializerMethodField(read_only=True)
-    gender = serializers.CharField(source='get_gender_display')
-    show_me = serializers.CharField(source='get_show_me_display')
-    
-    # photos = PhotoSerializer(
-    #     source="photo_set", many=True, read_only=True
-    # )  # nested serializer
+    firstname = serializers.CharField(required=True, allow_null=False)
+    lastname = serializers.CharField(required=True, allow_null=False)
+    birthdate = serializers.DateField(required=True, allow_null=False)
+    university = serializers.CharField(required=False, allow_null=True)
+    description = serializers.CharField(required=False, allow_null=True)
+    gender = serializers.CharField(source='get_gender_display', required=True, allow_null=False)
+    show_me = serializers.CharField(source='get_show_me_display', required=True, allow_null=False)
 
     class Meta:
         model = models.Profile
@@ -68,6 +69,7 @@ class UserSerializer(ProfileSerializer):
             "email",
             "token",
             "created_at",
+            "is_superuser",
             "has_account",
         ]
 
@@ -86,10 +88,34 @@ class UserSerializer(ProfileSerializer):
 
     def get_created_at(self, obj):
         return obj.created_at
-
+    
+    def get_is_superuser(self, obj):
+        return obj.is_superuser
+    
     def get_has_account(self, obj):
         return obj.has_account
 
+
+class SwipeProfileSerializer():
+    photos = PhotoSerializer(
+        source="photo_set", many=True, read_only=True
+    )  # nested serializer
+
+    class Meta:
+        model = models.Profile
+        fields = [
+            "id",
+            "email",
+            "firstname",
+            "lastname",
+            "birthdate",
+            "age",
+            "gender",
+            "university",
+            "description",
+            "photos"
+        ]
+    
 
 # -------------------------- DATA ACTIONS SERIALIZERS -----------------------------
 
@@ -101,8 +127,8 @@ class CreateProfileSerializer(serializers.Serializer):
     birthdate = serializers.DateField(required=True, allow_null=False)
     university = serializers.CharField(required=False, allow_null=True)
     description = serializers.CharField(required=False, allow_null=True)
-    gender = serializers.CharField(source='get_gender_display')
-    show_me = serializers.CharField(source='get_show_me_display')
+    gender = serializers.CharField(source='get_gender_display', required=True, allow_null=False)
+    show_me = serializers.CharField(source='get_show_me_display', required=True, allow_null=False)
 
 
 class UpdateProfileSerializer(serializers.Serializer):
@@ -111,5 +137,3 @@ class UpdateProfileSerializer(serializers.Serializer):
     # TODO: gender field
     # TODO: which gender want to see in the app
 
-
-# TODO: create a profile serializer for the swipe (prevent the info that users can access)

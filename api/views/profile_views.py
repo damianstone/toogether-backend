@@ -1,7 +1,10 @@
 from rest_framework import status
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from rest_framework.decorators import api_view, permission_classes, action
+from rest_framework.permissions import IsAuthenticated, IsAdminUser, AllowAny
 from rest_framework.response import Response
+from rest_framework.viewsets import ReadOnlyModelViewSet, ModelViewSet
+from rest_framework.exceptions import ValidationError
+from django.contrib.auth import get_user_model
 from django.core.exceptions import ObjectDoesNotExist
 from api import models, serializers
 from django.contrib.auth.hashers import make_password
@@ -11,9 +14,7 @@ from datetime import date
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
 
-# ----------------------- USER VIEWS --------------------------------
-
-# TOKEN SERIALIZER
+# ----------------------- USER VIEWS (LOGIN / REGISTER) --------------------------------
 
 
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
@@ -26,12 +27,12 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
         return data
 
 
-# TOKEN VIEW
 class MyTokenObtainPairView(TokenObtainPairView):
     serializer_class = MyTokenObtainPairSerializer
 
 
 @api_view(["POST"])
+@permission_classes([AllowAny])
 def registerUser(request):
     data = request.data
     password = data["password"]
@@ -53,6 +54,15 @@ def registerUser(request):
         return Response(message, status=status.HTTP_400_BAD_REQUEST)
 
 
+@api_view(["DELETE"])
+@permission_classes([IsAuthenticated])
+def deleteUser(request, pk):
+    user = request.user
+    user_to_delete = models.Profile.objects.get(id=user.id)
+    user_to_delete.delete()
+    return Response("User was deleted")
+
+
 # get the internals fields
 @api_view(["GET"])
 @permission_classes([IsAdminUser])
@@ -62,155 +72,164 @@ def getUsers(request):
     return Response(serializer.data)
 
 
-@api_view(["DELETE"])
-@permission_classes([IsAuthenticated])
-def deleteUser(request, pk):
-    userForDeletion = models.Profile.objects.get(id=pk)
-    userForDeletion.delete()
-    return Response("User was deleted")
-
-
 # ----------------------- PROFILES VIEWS --------------------------------
 
+"""
+IDs to try
+3c52dc26-7536-477c-bd4c-14df1b38676e
+e64379d3-24d6-43a0-be51-d37773847787
+"""
 
-@api_view(["POST"])
-@permission_classes([IsAuthenticated])
-def createProfile(request, pk):
+
+class ProfileViewSet(ModelViewSet):
+    queryset = models.Profile.objects.all()
+    serializer_class = serializers.ProfileSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_permissions(self):
+        if self.action == "list":  # list all the profile just for admin users
+            return [IsAdminUser()]
+        return [permission() for permission in self.permission_classes]
+
+    # user just can retrieve their profile
+    def retrieve(self, request, pk=None):
+        profile = models.Profile.objects.get(pk=pk)
+        if profile.id != request.user.id:
+            return Response(
+                {"detail": "Trying to get another profile"},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        user_serializer = serializers.ProfileSerializer(profile, many=False)
+        return Response(user_serializer.data, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=["post"], url_path=r"actions/create-profile")
+    def create_profile(self, request, pk):
+        def age(birthdate):
+            today = date.today()
+            age = (
+                today.year
+                - birthdate.year
+                - ((today.month, today.day) < (birthdate.month, birthdate.day))
+            )
+            return age
+
+        profile = models.Profile.objects.get(pk=pk)
+        if profile.id != request.user.id:
+            return Response(
+                {"detail": "Trying to get another profile"},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        fields_serializer = serializers.CreateProfileSerializer(data=request.data)
+        fields_serializer.is_valid(raise_exception=True)
+
+        profile.firstname = fields_serializer.validated_data["firstname"]
+        profile.lastname = fields_serializer.validated_data["lastname"]
+        profile.birthdate = fields_serializer.validated_data["birthdate"]
+        profile.university = fields_serializer.validated_data["university"]
+        profile.description = fields_serializer.validated_data["description"]
+        profile.gender = fields_serializer.validated_data["get_gender_display"]
+        profile.show_me = fields_serializer.validated_data["get_show_me_display"]
+
+        if age(profile.birthdate) < 18:
+            return Response(
+                {"detail": "You must be over 18 years old to use this app"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        else:
+            profile.age = age(profile.birthdate)
+            # user.has_account = True
+
+        profile.save()
+        profile_serializer = serializers.ProfileSerializer(profile, many=False)
+        return Response(profile_serializer.data)
+
+    @action(detail=True, methods=["patch"], url_path=r"actions/update-profile")
+    def update_profile(self, request, pk):
+        profile = models.Profile.objects.get(pk=pk)
+        if profile.id != request.user.id:
+            return Response(
+                {"detail": "Trying to get another profile"},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        fields_serializer = serializers.UpdateProfileSerializer(data=request.data)
+        fields_serializer.is_valid(raise_exception=True)
+
+        profile.university = fields_serializer.validated_data["university"]
+        profile.description = fields_serializer.validated_data["description"]
+
+        profile_serializer = serializers.ProfileSerializer(profile, many=False)
+        return Response(profile_serializer.data)
+
+    @action(detail=True, methods=["post"], url_path=r"actions/block-profile")
+    def block_profile(self, request, pk=None):
+        profile = request.user
+        id = request.data["id"]
+        try:
+            blocked_profile = models.Profile.objects.get(id=id)
+        except ObjectDoesNotExist:
+            return Response({"Error": "Profile does not exist"})
+        
+        profile.blocked_profiles.add(blocked_profile)
+        serializer = serializers.ProfileSerializer(blocked_profile, many=False)
+        return Response(serializer.data)
     
-    def age(birthdate):
-        today = date.today()
-        age = today.year - birthdate.year - ((today.month, today.day) < (birthdate.month, birthdate.day))
-        return age
+    @action(detail=True, methods=["post"], url_path=r"actions/disblock-profile")
+    def disblock_profile(self, request, pk=None):
+        profile = request.user
+        id = request.data["id"]
+        try:
+            blocked_profile = models.Profile.objects.get(id=id)
+        except ObjectDoesNotExist:
+            return Response({"Error": "Profile does not exist"})
+        profile.blocked_profiles.remove(blocked_profile)
+        serializer = serializers.ProfileSerializer(blocked_profile, many=False)
+        return Response(serializer.data)
     
-    user = models.Profile.objects.get(id=pk)
-    fields_serializer = serializers.CreateProfileSerializer(data=request.data)
-    fields_serializer.is_valid(raise_exception=True)
-    
-    user.firstname = fields_serializer.validated_data["firstname"]
-    user.lastname = fields_serializer.validated_data["lastname"]
-    user.birthdate = fields_serializer.validated_data["birthdate"]
-    user.university = fields_serializer.validated_data["university"]
-    user.description = fields_serializer.validated_data["description"]
-    
-    if age(user.birthdate) < 18:
-        return Response({"detail": "You must be over 18 years old to use this app"}, status=status.HTTP_400_BAD_REQUEST)
-    else:
-        user.age = age(user.birthdate)
-        user.has_account = True
-    
-    user_serializer = serializers.ProfileSerializer(user, many=False)
-    return Response(user_serializer.data)
-
-
-# Get all the profile users
-
-
-@api_view(["PATCH"])
-@permission_classes([IsAuthenticated])
-def updateProfile(request, pk):
-    user = models.Profile.objects.get(id=pk)
-    fields_serializer = serializers.UpdateProfileSerializer(data=request.data)
-    fields_serializer.is_valid(raise_exception=True)
-    user.university = fields_serializer.validated_data["university"]
-    user.description = fields_serializer.validated_data["description"]
-    user_serializer = serializers.ProfileSerializer(user, many=False)
-    return Response(user_serializer.data)
-
-
-# Get all the profile users
-
-
-@api_view(["GET"])
-@permission_classes([IsAdminUser])
-def getProfiles(request):
-    profiles = models.Profile.objects.all()
-    serializer = serializers.ProfileSerializer(profiles, many=True)
-    return Response(serializer.data)
-
-
-@api_view(["GET"])
-@permission_classes([IsAuthenticated])
-def getProfile(request, pk):
-    profile = models.Profile.objects.get(id=pk)
-    serializer = serializers.ProfileSerializer(profile, many=False)
-    return Response(serializer.data)
-
+    @action(detail=True, methods=["get"], url_path=r"actions/get-blocked-profiles")
+    def get_blocked_profiles(self, request, pk=None):
+        profile = models.Profile.objects.get(id=pk)
+        serializer = serializers.BlockedProfilesSerializer(profile, many=False)
+        return Response(serializer.data)
 
 # ----------------------- PHOTOS VIEWS --------------------------------
 
 
-@api_view(["POST"])
-@permission_classes([IsAuthenticated])
-def addPhoto(request):
-    profile = request.user
-    photos = models.Photo.objects.filter(profile=profile.id)
-    file = request.FILES.get("image")
-    if len(photos) >= 5:
-        return Response({"detail": "Profile cannot have more than 5 images"})
-    else:
-        photo = models.Photo.objects.create(profile=profile, image=file)
+class PhotoViewSet(ModelViewSet):
+    serializer_class = serializers.PhotoSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def list(self, request):
+        profile = request.user
+        queryset = models.Photo.objects.filter(profile=profile.id)
+        serializer = serializers.PhotoSerializer(queryset, many=True)
+        return Response(serializer.data)
+    
+    def retrieve(self, request, pk):
+        photo = models.Photo.objects.get(pk=pk)
         serializer = serializers.PhotoSerializer(photo, many=False)
         return Response(serializer.data)
+        
+    def create(self, request):
+        profile = request.user
+        profile_photos = models.Photo.objects.filter(profile=profile.id)
+        # file = request.FILES.get("image")
+        
+        fields_serializer = serializers.PhotoSerializer(data=request.data)
+        fields_serializer.is_valid(raise_exception=True)
+        
+        if len(profile_photos) >= 5:
+            return Response({"detail": "Profile cannot have more than 5 images"})
+        
+        photo = models.Photo.objects.create(profile=profile, image=fields_serializer.validated_data["image"])
+        serializer = serializers.PhotoSerializer(photo, many=False)
+        return Response(serializer.data)
+    
+    def destroy(self, request, pk):
+        photo = models.Photo.objects.get(pk=pk)
+        photo.delete()
+        return Response({"detail": "Photo deleted"}, status=status.HTTP_200_OK)
 
 
-@api_view(["GET"])
-@permission_classes([IsAuthenticated])
-def getProfilePhotos(request):
-    profile = request.user
-    photos = models.Photo.objects.filter(profile=profile.id)
-    serializer = serializers.PhotoSerializer(photos, many=True)
-    return Response(serializer.data)
-
-
-@api_view(["GET"])
-@permission_classes([IsAdminUser])
-def getPhotos(request):
-    photos = models.Photo.objects.all()
-    serializer = serializers.PhotoSerializer(photos, many=True)
-    return Response(serializer.data)
-
-
-@api_view(["DELETE"])
-@permission_classes([IsAuthenticated])
-def deletePhoto(request, pk):
-    photo = models.Photo.objects.get(id=pk)
-    photo.delete()
-    return Response("Photo deleted")
-
-
-# ----------------------- BLOCKED USERS --------------------------------
-
-
-@api_view(["POST"])
-@permission_classes([IsAuthenticated])
-def blockProfile(request):
-    profile = request.user
-    id = request.data["id"]
-    try:
-        blocked_profile = models.Profile.objects.get(id=id)
-    except ObjectDoesNotExist:
-        return Response({"Error": "Profile does not exist"})
-    profile.blocked_profiles.add(blocked_profile)
-    serializer = serializers.ProfileSerializer(blocked_profile, many=False)
-    return Response(serializer.data)
-
-
-@api_view(["POST"])
-@permission_classes([IsAuthenticated])
-def disblockProfile(request):
-    profile = request.user
-    id = request.data["id"]
-    try:
-        blocked_profile = models.Profile.objects.get(id=id)
-    except ObjectDoesNotExist:
-        return Response({"Error": "Profile does not exist"})
-    profile.blocked_profiles.remove(blocked_profile)
-    serializer = serializers.ProfileSerializer(blocked_profile, many=False)
-    return Response(serializer.data)
-
-@api_view(["GET"])
-@permission_classes([IsAuthenticated])
-def getBlockedProfiles(request, pk):
-    profile = models.Profile.objects.get(id=pk)
-    serializer = serializers.BlockedProfilesSerializer(profile, many=False)
-    return Response(serializer.data)
