@@ -171,11 +171,11 @@ class ProfileViewSet(ModelViewSet):
             blocked_profile = models.Profile.objects.get(id=id)
         except ObjectDoesNotExist:
             return Response({"Error": "Profile does not exist"})
-        
+
         profile.blocked_profiles.add(blocked_profile)
         serializer = serializers.ProfileSerializer(blocked_profile, many=False)
         return Response(serializer.data)
-    
+
     @action(detail=True, methods=["post"], url_path=r"actions/disblock-profile")
     def disblock_profile(self, request, pk=None):
         profile = request.user
@@ -187,12 +187,13 @@ class ProfileViewSet(ModelViewSet):
         profile.blocked_profiles.remove(blocked_profile)
         serializer = serializers.ProfileSerializer(blocked_profile, many=False)
         return Response(serializer.data)
-    
+
     @action(detail=True, methods=["get"], url_path=r"actions/get-blocked-profiles")
     def get_blocked_profiles(self, request, pk=None):
         profile = models.Profile.objects.get(id=pk)
         serializer = serializers.BlockedProfilesSerializer(profile, many=False)
         return Response(serializer.data)
+
 
 # ----------------------- PHOTOS VIEWS --------------------------------
 
@@ -200,36 +201,39 @@ class ProfileViewSet(ModelViewSet):
 class PhotoViewSet(ModelViewSet):
     serializer_class = serializers.PhotoSerializer
     permission_classes = [IsAuthenticated]
-    
+
     def list(self, request):
         profile = request.user
         queryset = models.Photo.objects.filter(profile=profile.id)
         serializer = serializers.PhotoSerializer(queryset, many=True)
         return Response(serializer.data)
-    
+
     def retrieve(self, request, pk):
         photo = models.Photo.objects.get(pk=pk)
         serializer = serializers.PhotoSerializer(photo, many=False)
         return Response(serializer.data)
-        
+
     def create(self, request):
         profile = request.user
         profile_photos = models.Photo.objects.filter(profile=profile.id)
-        # file = request.FILES.get("image")
-        
+        file = request.FILES.get("image")
+
         fields_serializer = serializers.PhotoSerializer(data=request.data)
         fields_serializer.is_valid(raise_exception=True)
-        
+
         if len(profile_photos) >= 5:
-            return Response({"detail": "Profile cannot have more than 5 images"})
-        
-        photo = models.Photo.objects.create(profile=profile, image=fields_serializer.validated_data["image"])
+            return Response(
+                {"detail": "Profile cannot have more than 5 images"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        photo = models.Photo.objects.create(
+            profile=profile, image=fields_serializer._validated_data["image"]
+        )
         serializer = serializers.PhotoSerializer(photo, many=False)
         return Response(serializer.data)
-    
+
     def destroy(self, request, pk):
         photo = models.Photo.objects.get(pk=pk)
         photo.delete()
         return Response({"detail": "Photo deleted"}, status=status.HTTP_200_OK)
-
-

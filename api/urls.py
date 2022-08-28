@@ -19,7 +19,9 @@ router.register(
 
 urlpatterns = [
     path("users/", views.getUsers, name="users"),
-    path("users/login/", views.MyTokenObtainPairView.as_view(), name="token_obtain_pair"),
+    path(
+        "users/login/", views.MyTokenObtainPairView.as_view(), name="token_obtain_pair"
+    ),
     path("users/register/", views.registerUser, name="register"),
     path("users/delete/", views.deleteUser, name="delete"),
     path("", include(router.urls)),
