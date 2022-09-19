@@ -32,6 +32,8 @@ class Profile(AbstractBaseUser, PermissionsMixin):
 
     birthdate = models.DateField(null=True, blank=True)
     age = models.PositiveIntegerField(null=True)
+    nationality = models.TextField(max_length=20, null=True)
+    city = models.TextField(max_length=15, null=True)
     university = models.TextField(max_length=40, null=True)
     description = models.TextField(max_length=500, null=True)
 

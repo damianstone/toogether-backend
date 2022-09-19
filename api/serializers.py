@@ -28,11 +28,10 @@ class ProfileSerializer(serializers.ModelSerializer):
     show_me = serializers.CharField(
         source="get_show_me_display", required=True, allow_null=False
     )
-    
+
     photos = PhotoSerializer(
         source="photo_set", many=True, read_only=True
     )  # nested serializer
-
 
     class Meta:
         model = models.Profile
@@ -46,11 +45,13 @@ class ProfileSerializer(serializers.ModelSerializer):
             "age",
             "gender",
             "show_me",
+            "nationality",
+            "city",
             "university",
             "description",
             "created_at",
             "has_account",
-            "photos"
+            "photos",
         ]
 
     def get_token(self, obj):
@@ -148,7 +149,13 @@ class CreateProfileSerializer(serializers.Serializer):
 
 
 class UpdateProfileSerializer(serializers.Serializer):
+    nationality = serializers.CharField(required=False, allow_null=True)
+    city = serializers.CharField(required=False, allow_null=True)
     university = serializers.CharField(required=False, allow_null=True)
     description = serializers.CharField(required=False, allow_null=True)
-    # TODO: gender field
-    # TODO: which gender want to see in the app
+    gender = serializers.CharField(
+        source="get_gender_display", required=True, allow_null=False
+    )
+    show_me = serializers.CharField(
+        source="get_show_me_display", required=True, allow_null=False
+    )
