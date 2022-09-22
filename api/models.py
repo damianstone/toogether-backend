@@ -62,6 +62,7 @@ class Photo(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     profile = models.ForeignKey(Profile, default=None, on_delete=models.CASCADE)
     image = models.ImageField(null=True, blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
 
 
 class Like(models.Model):

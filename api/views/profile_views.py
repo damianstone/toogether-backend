@@ -75,6 +75,7 @@ def getUsers(request):
 
 # ----------------------- PROFILES VIEWS --------------------------------
 
+
 class ProfileViewSet(ModelViewSet):
     queryset = models.Profile.objects.all()
     serializer_class = serializers.ProfileSerializer
@@ -151,12 +152,26 @@ class ProfileViewSet(ModelViewSet):
         fields_serializer = serializers.UpdateProfileSerializer(data=request.data)
         fields_serializer.is_valid(raise_exception=True)
 
-        profile.gender = fields_serializer.validated_data["get_gender_display"]
-        profile.show_me = fields_serializer.validated_data["get_show_me_display"]
-        profile.nationality = fields_serializer.validated_data["nationality"]
-        profile.city = fields_serializer.validated_data["city"]
-        profile.university = fields_serializer.validated_data["university"]
-        profile.description = fields_serializer.validated_data["description"]
+        # TODO: do it dynamically using a for loop
+        # for key in request.data:
+        #     print("key ---> ", key)
+        #     if key == 'gender' or key == 'show_me':
+        #         profile[key] = fields_serializer.validated_data[f"get_{key}_display"]
+        #     else:
+        #         profile[key] = fields_serializer.validated_data[key]
+
+        if "gender" in request.data:
+            profile.gender = fields_serializer.validated_data["get_gender_display"]
+        if "show_me" in request.data:
+            profile.show_me = fields_serializer.validated_data["get_show_me_display"]
+        if "nationality" in request.data:
+            fields_serializer.validated_data["nationality"]
+        if "city" in request.data:
+            profile.city = fields_serializer.validated_data["city"]
+        if "university" in request.data:
+            profile.university = fields_serializer.validated_data["university"]
+        if "description" in request.data:
+            profile.description = fields_serializer.validated_data["description"]
 
         profile.save()
         profile_serializer = serializers.ProfileSerializer(profile, many=False)
@@ -203,7 +218,9 @@ class PhotoViewSet(ModelViewSet):
 
     def list(self, request):
         profile = request.user
-        queryset = models.Photo.objects.filter(profile=profile.id)
+        queryset = models.Photo.objects.filter(profile=profile.id).order_by(
+            "created_at"
+        )
         serializer = serializers.PhotoSerializer(queryset, many=True)
         return Response(serializer.data)
 
@@ -231,9 +248,8 @@ class PhotoViewSet(ModelViewSet):
         )
         serializer = serializers.PhotoSerializer(photo, many=False)
         return Response(serializer.data)
-    
-    # TODO: when update django rest change the order of the objects
-    def update(self, request, pk=None, *args, **kwargs): 
+
+    def update(self, request, pk=None, *args, **kwargs):
         photo = models.Photo.objects.get(pk=pk)
         fields_serializer = serializers.PhotoSerializer(data=request.data, partial=True)
         fields_serializer.is_valid(raise_exception=True)

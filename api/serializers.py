@@ -152,10 +152,12 @@ class UpdateProfileSerializer(serializers.Serializer):
     nationality = serializers.CharField(required=False, allow_null=True)
     city = serializers.CharField(required=False, allow_null=True)
     university = serializers.CharField(required=False, allow_null=True)
-    description = serializers.CharField(required=False, allow_null=True)
+    description = serializers.CharField(
+        required=False, allow_null=True, allow_blank=True
+    )
     gender = serializers.CharField(
-        source="get_gender_display", required=True, allow_null=False
+        source="get_gender_display", required=False, allow_null=False, allow_blank=False
     )
     show_me = serializers.CharField(
-        source="get_show_me_display", required=True, allow_null=False
+        source="get_show_me_display", required=False, allow_null=False, allow_blank=False
     )
