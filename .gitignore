@@ -29,4 +29,5 @@ venv*
 .coverage
 
 #Images
-.static/images*
+static*
+.static*

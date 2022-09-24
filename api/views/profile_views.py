@@ -1,3 +1,4 @@
+from functools import partial
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.permissions import IsAuthenticated, IsAdminUser, AllowAny
@@ -56,11 +57,11 @@ def registerUser(request):
 
 @api_view(["DELETE"])
 @permission_classes([IsAuthenticated])
-def deleteUser(request, pk):
+def deleteUser(request):
     user = request.user
     user_to_delete = models.Profile.objects.get(id=user.id)
     user_to_delete.delete()
-    return Response("User was deleted")
+    return Response({"detail": "User deleted successfully"})
 
 
 # get the internals fields
@@ -73,12 +74,6 @@ def getUsers(request):
 
 
 # ----------------------- PROFILES VIEWS --------------------------------
-
-"""
-IDs to try
-3c52dc26-7536-477c-bd4c-14df1b38676e
-e64379d3-24d6-43a0-be51-d37773847787
-"""
 
 
 class ProfileViewSet(ModelViewSet):
@@ -139,7 +134,7 @@ class ProfileViewSet(ModelViewSet):
             )
         else:
             profile.age = age(profile.birthdate)
-            # user.has_account = True
+            profile.has_account = True
 
         profile.save()
         profile_serializer = serializers.ProfileSerializer(profile, many=False)
@@ -157,9 +152,28 @@ class ProfileViewSet(ModelViewSet):
         fields_serializer = serializers.UpdateProfileSerializer(data=request.data)
         fields_serializer.is_valid(raise_exception=True)
 
-        profile.university = fields_serializer.validated_data["university"]
-        profile.description = fields_serializer.validated_data["description"]
+        # TODO: do it dynamically using a for loop
+        # for key in request.data:
+        #     print("key ---> ", key)
+        #     if key == 'gender' or key == 'show_me':
+        #         profile[key] = fields_serializer.validated_data[f"get_{key}_display"]
+        #     else:
+        #         profile[key] = fields_serializer.validated_data[key]
 
+        if "gender" in request.data:
+            profile.gender = fields_serializer.validated_data["get_gender_display"]
+        if "show_me" in request.data:
+            profile.show_me = fields_serializer.validated_data["get_show_me_display"]
+        if "nationality" in request.data:
+            profile.nationality = fields_serializer.validated_data["nationality"]
+        if "city" in request.data:
+            profile.city = fields_serializer.validated_data["city"]
+        if "university" in request.data:
+            profile.university = fields_serializer.validated_data["university"]
+        if "description" in request.data:
+            profile.description = fields_serializer.validated_data["description"]
+
+        profile.save()
         profile_serializer = serializers.ProfileSerializer(profile, many=False)
         return Response(profile_serializer.data)
 
@@ -171,11 +185,11 @@ class ProfileViewSet(ModelViewSet):
             blocked_profile = models.Profile.objects.get(id=id)
         except ObjectDoesNotExist:
             return Response({"Error": "Profile does not exist"})
-        
+
         profile.blocked_profiles.add(blocked_profile)
         serializer = serializers.ProfileSerializer(blocked_profile, many=False)
         return Response(serializer.data)
-    
+
     @action(detail=True, methods=["post"], url_path=r"actions/disblock-profile")
     def disblock_profile(self, request, pk=None):
         profile = request.user
@@ -187,12 +201,13 @@ class ProfileViewSet(ModelViewSet):
         profile.blocked_profiles.remove(blocked_profile)
         serializer = serializers.ProfileSerializer(blocked_profile, many=False)
         return Response(serializer.data)
-    
+
     @action(detail=True, methods=["get"], url_path=r"actions/get-blocked-profiles")
     def get_blocked_profiles(self, request, pk=None):
         profile = models.Profile.objects.get(id=pk)
         serializer = serializers.BlockedProfilesSerializer(profile, many=False)
         return Response(serializer.data)
+
 
 # ----------------------- PHOTOS VIEWS --------------------------------
 
@@ -200,36 +215,50 @@ class ProfileViewSet(ModelViewSet):
 class PhotoViewSet(ModelViewSet):
     serializer_class = serializers.PhotoSerializer
     permission_classes = [IsAuthenticated]
-    
+
     def list(self, request):
         profile = request.user
-        queryset = models.Photo.objects.filter(profile=profile.id)
+        queryset = models.Photo.objects.filter(profile=profile.id).order_by(
+            "created_at"
+        )
         serializer = serializers.PhotoSerializer(queryset, many=True)
         return Response(serializer.data)
-    
+
     def retrieve(self, request, pk):
         photo = models.Photo.objects.get(pk=pk)
         serializer = serializers.PhotoSerializer(photo, many=False)
         return Response(serializer.data)
-        
+
     def create(self, request):
         profile = request.user
         profile_photos = models.Photo.objects.filter(profile=profile.id)
         # file = request.FILES.get("image")
-        
+
         fields_serializer = serializers.PhotoSerializer(data=request.data)
         fields_serializer.is_valid(raise_exception=True)
-        
+
         if len(profile_photos) >= 5:
-            return Response({"detail": "Profile cannot have more than 5 images"})
-        
-        photo = models.Photo.objects.create(profile=profile, image=fields_serializer.validated_data["image"])
+            return Response(
+                {"detail": "Profile cannot have more than 5 images"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        photo = models.Photo.objects.create(
+            profile=profile, image=fields_serializer._validated_data["image"]
+        )
         serializer = serializers.PhotoSerializer(photo, many=False)
         return Response(serializer.data)
-    
+
+    def update(self, request, pk=None, *args, **kwargs):
+        photo = models.Photo.objects.get(pk=pk)
+        fields_serializer = serializers.PhotoSerializer(data=request.data, partial=True)
+        fields_serializer.is_valid(raise_exception=True)
+        photo.image = fields_serializer._validated_data["image"]
+        photo.save()
+        serializer = serializers.PhotoSerializer(photo, many=False)
+        return Response(serializer.data)
+
     def destroy(self, request, pk):
         photo = models.Photo.objects.get(pk=pk)
         photo.delete()
         return Response({"detail": "Photo deleted"}, status=status.HTTP_200_OK)
-
-

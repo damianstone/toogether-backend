@@ -8,18 +8,18 @@ from .managers import CustomUserManager
 
 class Profile(AbstractBaseUser, PermissionsMixin):
     GENDER_CHOICES = (
-       ('male', 'Male'),
-       ('female', 'Female'),
-       ('non-binary', 'Non-binary'),
-       ('chair', 'Chair'),
+        ("male", "Male"),
+        ("female", "Female"),
+        ("non-binary", "Non-binary"),
+        ("chair", "Chair"),
     )
-    
+
     SHOW_ME_CHOICES = (
-       ('men', 'Men'),
-       ('women', 'Women'),
-       ('both', 'Both'),
+        ("men", "Men"),
+        ("women", "Women"),
+        ("both", "Both"),
     )
-    
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     email = models.CharField(max_length=200, unique=True)
     firstname = models.CharField(max_length=200, null=True)
@@ -32,13 +32,18 @@ class Profile(AbstractBaseUser, PermissionsMixin):
 
     birthdate = models.DateField(null=True, blank=True)
     age = models.PositiveIntegerField(null=True)
+    nationality = models.TextField(max_length=20, null=True)
+    city = models.TextField(max_length=15, null=True)
     university = models.TextField(max_length=40, null=True)
     description = models.TextField(max_length=500, null=True)
-    
-    gender = models.CharField(default='male', max_length=10, choices=GENDER_CHOICES, null=False)
-    show_me = models.CharField(default='women', max_length=10, choices=SHOW_ME_CHOICES, null=False)
-    
-    
+
+    gender = models.CharField(
+        default="male", max_length=10, choices=GENDER_CHOICES, null=False
+    )
+    show_me = models.CharField(
+        default="women", max_length=10, choices=SHOW_ME_CHOICES, null=False
+    )
+
     blocked_profiles = models.ManyToManyField(
         "self", symmetrical=False, related_name="blockedProfiles", blank=True
     )
@@ -57,6 +62,7 @@ class Photo(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     profile = models.ForeignKey(Profile, default=None, on_delete=models.CASCADE)
     image = models.ImageField(null=True, blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
 
 
 class Like(models.Model):
