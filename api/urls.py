@@ -29,7 +29,9 @@ urlpatterns = [
     path("token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
     path("users/", profile_views.getUsers, name="users"),
     path(
-        "users/login/", profile_views.MyTokenObtainPairView.as_view(), name="token_obtain_pair"
+        "users/login/",
+        profile_views.MyTokenObtainPairView.as_view(),
+        name="token_obtain_pair",
     ),
     path("users/register/", profile_views.registerUser, name="register"),
     path("users/delete/", profile_views.deleteUser, name="delete"),

@@ -62,7 +62,6 @@ def deleteUser(request):
     return Response({"detail": "User deleted successfully"})
 
 
-# get the internals fields
 @api_view(["GET"])
 @permission_classes([IsAdminUser])
 def getUsers(request):
@@ -113,7 +112,7 @@ class ProfileViewSet(ModelViewSet):
             return Response(
                 {"Error": "Profile does not exist"}, status=status.HTTP_400_BAD_REQUEST
             )
-            
+
         if profile.id != request.user.id:
             return Response(
                 {"detail": "Trying to get another profile"},
@@ -146,24 +145,35 @@ class ProfileViewSet(ModelViewSet):
 
     @action(detail=True, methods=["patch"], url_path=r"actions/update-profile")
     def update_profile(self, request, pk):
+        print(request.data)
+        fields_serializer = serializers.UpdateProfileSerializer(data=request.data)
+        fields_serializer.is_valid(raise_exception=True)
+
         try:
             profile = models.Profile.objects.get(pk=pk)
         except ObjectDoesNotExist:
             return Response(
                 {"Error": "Profile does not exist"}, status=status.HTTP_400_BAD_REQUEST
             )
-            
+
         if profile.id != request.user.id:
             return Response(
                 {"detail": "Trying to get another profile"},
                 status=status.HTTP_401_UNAUTHORIZED,
             )
 
-        fields_serializer = serializers.UpdateProfileSerializer(data=request.data)
-        fields_serializer.is_valid(raise_exception=True)
-
-        for key, val in fields_serializer.validated_data.items():
-            setattr(profile, key, val)
+        if "gender" in request.data:
+            profile.gender = fields_serializer.validated_data["get_gender_display"]
+        if "show_me" in request.data:
+            profile.show_me = fields_serializer.validated_data["get_show_me_display"]
+        if "nationality" in request.data:
+            profile.nationality = fields_serializer.validated_data["nationality"]
+        if "city" in request.data:
+            profile.city = fields_serializer.validated_data["city"]
+        if "university" in request.data:
+            profile.university = fields_serializer.validated_data["university"]
+        if "description" in request.data:
+            profile.description = fields_serializer.validated_data["description"]
 
         profile.save()
         profile_serializer = serializers.ProfileSerializer(profile, many=False)
