@@ -1,10 +1,8 @@
-from functools import partial
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.permissions import IsAuthenticated, IsAdminUser, AllowAny
 from rest_framework.response import Response
-from rest_framework.viewsets import ReadOnlyModelViewSet, ModelViewSet
-from rest_framework.exceptions import ValidationError
+from rest_framework.viewsets import ModelViewSet
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ObjectDoesNotExist
 from api import models, serializers
@@ -109,7 +107,13 @@ class ProfileViewSet(ModelViewSet):
             )
             return age
 
-        profile = models.Profile.objects.get(pk=pk)
+        try:
+            profile = models.Profile.objects.get(pk=pk)
+        except ObjectDoesNotExist:
+            return Response(
+                {"Error": "Profile does not exist"}, status=status.HTTP_400_BAD_REQUEST
+            )
+            
         if profile.id != request.user.id:
             return Response(
                 {"detail": "Trying to get another profile"},
@@ -142,7 +146,13 @@ class ProfileViewSet(ModelViewSet):
 
     @action(detail=True, methods=["patch"], url_path=r"actions/update-profile")
     def update_profile(self, request, pk):
-        profile = models.Profile.objects.get(pk=pk)
+        try:
+            profile = models.Profile.objects.get(pk=pk)
+        except ObjectDoesNotExist:
+            return Response(
+                {"Error": "Profile does not exist"}, status=status.HTTP_400_BAD_REQUEST
+            )
+            
         if profile.id != request.user.id:
             return Response(
                 {"detail": "Trying to get another profile"},
@@ -152,26 +162,8 @@ class ProfileViewSet(ModelViewSet):
         fields_serializer = serializers.UpdateProfileSerializer(data=request.data)
         fields_serializer.is_valid(raise_exception=True)
 
-        # TODO: do it dynamically using a for loop
-        # for key in request.data:
-        #     print("key ---> ", key)
-        #     if key == 'gender' or key == 'show_me':
-        #         profile[key] = fields_serializer.validated_data[f"get_{key}_display"]
-        #     else:
-        #         profile[key] = fields_serializer.validated_data[key]
-
-        if "gender" in request.data:
-            profile.gender = fields_serializer.validated_data["get_gender_display"]
-        if "show_me" in request.data:
-            profile.show_me = fields_serializer.validated_data["get_show_me_display"]
-        if "nationality" in request.data:
-            profile.nationality = fields_serializer.validated_data["nationality"]
-        if "city" in request.data:
-            profile.city = fields_serializer.validated_data["city"]
-        if "university" in request.data:
-            profile.university = fields_serializer.validated_data["university"]
-        if "description" in request.data:
-            profile.description = fields_serializer.validated_data["description"]
+        for key, val in fields_serializer.validated_data.items():
+            setattr(profile, key, val)
 
         profile.save()
         profile_serializer = serializers.ProfileSerializer(profile, many=False)
@@ -184,7 +176,9 @@ class ProfileViewSet(ModelViewSet):
         try:
             blocked_profile = models.Profile.objects.get(id=id)
         except ObjectDoesNotExist:
-            return Response({"Error": "Profile does not exist"})
+            return Response(
+                {"Error": "Profile does not exist"}, status=status.HTTP_400_BAD_REQUEST
+            )
 
         profile.blocked_profiles.add(blocked_profile)
         serializer = serializers.ProfileSerializer(blocked_profile, many=False)

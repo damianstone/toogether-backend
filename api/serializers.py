@@ -1,8 +1,10 @@
+from dataclasses import fields
 from rest_framework import serializers
 from api import models
 from rest_framework_simplejwt.tokens import RefreshToken
 
 # -------------------------- MODELS SERIALIZERS -----------------------------
+
 
 class PhotoSerializer(serializers.ModelSerializer):
     image = serializers.ImageField(
@@ -78,6 +80,15 @@ class UserSerializer(ProfileSerializer):
         token = RefreshToken.for_user(obj)
         return str(token.access_token)
 
+class GroupSerializer(serializers.ModelSerializer):
+    # TODO: serialize the share_link as an hyperlink
+    share_link = serializers.CharField(required=True, allow_null=False)
+    members = ProfileSerializer(read_only=True, many=True)
+    class Meta:
+        model = models.Group
+        fields = '__all__'
+        
+
 class SwipeProfileSerializer:
     photos = PhotoSerializer(
         source="photo_set", many=True, read_only=True
@@ -133,3 +144,6 @@ class UpdateProfileSerializer(serializers.Serializer):
         allow_null=False,
         allow_blank=False,
     )
+
+class GroupSerializerWithMember(serializers.Serializer):
+    member_id = serializers.CharField(required=True, allow_null=False)

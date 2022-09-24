@@ -65,6 +65,24 @@ class Photo(models.Model):
     created_at = models.DateTimeField(default=timezone.now)
 
 
+class Group(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    owner = models.ForeignKey(
+        Profile, default=None, on_delete=models.CASCADE, related_name="owner_profile"
+    )
+    total_members = models.PositiveIntegerField(null=True)
+    share_link = models.CharField(max_length=30, unique=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    members = models.ManyToManyField(
+        Profile, blank=True, related_name="member_profiles"
+    )
+
+
+class Member(models.Model):
+    group = models.ForeignKey(Group, default=None, on_delete=models.CASCADE)
+    profile = models.ForeignKey(Profile, default=None, on_delete=models.CASCADE)
+
+
 class Like(models.Model):
     profile = models.ForeignKey(Profile, on_delete=models.SET_NULL, null=True)
     created_at = models.DateTimeField(default=timezone.now)
