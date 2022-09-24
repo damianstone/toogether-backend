@@ -57,11 +57,11 @@ def registerUser(request):
 
 @api_view(["DELETE"])
 @permission_classes([IsAuthenticated])
-def deleteUser(request, pk):
+def deleteUser(request):
     user = request.user
     user_to_delete = models.Profile.objects.get(id=user.id)
     user_to_delete.delete()
-    return Response("User was deleted")
+    return Response({"detail": "User deleted successfully"})
 
 
 # get the internals fields
@@ -165,7 +165,7 @@ class ProfileViewSet(ModelViewSet):
         if "show_me" in request.data:
             profile.show_me = fields_serializer.validated_data["get_show_me_display"]
         if "nationality" in request.data:
-            fields_serializer.validated_data["nationality"]
+            profile.nationality = fields_serializer.validated_data["nationality"]
         if "city" in request.data:
             profile.city = fields_serializer.validated_data["city"]
         if "university" in request.data:
