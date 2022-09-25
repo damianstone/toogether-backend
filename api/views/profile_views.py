@@ -262,6 +262,7 @@ class PhotoViewSet(ModelViewSet):
         serializer = serializers.PhotoSerializer(photo, many=False)
         return Response(serializer.data)
 
+    # TODO: delete from the static folder as well
     def destroy(self, request, pk):
         photo = models.Photo.objects.get(pk=pk)
         photo.delete()

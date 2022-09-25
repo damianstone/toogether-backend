@@ -87,7 +87,6 @@ class GroupViewSet(ModelViewSet):
             group = models.Group.objects.get(
                 share_link=fields_serializer._validated_data["share_link"]
             )
-            print("TOTAL MEMBERS --> ", group.total_members)
         except ObjectDoesNotExist:
             return Response(
                 {"detail": "Group does not exist"},
@@ -95,7 +94,6 @@ class GroupViewSet(ModelViewSet):
             )
 
         group.members.add(profile)
-        print(group.total_members)
         group.total_members += 1
         group.save()
         serializer = serializers.GroupSerializer(group, many=False)
