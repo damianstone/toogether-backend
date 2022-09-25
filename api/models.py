@@ -1,5 +1,6 @@
 import datetime
 import uuid
+import shortuuid
 from django.utils import timezone
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
@@ -63,6 +64,40 @@ class Photo(models.Model):
     profile = models.ForeignKey(Profile, default=None, on_delete=models.CASCADE)
     image = models.ImageField(null=True, blank=True)
     created_at = models.DateTimeField(default=timezone.now)
+
+
+class Group(models.Model):
+    GENDER_CHOICES = (
+        ("male", "Male"),
+        ("female", "Female"),
+        ("non-binary", "Non-binary"),
+        ("chair", "Chair"),
+    )
+
+    # TODO: add property to know if its a male or female group
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    owner = models.ForeignKey(
+        Profile, default=None, on_delete=models.CASCADE, related_name="owner_profile"
+    )
+    gender = models.CharField(
+        default="male", max_length=10, choices=GENDER_CHOICES, null=False
+    )
+    total_members = models.PositiveIntegerField(null=True)
+    share_link = models.CharField(max_length=100, unique=True, null=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    members = models.ManyToManyField(
+        Profile, blank=True, related_name="member_profiles"
+    )
+
+    def save(self, *args, **kwargs):
+        if not self.share_link:
+            self.share_link = f"https://start.the.night/{shortuuid.uuid()}"
+        super().save(*args, **kwargs)
+
+
+class Member(models.Model):
+    group = models.ForeignKey(Group, default=None, on_delete=models.CASCADE)
+    profile = models.ForeignKey(Profile, default=None, on_delete=models.CASCADE)
 
 
 class Like(models.Model):

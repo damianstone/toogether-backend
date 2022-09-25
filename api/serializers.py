@@ -1,8 +1,10 @@
+from dataclasses import fields
 from rest_framework import serializers
 from api import models
 from rest_framework_simplejwt.tokens import RefreshToken
 
 # -------------------------- MODELS SERIALIZERS -----------------------------
+
 
 class PhotoSerializer(serializers.ModelSerializer):
     image = serializers.ImageField(
@@ -14,6 +16,7 @@ class PhotoSerializer(serializers.ModelSerializer):
         fields = ["id", "image", "profile"]
 
 
+# TODO: make this serializer just for retrieve (with more data)
 class ProfileSerializer(serializers.ModelSerializer):
     token = serializers.SerializerMethodField(read_only=True)
     gender = serializers.CharField(
@@ -23,9 +26,7 @@ class ProfileSerializer(serializers.ModelSerializer):
         source="get_show_me_display", required=True, allow_null=False
     )
 
-    photos = PhotoSerializer(
-        source="photo_set", many=True, read_only=True
-    )  # nested serializer
+    photos = PhotoSerializer(source="photo_set", many=True, read_only=True)
 
     class Meta:
         model = models.Profile
@@ -53,6 +54,7 @@ class ProfileSerializer(serializers.ModelSerializer):
         return str(token.access_token)
 
 
+# TODO: serialize profiles in blocked_profiles
 class BlockedProfilesSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Profile
@@ -78,6 +80,23 @@ class UserSerializer(ProfileSerializer):
         token = RefreshToken.for_user(obj)
         return str(token.access_token)
 
+
+class GroupSerializer(serializers.ModelSerializer):
+    members = ProfileSerializer(read_only=True, many=True)
+    gender = serializers.CharField(
+        source="get_gender_display", required=True, allow_null=False
+    )
+
+    class Meta:
+        model = models.Group
+        fields = "__all__"
+
+
+class GroupSerializerWithLink(GroupSerializer):
+    share_link = serializers.CharField(required=True, allow_null=False)
+
+
+# TODO: swipe serializer with the profile data
 class SwipeProfileSerializer:
     photos = PhotoSerializer(
         source="photo_set", many=True, read_only=True
@@ -133,3 +152,7 @@ class UpdateProfileSerializer(serializers.Serializer):
         allow_null=False,
         allow_blank=False,
     )
+
+
+class GroupSerializerWithMember(serializers.Serializer):
+    member_id = serializers.CharField(required=True, allow_null=False)
