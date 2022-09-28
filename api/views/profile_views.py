@@ -78,22 +78,22 @@ class ProfileViewSet(ModelViewSet):
     serializer_class = serializers.ProfileSerializer
     permission_classes = [IsAuthenticated]
 
-    def get_permissions(self):
-        if self.action == "list":  # list all the profile just for admin users
-            return [IsAdminUser()]
-        return [permission() for permission in self.permission_classes]
+    # def get_permissions(self):
+    #     if self.action == "list":  # list all the profile just for admin users
+    #         return [IsAdminUser()]
+    #     return [permission() for permission in self.permission_classes]
 
     # user just can retrieve their profile
     def retrieve(self, request, pk=None):
         profile = models.Profile.objects.get(pk=pk)
-        if profile.id != request.user.id:
-            return Response(
-                {"detail": "Trying to get another profile"},
-                status=status.HTTP_401_UNAUTHORIZED,
-            )
+        # if profile.id != request.user.id:
+        #     return Response(
+        #         {"detail": "Trying to get another profile"},
+        #         status=status.HTTP_401_UNAUTHORIZED,
+        #     )
 
-        user_serializer = serializers.ProfileSerializer(profile, many=False)
-        return Response(user_serializer.data, status=status.HTTP_200_OK)
+        serializer = serializers.ProfileSerializer(profile, many=False)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=["post"], url_path=r"actions/create-profile")
     def create_profile(self, request, pk):
@@ -145,7 +145,6 @@ class ProfileViewSet(ModelViewSet):
 
     @action(detail=True, methods=["patch"], url_path=r"actions/update-profile")
     def update_profile(self, request, pk):
-        print(request.data)
         fields_serializer = serializers.UpdateProfileSerializer(data=request.data)
         fields_serializer.is_valid(raise_exception=True)
 

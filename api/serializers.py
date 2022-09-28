@@ -35,7 +35,6 @@ class ProfileSerializer(serializers.ModelSerializer):
             "email",
             "firstname",
             "lastname",
-            "token",
             "birthdate",
             "age",
             "gender",
@@ -47,6 +46,7 @@ class ProfileSerializer(serializers.ModelSerializer):
             "created_at",
             "has_account",
             "photos",
+            "token",
         ]
 
     def get_token(self, obj):
@@ -80,11 +80,39 @@ class UserSerializer(ProfileSerializer):
         token = RefreshToken.for_user(obj)
         return str(token.access_token)
 
-
-class GroupSerializer(serializers.ModelSerializer):
-    members = ProfileSerializer(read_only=True, many=True)
+class MemberSerializer(serializers.ModelSerializer):
     gender = serializers.CharField(
         source="get_gender_display", required=True, allow_null=False
+    )
+    show_me = serializers.CharField(
+        source="get_show_me_display", required=True, allow_null=False
+    )
+
+    photos = PhotoSerializer(source="photo_set", many=True, read_only=True)
+
+    class Meta:
+        model = models.Profile
+        fields = [
+            "id",
+            "email",
+            "firstname",
+            "lastname",
+            "birthdate",
+            "age",
+            "gender",
+            "show_me",
+            "nationality",
+            "city",
+            "university",
+            "description",
+            "photos",
+        ]
+
+class GroupSerializer(serializers.ModelSerializer):
+    owner = MemberSerializer(read_only=True, many=False)
+    members = MemberSerializer(read_only=True, many=True)
+    gender = serializers.CharField(
+        source="get_gender_display", required=False, allow_null=False
     )
 
     class Meta:
