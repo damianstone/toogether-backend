@@ -35,7 +35,6 @@ class ProfileSerializer(serializers.ModelSerializer):
             "email",
             "firstname",
             "lastname",
-            "token",
             "birthdate",
             "age",
             "gender",
@@ -47,6 +46,7 @@ class ProfileSerializer(serializers.ModelSerializer):
             "created_at",
             "has_account",
             "photos",
+            "token",
         ]
 
     def get_token(self, obj):
@@ -80,16 +80,53 @@ class UserSerializer(ProfileSerializer):
         token = RefreshToken.for_user(obj)
         return str(token.access_token)
 
-
-class GroupSerializer(serializers.ModelSerializer):
-    members = ProfileSerializer(read_only=True, many=True)
+class MemberSerializer(serializers.ModelSerializer):
     gender = serializers.CharField(
         source="get_gender_display", required=True, allow_null=False
+    )
+    show_me = serializers.CharField(
+        source="get_show_me_display", required=True, allow_null=False
+    )
+
+    photos = PhotoSerializer(source="photo_set", many=True, read_only=True)
+
+    class Meta:
+        model = models.Profile
+        fields = [
+            "id",
+            "email",
+            "firstname",
+            "lastname",
+            "birthdate",
+            "age",
+            "gender",
+            "show_me",
+            "nationality",
+            "city",
+            "university",
+            "description",
+            "photos",
+        ]
+
+class GroupSerializer(serializers.ModelSerializer):
+    owner = MemberSerializer(read_only=True, many=False)
+    members = serializers.SerializerMethodField()
+    gender = serializers.CharField(
+        source="get_gender_display", required=False, allow_null=False
     )
 
     class Meta:
         model = models.Group
         fields = "__all__"
+    
+    def get_members(self, group):
+        # get the group
+        group = models.Group.objects.get(pk=group.id)
+        # filter the members and exclude the owner
+        members_without_owner = group.members.exclude(id=group.owner.id)
+        # serialize the members
+        serializer = MemberSerializer(instance=members_without_owner, many=True)
+        return serializer.data
 
 
 class GroupSerializerWithLink(GroupSerializer):
