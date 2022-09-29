@@ -74,7 +74,6 @@ class Group(models.Model):
         ("chair", "Chair"),
     )
 
-    # TODO: add property to know if its a male or female group
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     owner = models.ForeignKey(
         Profile, default=None, on_delete=models.CASCADE, related_name="owner_profile"
@@ -94,10 +93,6 @@ class Group(models.Model):
             self.share_link = f"https://start.the.night/{shortuuid.uuid()}"
         super().save(*args, **kwargs)
 
-
-class Member(models.Model):
-    group = models.ForeignKey(Group, default=None, on_delete=models.CASCADE)
-    profile = models.ForeignKey(Profile, default=None, on_delete=models.CASCADE)
 
 
 class Like(models.Model):

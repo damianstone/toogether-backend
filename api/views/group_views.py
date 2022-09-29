@@ -13,10 +13,6 @@ class GroupViewSet(ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     # TODO: override list to order by location
-    
-    # def list(self, request, format=None):
-    #     profile = request.profile
-    #     return Response(serializer.data, status=status.HTTP_200_OK)
 
     def create(self, request):
         profile = request.user

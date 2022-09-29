@@ -110,7 +110,7 @@ class MemberSerializer(serializers.ModelSerializer):
 
 class GroupSerializer(serializers.ModelSerializer):
     owner = MemberSerializer(read_only=True, many=False)
-    members = MemberSerializer(read_only=True, many=True)
+    members = serializers.SerializerMethodField()
     gender = serializers.CharField(
         source="get_gender_display", required=False, allow_null=False
     )
@@ -118,6 +118,15 @@ class GroupSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Group
         fields = "__all__"
+    
+    def get_members(self, group):
+        # get the group
+        group = models.Group.objects.get(pk=group.id)
+        # filter the members and exclude the owner
+        members_without_owner = group.members.exclude(id=group.owner.id)
+        # serialize the members
+        serializer = MemberSerializer(instance=members_without_owner, many=True)
+        return serializer.data
 
 
 class GroupSerializerWithLink(GroupSerializer):
