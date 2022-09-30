@@ -1,9 +1,27 @@
+from cProfile import Profile
 from dataclasses import fields
 from rest_framework import serializers
 from api import models
 from rest_framework_simplejwt.tokens import RefreshToken
 
-# -------------------------- MODELS SERIALIZERS -----------------------------
+
+class ChoicesField(serializers.Field):
+    def __init__(self, choices, **kwargs):
+        self._choices = choices
+        super(ChoicesField, self).__init__(**kwargs)
+
+    def to_representation(self, obj):
+        if obj in self._choices:
+            return self._choices[obj]
+        return obj # TODO: return an error
+    
+    def to_internal_value(self, data):
+        if data in self._choices:
+            return getattr(self._choices, data)
+        raise serializers.ValidationError(["choice not valid"])
+
+
+# -------------------------- MODELS SERIALIZERS ----------------------------
 
 
 class PhotoSerializer(serializers.ModelSerializer):
@@ -19,6 +37,31 @@ class PhotoSerializer(serializers.ModelSerializer):
 # TODO: make this serializer just for retrieve (with more data)
 class ProfileSerializer(serializers.ModelSerializer):
     token = serializers.SerializerMethodField(read_only=True)
+
+    # transform the gender and show me into text "Male"
+    gender = serializers.CharField(
+        source="get_gender_display", required=True, allow_null=False
+    )
+    show_me = serializers.CharField(
+        source="get_show_me_display", required=True, allow_null=False
+    )
+
+    photos = PhotoSerializer(source="photo_set", many=True, read_only=True)
+
+    class Meta:
+        model = models.Profile
+        exclude = ["user_permissions", "groups", "password"]
+
+    def get_token(self, obj):
+        token = RefreshToken.for_user(obj)
+        return str(token.access_token)
+
+
+
+# -------------------------- GROUP SERIALIZERS -----------------------------
+
+
+class SwipeProfileSerializer(serializers.ModelSerializer):
     gender = serializers.CharField(
         source="get_gender_display", required=True, allow_null=False
     )
@@ -33,68 +76,7 @@ class ProfileSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "email",
-            "firstname",
-            "lastname",
-            "birthdate",
-            "age",
-            "gender",
-            "show_me",
-            "nationality",
-            "city",
-            "university",
-            "description",
-            "created_at",
-            "has_account",
-            "photos",
-            "token",
-        ]
-
-    def get_token(self, obj):
-        token = RefreshToken.for_user(obj)
-        return str(token.access_token)
-
-
-# TODO: serialize profiles in blocked_profiles
-class BlockedProfilesSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = models.Profile
-        fields = ["blocked_profiles"]
-
-
-class UserSerializer(ProfileSerializer):
-    token = serializers.SerializerMethodField(read_only=True)
-
-    class Meta:
-        model = models.Profile
-        fields = [
-            "id",
-            "firstname",
-            "email",
-            "token",
-            "created_at",
-            "is_superuser",
-            "has_account",
-        ]
-
-    def get_token(self, obj):
-        token = RefreshToken.for_user(obj)
-        return str(token.access_token)
-
-class MemberSerializer(serializers.ModelSerializer):
-    gender = serializers.CharField(
-        source="get_gender_display", required=True, allow_null=False
-    )
-    show_me = serializers.CharField(
-        source="get_show_me_display", required=True, allow_null=False
-    )
-
-    photos = PhotoSerializer(source="photo_set", many=True, read_only=True)
-
-    class Meta:
-        model = models.Profile
-        fields = [
-            "id",
-            "email",
+            "is_in_group",
             "firstname",
             "lastname",
             "birthdate",
@@ -108,24 +90,46 @@ class MemberSerializer(serializers.ModelSerializer):
             "photos",
         ]
 
-class GroupSerializer(serializers.ModelSerializer):
-    owner = MemberSerializer(read_only=True, many=False)
-    members = serializers.SerializerMethodField()
+
+
+class SwipeGroupSerializer(serializers.ModelSerializer):
+    owner = SwipeProfileSerializer(read_only=True, many=False)
+    members = SwipeProfileSerializer(read_only=True, many=True)
     gender = serializers.CharField(
         source="get_gender_display", required=False, allow_null=False
     )
 
     class Meta:
         model = models.Group
+        fields = ["id", "gender", "total_members", "created_at", "owner", "members"]
+        
+    # TODO: Like serializer
+
+    # TODO: match serializer
+
+
+# -------------------------- GROUP SERIALIZERS --------------------------------
+
+class GroupSerializer(serializers.ModelSerializer):
+    owner = SwipeProfileSerializer(read_only=True, many=False)
+    members = serializers.SerializerMethodField()
+    gender = ChoicesField(
+        choices=models.Group.GENDER_CHOICES,
+        required=False,
+        allow_null=False,
+    )
+
+    class Meta:
+        model = models.Group
         fields = "__all__"
-    
+
     def get_members(self, group):
         # get the group
         group = models.Group.objects.get(pk=group.id)
         # filter the members and exclude the owner
         members_without_owner = group.members.exclude(id=group.owner.id)
         # serialize the members
-        serializer = MemberSerializer(instance=members_without_owner, many=True)
+        serializer = SwipeProfileSerializer(instance=members_without_owner, many=True)
         return serializer.data
 
 
@@ -133,27 +137,13 @@ class GroupSerializerWithLink(GroupSerializer):
     share_link = serializers.CharField(required=True, allow_null=False)
 
 
-# TODO: swipe serializer with the profile data
-class SwipeProfileSerializer:
-    photos = PhotoSerializer(
-        source="photo_set", many=True, read_only=True
-    )  # nested serializer
+# -------------------------- BLOCKED PROFILES SERIALIZERS --------------------------------
 
+class BlockedProfilesSerializer(serializers.ModelSerializer):
+    blocked_profiles = SwipeProfileSerializer(read_only=True, many=True)
     class Meta:
         model = models.Profile
-        fields = [
-            "id",
-            "email",
-            "firstname",
-            "lastname",
-            "birthdate",
-            "age",
-            "gender",
-            "university",
-            "description",
-            "photos",
-        ]
-
+        fields = ["blocked_profiles"]
 
 # -------------------------- DATA ACTIONS SERIALIZERS -----------------------------
 
@@ -165,11 +155,15 @@ class CreateProfileSerializer(serializers.Serializer):
     birthdate = serializers.DateField(required=True, allow_null=False)
     university = serializers.CharField(required=False, allow_null=True)
     description = serializers.CharField(required=False, allow_null=True)
-    gender = serializers.CharField(
-        source="get_gender_display", required=True, allow_null=False
+    gender = ChoicesField(
+        choices=models.Profile.GENDER_CHOICES,
+        required=False,
+        allow_null=False,
     )
-    show_me = serializers.CharField(
-        source="get_show_me_display", required=True, allow_null=False
+    show_me = ChoicesField(
+        choices=models.Profile.SHOW_ME_CHOICES,
+        required=False,
+        allow_null=False,
     )
 
 
@@ -180,14 +174,15 @@ class UpdateProfileSerializer(serializers.Serializer):
     description = serializers.CharField(
         required=False, allow_null=True, allow_blank=True
     )
-    gender = serializers.CharField(
-        source="get_gender_display", required=False, allow_null=False, allow_blank=False
-    )
-    show_me = serializers.CharField(
-        source="get_show_me_display",
+    gender = ChoicesField(
+        choices=models.Profile.GENDER_CHOICES,
         required=False,
         allow_null=False,
-        allow_blank=False,
+    )
+    show_me = ChoicesField(
+        choices=models.Profile.SHOW_ME_CHOICES,
+        required=False,
+        allow_null=False,
     )
 
 

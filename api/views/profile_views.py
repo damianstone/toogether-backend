@@ -6,6 +6,7 @@ from rest_framework.viewsets import ModelViewSet
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ObjectDoesNotExist
 from api import models, serializers
+from service.core.pagination import CustomPagination
 from django.contrib.auth.hashers import make_password
 from datetime import date
 
@@ -19,7 +20,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
         data = super().validate(attrs)
-        serializer = serializers.UserSerializer(self.user).data
+        serializer = serializers.ProfileSerializer(self.user).data
         for key, value in serializer.items():
             data[key] = value
 
@@ -46,7 +47,7 @@ def registerUser(request):
         user = models.Profile.objects.create(
             email=data["email"], password=make_password(data["password"])
         )
-        serializer = serializers.UserSerializer(user, many=False)
+        serializer = serializers.ProfileSerializer(user, many=False)
         return Response(serializer.data)
     except:
         message = {"detail": "User with this email already exist"}
@@ -66,7 +67,7 @@ def deleteUser(request):
 @permission_classes([IsAdminUser])
 def getUsers(request):
     profiles = models.Profile.objects.all()
-    serializer = serializers.UserSerializer(profiles, many=True)
+    serializer = serializers.ProfileSerializer(profiles, many=True)
     return Response(serializer.data)
 
 
@@ -77,20 +78,24 @@ class ProfileViewSet(ModelViewSet):
     queryset = models.Profile.objects.all()
     serializer_class = serializers.ProfileSerializer
     permission_classes = [IsAuthenticated]
+    pagination_class = CustomPagination
 
+    # TODO: just for admins
     # def get_permissions(self):
     #     if self.action == "list":  # list all the profile just for admin users
     #         return [IsAdminUser()]
     #     return [permission() for permission in self.permission_classes]
 
-    # user just can retrieve their profile
+    # :
+    
+    # NOTE: 
     def retrieve(self, request, pk=None):
         profile = models.Profile.objects.get(pk=pk)
-        # if profile.id != request.user.id:
-        #     return Response(
-        #         {"detail": "Trying to get another profile"},
-        #         status=status.HTTP_401_UNAUTHORIZED,
-        #     )
+        if profile.id != request.user.id:
+            return Response(
+                {"detail": "Trying to get another profile"},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
 
         serializer = serializers.ProfileSerializer(profile, many=False)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -127,8 +132,8 @@ class ProfileViewSet(ModelViewSet):
         profile.birthdate = fields_serializer.validated_data["birthdate"]
         profile.university = fields_serializer.validated_data["university"]
         profile.description = fields_serializer.validated_data["description"]
-        profile.gender = fields_serializer.validated_data["get_gender_display"]
-        profile.show_me = fields_serializer.validated_data["get_show_me_display"]
+        profile.gender = fields_serializer.validated_data["gender"]
+        profile.show_me = fields_serializer.validated_data["show_me"]
 
         if age(profile.birthdate) < 18:
             return Response(
@@ -162,9 +167,9 @@ class ProfileViewSet(ModelViewSet):
             )
 
         if "gender" in request.data:
-            profile.gender = fields_serializer.validated_data["get_gender_display"]
+            profile.gender = fields_serializer.validated_data["gender"]
         if "show_me" in request.data:
-            profile.show_me = fields_serializer.validated_data["get_show_me_display"]
+            profile.show_me = fields_serializer.validated_data["show_me"]
         if "nationality" in request.data:
             profile.nationality = fields_serializer.validated_data["nationality"]
         if "city" in request.data:
@@ -181,9 +186,8 @@ class ProfileViewSet(ModelViewSet):
     @action(detail=True, methods=["post"], url_path=r"actions/block-profile")
     def block_profile(self, request, pk=None):
         profile = request.user
-        id = request.data["id"]
         try:
-            blocked_profile = models.Profile.objects.get(id=id)
+            blocked_profile = models.Profile.objects.get(pk=pk)
         except ObjectDoesNotExist:
             return Response(
                 {"Error": "Profile does not exist"}, status=status.HTTP_400_BAD_REQUEST
@@ -196,9 +200,8 @@ class ProfileViewSet(ModelViewSet):
     @action(detail=True, methods=["post"], url_path=r"actions/disblock-profile")
     def disblock_profile(self, request, pk=None):
         profile = request.user
-        id = request.data["id"]
         try:
-            blocked_profile = models.Profile.objects.get(id=id)
+            blocked_profile = models.Profile.objects.get(pk=pk)
         except ObjectDoesNotExist:
             return Response({"Error": "Profile does not exist"})
         profile.blocked_profiles.remove(blocked_profile)

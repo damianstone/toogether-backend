@@ -12,12 +12,14 @@ class GroupViewSet(ModelViewSet):
     serializer_class = serializers.GroupSerializer
     permission_classes = [IsAuthenticated]
 
-    # TODO: override list to order by location
+    # TODO: list by location using the swipe serializer
+    # TODO: in the group serializer get the total members of retun as a custom json
 
     def create(self, request):
         profile = request.user
         profile_has_group = models.Group.objects.filter(owner=profile.id).exists()
         profile_is_in_another_group = profile.member_profiles.all().exists()
+        print(profile.gender)
         fields_serializer = serializers.GroupSerializer(data={"gender": profile.gender})
         fields_serializer.is_valid(raise_exception=True)
 
@@ -35,10 +37,12 @@ class GroupViewSet(ModelViewSet):
 
         group = models.Group.objects.create(owner=profile)
         group.members.add(profile)
+        profile.is_in_group = True
         group.total_members = 1
-        group.gender = fields_serializer._validated_data["get_gender_display"]
+        group.gender = fields_serializer._validated_data["gender"]
 
         group.save()
+        profile.save()
         serializer = serializers.GroupSerializer(group, many=False)
         return Response(serializer.data)
 
@@ -58,6 +62,8 @@ class GroupViewSet(ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
         group.delete()
+        profile.is_in_group = False
+        profile.save()
         return Response(
             {"detail": "Group deleted"},
             status=status.HTTP_200_OK,
@@ -95,7 +101,9 @@ class GroupViewSet(ModelViewSet):
 
         group.members.add(profile)
         group.total_members += 1
+        profile.is_in_group = True
         group.save()
+        profile.save()
         serializer = serializers.GroupSerializer(group, many=False)
         return Response(serializer.data)
 
@@ -121,7 +129,9 @@ class GroupViewSet(ModelViewSet):
 
         group.members.remove(profile)
         group.total_members -= 1
+        profile.is_in_group = False
         group.save()
+        profile.save()
         return Response(
             {"detail": "You left the group"},
             status=status.HTTP_200_OK,
@@ -152,6 +162,8 @@ class GroupViewSet(ModelViewSet):
 
         group.members.remove(profile_to_remove)
         group.total_members -= 1
+        profile_to_remove.is_in_group = False
         group.save()
+        profile.save()
         serializer = serializers.GroupSerializer(group, many=False)
         return Response(serializer.data)

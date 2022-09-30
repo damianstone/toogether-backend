@@ -3,22 +3,22 @@ import uuid
 import shortuuid
 from django.utils import timezone
 from django.db import models
+from model_utils import Choices
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from .managers import CustomUserManager
 
 
 class Profile(AbstractBaseUser, PermissionsMixin):
-    GENDER_CHOICES = (
-        ("male", "Male"),
-        ("female", "Female"),
-        ("non-binary", "Non-binary"),
-        ("chair", "Chair"),
+    GENDER_CHOICES = Choices(
+        ("M", "Male"),
+        ("W", "Female"),
+        ("X", "Non-binary"),
     )
 
-    SHOW_ME_CHOICES = (
-        ("men", "Men"),
-        ("women", "Women"),
-        ("both", "Both"),
+    SHOW_ME_CHOICES = Choices(
+        ("M", "Men"),
+        ("W", "Women"),
+        ("X", "Everyone"),
     )
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -30,19 +30,29 @@ class Profile(AbstractBaseUser, PermissionsMixin):
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(default=timezone.now)
     has_account = models.BooleanField(default=False)
+    is_in_group = models.BooleanField(default=False)
 
     birthdate = models.DateField(null=True, blank=True)
     age = models.PositiveIntegerField(null=True)
     nationality = models.TextField(max_length=20, null=True)
     city = models.TextField(max_length=15, null=True)
+    live_in = models.TextField(max_length=15, null=True)
     university = models.TextField(max_length=40, null=True)
     description = models.TextField(max_length=500, null=True)
 
     gender = models.CharField(
-        default="male", max_length=10, choices=GENDER_CHOICES, null=False
+        choices=GENDER_CHOICES,
+        default=GENDER_CHOICES.M,
+        max_length=1,
+        null=False,
+        blank=False,
     )
     show_me = models.CharField(
-        default="women", max_length=10, choices=SHOW_ME_CHOICES, null=False
+        choices=SHOW_ME_CHOICES,
+        default=SHOW_ME_CHOICES.W,
+        max_length=1,
+        null=False,
+        blank=False,
     )
 
     blocked_profiles = models.ManyToManyField(
@@ -67,11 +77,10 @@ class Photo(models.Model):
 
 
 class Group(models.Model):
-    GENDER_CHOICES = (
-        ("male", "Male"),
-        ("female", "Female"),
-        ("non-binary", "Non-binary"),
-        ("chair", "Chair"),
+    GENDER_CHOICES = Choices(
+        ("M", "Male"),
+        ("W", "Female"),
+        ("X", "Non-binary"),
     )
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -79,7 +88,11 @@ class Group(models.Model):
         Profile, default=None, on_delete=models.CASCADE, related_name="owner_profile"
     )
     gender = models.CharField(
-        default="male", max_length=10, choices=GENDER_CHOICES, null=False
+        choices=GENDER_CHOICES,
+        default=GENDER_CHOICES.M,
+        max_length=1,
+        null=False,
+        blank=False,
     )
     total_members = models.PositiveIntegerField(null=True)
     share_link = models.CharField(max_length=100, unique=True, null=True)
@@ -94,10 +107,13 @@ class Group(models.Model):
         super().save(*args, **kwargs)
 
 
-
+# TODO: like model
 class Like(models.Model):
     profile = models.ForeignKey(Profile, on_delete=models.SET_NULL, null=True)
     created_at = models.DateTimeField(default=timezone.now)
 
     def __str__(self):
         return "{} : {}".format(self.profile_id_1, self.profile_id_2)
+
+
+# TODO: match model
