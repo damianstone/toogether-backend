@@ -94,6 +94,7 @@ class Group(models.Model):
         null=False,
         blank=False,
     )
+    age = models.PositiveIntegerField(null=True)
     total_members = models.PositiveIntegerField(null=True)
     share_link = models.CharField(max_length=100, unique=True, null=True)
     created_at = models.DateTimeField(default=timezone.now)
@@ -104,6 +105,8 @@ class Group(models.Model):
     def save(self, *args, **kwargs):
         if not self.share_link:
             self.share_link = f"https://start.the.night/{shortuuid.uuid()}"
+        if not self.age:
+            self.age = self.owner.age
         super().save(*args, **kwargs)
 
 

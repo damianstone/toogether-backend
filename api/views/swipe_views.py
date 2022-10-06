@@ -5,63 +5,117 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 from django.core.exceptions import ObjectDoesNotExist
 from api import models, serializers
+from datetime import date
+from django.utils.timezone import now
 
 
-# TODO: implement web sockets
+# TODO: filter groups and profiles by gender --
+# TODO: Show profiles that are not in group --
+# TODO: exclude blocked profiles --
+# TODO: exclude the current user or the current group in the swipe list --
+# TODO: filter by age --
+
+# TODO: if the user is blocked by someone dont show that someone
+# TODO: filter by distance
+
+
+def age_range(data, min_age, max_age):
+    current = now().date()
+    min_date = date(current.year - min_age, current.month, current.day)
+    max_date = date(current.year - max_age, current.month, current.day)
+
+    return data.filter(birthdate__gte=max_date, birthdate__lte=min_date)
+
+
+def filter_profiles(current_profile, profiles):
+    profile_age = current_profile.age
+    blocked_profiles = current_profile.blocked_profiles.all()
+    show_gender = current_profile.show_me  # M, W, X -> X means Man and Woman
+    profiles_not_in_group = profiles.filter(is_in_group=False)
+    
+    # exclude the current user in the swipe
+    show_profiles = show_profiles.exclude(id=current_profile.id)
+
+    # Filter by the gender that the current user want to see
+    if show_gender == "X":
+        show_profiles = profiles_not_in_group
+    else:
+        show_profiles = profiles_not_in_group.filter(gender=show_gender)
+
+    # Exclude the blocked profiles the user has
+    for blocked_profile in blocked_profiles:
+        show_profiles = show_profiles.exclude(id=blocked_profile.id)
+
+    # Show profiles between in a range of ages
+    if profile_age == 18 or profile_age == 19:
+        show_profiles = age_range(show_profiles, profile_age - 1, profile_age + 6)
+    else:
+        show_profiles = age_range(show_profiles, profile_age - 5, profile_age + 5)
+
+    return show_profiles
+
+
+def filter_groups(current_profile, groups):
+    profile_age = current_profile.age
+    profile_is_in_group = current_profile.is_in_group
+    blocked_profiles = current_profile.blocked_profiles.all()
+    show_gender = current_profile.show_me
+
+    # filter by gender
+    if show_gender == "X":
+        show_groups = groups
+    else:
+        show_groups = groups.filter(gender=show_gender)
+
+    # if the user in a group, don't their group in the swipe
+    if profile_is_in_group:
+        for group in groups:
+            if group.members.filter(id=current_profile.id).exists():
+                show_groups = show_groups.exclude(id=group.id)
+
+    # TODO: implement a search algorithm (hash map)
+    # dont' show groups that has any blocked profile in their members
+    for group in groups:
+        for blocked_profile in blocked_profiles:
+            if group.members.filter(id=blocked_profile.id):
+                show_groups = show_groups.exclude(id=group.id)
+
+    # show groups between in a range of age
+    if profile_age == 18 or profile_age == 19:  
+        # filter age >= number and age <= number
+        show_groups = show_groups.filter(
+            age__gte=profile_age - 1, age__lte=profile_age + 6
+        )
+    else:
+        show_groups = show_groups.filter(
+            age__gte=profile_age - 5, age__lte=profile_age + 5
+        )
+
+    return show_groups
 
 
 class SwipeModelViewSet(ModelViewSet):
     permission_classes = [IsAuthenticated]
 
-    # TODO: not display the profile of the current user
-    def get_queryset(self):
-        groups = models.Group.objects.all()
-        current_profile = models.Profile.objects.filter(user=self.request.user)
-        
-        if current_profile.is_in_group:
-            print(current_profile.is_in_group)
-            for group in groups:
-                # filter the members and exclude the owner
-                members_without_owner = group.members.exclude(id=group.owner.id)
-        else:
-            return models.Profile.objects.filter(user=self.request.user).exclude(
-                user=self.request.user
-            )
-
-
-    # TODO: check if the user belong to a many to many field
     def list(self, request):
-        # get the current user
-        profile = models.Profile.objects.get(id=request.user.id)
-        show_gender = profile.show_me
-        print(show_gender)  # M, W, X -> X means Man and Woman
-
-        # get all the profiles and groups (queryes)
+        current_profile = models.Profile.objects.get(id=request.user.id)
         profiles = models.Profile.objects.all().filter(has_account=True)
         groups = models.Group.objects.all()
 
-        # TODO: check if profile is in blocked profiles
-        # TODO: check if user
-        # filtering the groups and profiles by  gender
-        profiles_not_in_group = profiles.filter(is_in_group=False)
-        
-        if show_gender == "X":
-            show_profiles = profiles_not_in_group
-            show_groups = groups
-        else:
-            show_profiles = profiles_not_in_group.filter(gender=show_gender)
-            show_groups = groups.filter(gender=show_gender)
+        show_profiles = filter_profiles(current_profile, profiles)
+        show_groups = filter_groups(current_profile, groups)
 
         # Serialize data
         profiles_serializer = serializers.SwipeProfileSerializer(
             show_profiles, many=True
         )
         groups_serializer = serializers.SwipeGroupSerializer(show_groups, many=True)
-        data = profiles_serializer.data + groups_serializer.data
+        data = groups_serializer.data + profiles_serializer.data
 
         # Custom respomse
         return Response(
             {
+                "distance": "8km",
                 "count": len(data),
                 "group_count": show_groups.count(),
                 "profile_count": show_profiles.count(),
@@ -71,6 +125,7 @@ class SwipeModelViewSet(ModelViewSet):
 
     def retrieve(self, request, pk=None):
         profile = models.Profile.objects.get(pk=pk)
+        # TODO: check if the user in group and return the group
         serializer = serializers.SwipeProfileSerializer(profile, many=False)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
