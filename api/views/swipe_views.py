@@ -1,3 +1,4 @@
+from unicodedata import name
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
@@ -33,7 +34,7 @@ def filter_profiles(current_profile, profiles):
     profile_age = current_profile.age
     blocked_profiles = current_profile.blocked_profiles.all()
     show_gender = current_profile.show_me  # M, W, X -> X means Man and Woman
-    
+
     # dont show profiles that are in groups
     profiles_not_in_group = profiles.filter(is_in_group=False)
 
@@ -52,7 +53,7 @@ def filter_profiles(current_profile, profiles):
         show_profiles = age_range(show_profiles, profile_age - 1, profile_age + 6)
     else:
         show_profiles = age_range(show_profiles, profile_age - 5, profile_age + 5)
-        
+
     # exclude the current user in the swipe
     show_profiles = show_profiles.exclude(id=current_profile.id)
 
@@ -81,7 +82,7 @@ def filter_groups(current_profile, groups):
     # dont' show groups that has any blocked profile in their members
     for group in groups:
         for blocked_profile in blocked_profiles:
-            if group.members.filter(id=blocked_profile.id):
+            if group.members.filter(id=blocked_profile.id).exists():
                 show_groups = show_groups.exclude(id=group.id)
 
     # show groups between in a range of age
@@ -105,18 +106,30 @@ class SwipeModelViewSet(ModelViewSet):
         current_profile = models.Profile.objects.get(id=request.user.id)
         profiles = models.Profile.objects.all().filter(has_account=True)
         groups = models.Group.objects.all()
-        
+
+        # all the profiles by distance
         profiles_by_distance = profiles.filter(
             location__distance_lt=(current_profile.location, D(km=8))
         )
-
+        
+        groups_by_distance = models.Group.objects.none()
+        
+        # get the groups that contain users in the distance ratio
+        for profile in profiles_by_distance:
+            #check if the profile is in a group
+            if profile.member_group.all().exists():
+                # if at least one member is i the distance ratio add the group to the swipe
+                groups_by_distance = groups_by_distance.union(profile.member_group.all())
+        
+        # swipe filters
         show_profiles = filter_profiles(current_profile, profiles_by_distance)
-        show_groups = filter_groups(current_profile, groups)
+        show_groups = filter_groups(current_profile, groups_by_distance)
 
         # Serialize data
         profiles_serializer = serializers.SwipeProfileSerializer(
             show_profiles, many=True
         )
+        
         groups_serializer = serializers.SwipeGroupSerializer(show_groups, many=True)
         data = groups_serializer.data + profiles_serializer.data
 

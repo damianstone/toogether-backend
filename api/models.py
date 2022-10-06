@@ -102,7 +102,7 @@ class Group(models.Model):
     share_link = models.CharField(max_length=100, unique=True, null=True)
     created_at = models.DateTimeField(default=timezone.now)
     members = models.ManyToManyField(
-        Profile, blank=True, related_name="member_profiles"
+        Profile, blank=True, related_name="member_group"
     )
 
     def save(self, *args, **kwargs):

@@ -87,6 +87,7 @@ class SwipeProfileSerializer(serializers.ModelSerializer):
             "city",
             "university",
             "description",
+            "location",
             "photos",
         ]
 

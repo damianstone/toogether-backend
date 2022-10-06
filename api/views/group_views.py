@@ -19,7 +19,7 @@ class GroupViewSet(ModelViewSet):
         profile = request.user
         profile_has_group = models.Group.objects.filter(owner=profile.id).exists()
         profile_is_in_another_group = profile.member_profiles.all().exists()
-        print(profile.gender)
+        
         fields_serializer = serializers.GroupSerializer(data={"gender": profile.gender})
         fields_serializer.is_valid(raise_exception=True)
 
