@@ -17,9 +17,9 @@ from django.contrib.gis.measure import D
 # TODO: exclude blocked profiles --
 # TODO: exclude the current user or the current group in the swipe list --
 # TODO: filter by age --
+# TODO: filter by distance --
 
 # TODO: if the user is blocked by someone dont show that someone
-# TODO: filter by distance
 
 
 def age_range(data, min_age, max_age):
@@ -47,6 +47,10 @@ def filter_profiles(current_profile, profiles):
     # Exclude the blocked profiles the user has
     for blocked_profile in blocked_profiles:
         show_profiles = show_profiles.exclude(id=blocked_profile.id)
+    
+    if current_profile.blocked_by.all().exists():
+        for blocked_by_profile in current_profile.blocked_by.all():
+            show_profiles = show_profiles.exclude(id=blocked_by_profile.id)
 
     # Show profiles between in a range of ages
     if profile_age == 18 or profile_age == 19:
@@ -62,7 +66,6 @@ def filter_profiles(current_profile, profiles):
 
 def filter_groups(current_profile, groups):
     profile_age = current_profile.age
-    profile_is_in_group = current_profile.is_in_group
     blocked_profiles = current_profile.blocked_profiles.all()
     show_gender = current_profile.show_me
 
@@ -73,7 +76,7 @@ def filter_groups(current_profile, groups):
         show_groups = groups.filter(gender=show_gender)
 
     # if the user in a group, don't their group in the swipe
-    if profile_is_in_group:
+    if current_profile.is_in_group:
         for group in groups:
             if group.members.filter(id=current_profile.id).exists():
                 show_groups = show_groups.exclude(id=group.id)
@@ -84,6 +87,12 @@ def filter_groups(current_profile, groups):
         for blocked_profile in blocked_profiles:
             if group.members.filter(id=blocked_profile.id).exists():
                 show_groups = show_groups.exclude(id=group.id)
+                
+        # also don't show any profile that has blocked the current user        
+        if current_profile.blocked_by.all().exists():
+            for blocked_by_profile in current_profile.blocked_by.all():
+                if group.members.filter(id=blocked_by_profile.id).exists():
+                    show_groups = show_groups.exclude(id=group.id)
 
     # show groups between in a range of age
     if profile_age == 18 or profile_age == 19:

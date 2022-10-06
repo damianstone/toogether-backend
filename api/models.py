@@ -59,7 +59,7 @@ class Profile(AbstractBaseUser, PermissionsMixin):
     )
 
     blocked_profiles = models.ManyToManyField(
-        "self", symmetrical=False, related_name="blockedProfiles", blank=True
+        "self", symmetrical=False, related_name="blocked_by", blank=True
     )
 
     USERNAME_FIELD = "email"
