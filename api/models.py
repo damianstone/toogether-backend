@@ -31,6 +31,8 @@ class Profile(AbstractBaseUser, PermissionsMixin):
     created_at = models.DateTimeField(default=timezone.now)
     has_account = models.BooleanField(default=False)
     is_in_group = models.BooleanField(default=False)
+    
+    # TODO: add latitude, longitude and location
 
     birthdate = models.DateField(null=True, blank=True)
     age = models.PositiveIntegerField(null=True)
