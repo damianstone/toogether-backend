@@ -9,6 +9,9 @@ from api import models, serializers
 from service.core.pagination import CustomPagination
 from django.contrib.auth.hashers import make_password
 from datetime import date
+from django.contrib.gis.geos import GEOSGeometry
+from decimal import *
+import json
 
 # simple json token
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
@@ -75,7 +78,7 @@ def getUsers(request):
 
 
 class ProfileViewSet(ModelViewSet):
-    queryset = models.Profile.objects.all()
+    queryset = models.Profile.objects.all().filter(has_account=True)
     serializer_class = serializers.ProfileSerializer
     permission_classes = [IsAuthenticated]
     pagination_class = CustomPagination
@@ -183,6 +186,29 @@ class ProfileViewSet(ModelViewSet):
         profile_serializer = serializers.ProfileSerializer(profile, many=False)
         return Response(profile_serializer.data)
 
+    @action(detail=False, methods=["post"], url_path=r"actions/location")
+    def update_location(self, request):
+        profile = request.user
+        
+        # receives lat and lon
+        fields_serializer = serializers.UpdateLocation(data=request.data)
+        fields_serializer.is_valid(raise_exception=True)
+
+        
+        lat = fields_serializer.validated_data["lat"]
+        lon = fields_serializer.validated_data["lon"]
+        
+        # update the location point using the new lat and lon
+        point = {
+            "type": "Point",
+            "coordinates": [lat, lon]
+        }
+        
+        profile.location = GEOSGeometry(json.dumps(point), srid=4326)
+        profile.save()
+        serializer = serializers.ProfileSerializer(profile, many=False)
+        return Response(serializer.data)
+        
     @action(detail=True, methods=["post"], url_path=r"actions/block-profile")
     def block_profile(self, request, pk=None):
         profile = request.user

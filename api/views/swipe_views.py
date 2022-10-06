@@ -7,6 +7,8 @@ from django.core.exceptions import ObjectDoesNotExist
 from api import models, serializers
 from datetime import date
 from django.utils.timezone import now
+from django.contrib.gis.geos import GEOSGeometry
+from django.contrib.gis.measure import D
 
 
 # TODO: filter groups and profiles by gender --
@@ -31,10 +33,9 @@ def filter_profiles(current_profile, profiles):
     profile_age = current_profile.age
     blocked_profiles = current_profile.blocked_profiles.all()
     show_gender = current_profile.show_me  # M, W, X -> X means Man and Woman
-    profiles_not_in_group = profiles.filter(is_in_group=False)
     
-    # exclude the current user in the swipe
-    show_profiles = show_profiles.exclude(id=current_profile.id)
+    # dont show profiles that are in groups
+    profiles_not_in_group = profiles.filter(is_in_group=False)
 
     # Filter by the gender that the current user want to see
     if show_gender == "X":
@@ -51,6 +52,9 @@ def filter_profiles(current_profile, profiles):
         show_profiles = age_range(show_profiles, profile_age - 1, profile_age + 6)
     else:
         show_profiles = age_range(show_profiles, profile_age - 5, profile_age + 5)
+        
+    # exclude the current user in the swipe
+    show_profiles = show_profiles.exclude(id=current_profile.id)
 
     return show_profiles
 
@@ -81,7 +85,7 @@ def filter_groups(current_profile, groups):
                 show_groups = show_groups.exclude(id=group.id)
 
     # show groups between in a range of age
-    if profile_age == 18 or profile_age == 19:  
+    if profile_age == 18 or profile_age == 19:
         # filter age >= number and age <= number
         show_groups = show_groups.filter(
             age__gte=profile_age - 1, age__lte=profile_age + 6
@@ -101,8 +105,12 @@ class SwipeModelViewSet(ModelViewSet):
         current_profile = models.Profile.objects.get(id=request.user.id)
         profiles = models.Profile.objects.all().filter(has_account=True)
         groups = models.Group.objects.all()
+        
+        profiles_by_distance = profiles.filter(
+            location__distance_lt=(current_profile.location, D(km=8))
+        )
 
-        show_profiles = filter_profiles(current_profile, profiles)
+        show_profiles = filter_profiles(current_profile, profiles_by_distance)
         show_groups = filter_groups(current_profile, groups)
 
         # Serialize data
