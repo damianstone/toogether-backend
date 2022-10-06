@@ -2,7 +2,8 @@ import datetime
 import uuid
 import shortuuid
 from django.utils import timezone
-from django.db import models
+from django.contrib.gis.db import models
+from django.contrib.gis.geos import Point
 from model_utils import Choices
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from .managers import CustomUserManager
@@ -32,8 +33,8 @@ class Profile(AbstractBaseUser, PermissionsMixin):
     has_account = models.BooleanField(default=False)
     is_in_group = models.BooleanField(default=False)
     
-    # TODO: add latitude, longitude and location
-
+    location = models.PointField(srid=4326, blank=True, null=True)
+    
     birthdate = models.DateField(null=True, blank=True)
     age = models.PositiveIntegerField(null=True)
     nationality = models.TextField(max_length=20, null=True)

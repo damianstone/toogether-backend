@@ -185,6 +185,9 @@ class UpdateProfileSerializer(serializers.Serializer):
         allow_null=False,
     )
 
+class UpdateLocation(serializers.Serializer):
+    lat = serializers.FloatField()
+    lon = serializers.FloatField()
 
 class GroupSerializerWithMember(serializers.Serializer):
     member_id = serializers.CharField(required=True, allow_null=False)

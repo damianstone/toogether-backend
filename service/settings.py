@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     "corsheaders",
     "rest_framework_simplejwt",
     "rest_framework_simplejwt.token_blacklist",
+    "django.contrib.gis",
     "api.apps.ApiConfig",
 ]
 
@@ -131,7 +132,7 @@ print("DB NAME -->", os.environ.get("LOCAL_DB_PORT"))
 
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.postgresql",
+        "ENGINE": "django.contrib.gis.db.backends.postgis",
         "NAME": os.environ.get("LOCAL_DB_NAME"),
         "USER": os.environ.get("LOCAL_DB_USER"),
         "PASSWORD": os.environ.get("LOCAL_DB_PASSWORD"),
