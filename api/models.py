@@ -32,9 +32,9 @@ class Profile(AbstractBaseUser, PermissionsMixin):
     created_at = models.DateTimeField(default=timezone.now)
     has_account = models.BooleanField(default=False)
     is_in_group = models.BooleanField(default=False)
-    
+
     location = models.PointField(srid=4326, blank=True, null=True)
-    
+
     birthdate = models.DateField(null=True, blank=True)
     age = models.PositiveIntegerField(null=True)
     nationality = models.TextField(max_length=20, null=True)
@@ -62,6 +62,11 @@ class Profile(AbstractBaseUser, PermissionsMixin):
         "self", symmetrical=False, related_name="blocked_by", blank=True
     )
 
+    # many to many of people that like the current profile
+    likes = models.ManyToManyField(
+        "self", symmetrical=False, related_name="liked_by", blank=True
+    )
+
     USERNAME_FIELD = "email"
     # requred for creating user
     REQUIRED_FIELDS = []
@@ -77,6 +82,15 @@ class Photo(models.Model):
     profile = models.ForeignKey(Profile, default=None, on_delete=models.CASCADE)
     image = models.ImageField(null=True, blank=True)
     created_at = models.DateTimeField(default=timezone.now)
+
+
+class Match(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    created_at = models.DateTimeField(default=timezone.now)
+    profiles = models.ManyToManyField(Profile, blank=True, related_name="matches")
+
+    # def __str__(self):
+    #     return "{} : {}".format(self.profile_id_1, self.profile_id_2)
 
 
 class Group(models.Model):
@@ -101,9 +115,10 @@ class Group(models.Model):
     total_members = models.PositiveIntegerField(null=True)
     share_link = models.CharField(max_length=100, unique=True, null=True)
     created_at = models.DateTimeField(default=timezone.now)
-    members = models.ManyToManyField(
-        Profile, blank=True, related_name="member_group"
-    )
+    members = models.ManyToManyField(Profile, blank=True, related_name="member_group")
+
+    matches = models.ManyToManyField(Match, blank=True, related_name="matches")
+    likes = models.ManyToManyField(Profile, blank=True, related_name="group_likes")
 
     def save(self, *args, **kwargs):
         if not self.share_link:
@@ -111,15 +126,3 @@ class Group(models.Model):
         if not self.age:
             self.age = self.owner.age
         super().save(*args, **kwargs)
-
-
-# TODO: like model
-class Like(models.Model):
-    profile = models.ForeignKey(Profile, on_delete=models.SET_NULL, null=True)
-    created_at = models.DateTimeField(default=timezone.now)
-
-    def __str__(self):
-        return "{} : {}".format(self.profile_id_1, self.profile_id_2)
-
-
-# TODO: match model

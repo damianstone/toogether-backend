@@ -1,8 +1,8 @@
-from django.contrib import admin
-from django.contrib.auth.admin import UserAdmin
-from .models import Profile, Photo, Like
+from django.contrib.gis import admin
+from .models import Profile, Photo, Group, Match
 
 # Register your models here.
-admin.site.register(Profile)
-admin.site.register(Photo)
-admin.site.register(Like)
+admin.site.register(Profile, admin.OSMGeoAdmin)
+admin.site.register(Photo, admin.OSMGeoAdmin)
+admin.site.register(Match, admin.OSMGeoAdmin)
+admin.site.register(Group, admin.OSMGeoAdmin)

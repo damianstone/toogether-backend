@@ -13,8 +13,8 @@ class ChoicesField(serializers.Field):
     def to_representation(self, obj):
         if obj in self._choices:
             return self._choices[obj]
-        return obj # TODO: return an error
-    
+        return obj  # TODO: return an error
+
     def to_internal_value(self, data):
         if data in self._choices:
             return getattr(self._choices, data)
@@ -57,8 +57,7 @@ class ProfileSerializer(serializers.ModelSerializer):
         return str(token.access_token)
 
 
-
-# -------------------------- GROUP SERIALIZERS -----------------------------
+# -------------------------- SWIPE SERIALIZERS -----------------------------
 
 
 class SwipeProfileSerializer(serializers.ModelSerializer):
@@ -92,7 +91,6 @@ class SwipeProfileSerializer(serializers.ModelSerializer):
         ]
 
 
-
 class SwipeGroupSerializer(serializers.ModelSerializer):
     owner = SwipeProfileSerializer(read_only=True, many=False)
     members = SwipeProfileSerializer(read_only=True, many=True)
@@ -103,13 +101,10 @@ class SwipeGroupSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Group
         fields = ["id", "gender", "total_members", "created_at", "owner", "members"]
-        
-    # TODO: Like serializer
-
-    # TODO: match serializer
 
 
 # -------------------------- GROUP SERIALIZERS --------------------------------
+
 
 class GroupSerializer(serializers.ModelSerializer):
     owner = SwipeProfileSerializer(read_only=True, many=False)
@@ -140,11 +135,22 @@ class GroupSerializerWithLink(GroupSerializer):
 
 # -------------------------- BLOCKED PROFILES SERIALIZERS --------------------------------
 
+
 class BlockedProfilesSerializer(serializers.ModelSerializer):
     blocked_profiles = SwipeProfileSerializer(read_only=True, many=True)
+
     class Meta:
         model = models.Profile
         fields = ["blocked_profiles"]
+
+
+class MatchSerializer(serializers.ModelSerializer):
+    profiles = SwipeProfileSerializer(read_only=True, many=True)
+
+    class Meta:
+        model = models.Match
+        fields = ["id", "profiles"]
+
 
 # -------------------------- DATA ACTIONS SERIALIZERS -----------------------------
 
@@ -186,9 +192,11 @@ class UpdateProfileSerializer(serializers.Serializer):
         allow_null=False,
     )
 
+
 class UpdateLocation(serializers.Serializer):
     lat = serializers.FloatField()
     lon = serializers.FloatField()
+
 
 class GroupSerializerWithMember(serializers.Serializer):
     member_id = serializers.CharField(required=True, allow_null=False)

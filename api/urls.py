@@ -30,6 +30,12 @@ router.register(
     basename="swipe",
 )
 
+router.register(
+    r"matches",
+    swipe_views.MatchModelViewSet,
+    basename="match",
+)
+
 urlpatterns = [
     path("token/", profile_views.getUsers, name="token"),
     path("token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),

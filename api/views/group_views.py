@@ -18,8 +18,8 @@ class GroupViewSet(ModelViewSet):
     def create(self, request):
         profile = request.user
         profile_has_group = models.Group.objects.filter(owner=profile.id).exists()
-        profile_is_in_another_group = profile.member_profiles.all().exists()
-        
+        profile_is_in_another_group = profile.member_group.all().exists()
+
         fields_serializer = serializers.GroupSerializer(data={"gender": profile.gender})
         fields_serializer.is_valid(raise_exception=True)
 
@@ -73,7 +73,7 @@ class GroupViewSet(ModelViewSet):
     def join(self, request):
         profile = request.user
         profile_has_group = models.Group.objects.filter(owner=profile.id).exists()
-        profile_is_in_another_group = profile.member_profiles.all().exists()
+        profile_is_in_another_group = profile.member_group.all().exists()
         fields_serializer = serializers.GroupSerializerWithLink(data=request.data)
         fields_serializer.is_valid(raise_exception=True)
 

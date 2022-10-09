@@ -90,15 +90,15 @@ class ProfileViewSet(ModelViewSet):
     #     return [permission() for permission in self.permission_classes]
 
     # :
-    
-    # NOTE: 
+
+    # NOTE:
     def retrieve(self, request, pk=None):
         profile = models.Profile.objects.get(pk=pk)
-        if profile.id != request.user.id:
-            return Response(
-                {"detail": "Trying to get another profile"},
-                status=status.HTTP_401_UNAUTHORIZED,
-            )
+        # if profile.id != request.user.id:
+        #     return Response(
+        #         {"detail": "Trying to get another profile"},
+        #         status=status.HTTP_401_UNAUTHORIZED,
+        #     )
 
         serializer = serializers.ProfileSerializer(profile, many=False)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -189,26 +189,22 @@ class ProfileViewSet(ModelViewSet):
     @action(detail=False, methods=["post"], url_path=r"actions/location")
     def update_location(self, request):
         profile = request.user
-        
+
         # receives lat and lon
         fields_serializer = serializers.UpdateLocation(data=request.data)
         fields_serializer.is_valid(raise_exception=True)
 
-        
         lat = fields_serializer.validated_data["lat"]
         lon = fields_serializer.validated_data["lon"]
-        
+
         # update the location point using the new lat and lon
-        point = {
-            "type": "Point",
-            "coordinates": [lat, lon]
-        }
-        
+        point = {"type": "Point", "coordinates": [lat, lon]}
+
         profile.location = GEOSGeometry(json.dumps(point), srid=4326)
         profile.save()
         serializer = serializers.ProfileSerializer(profile, many=False)
         return Response(serializer.data)
-        
+
     @action(detail=True, methods=["post"], url_path=r"actions/block-profile")
     def block_profile(self, request, pk=None):
         profile = request.user
@@ -239,7 +235,8 @@ class ProfileViewSet(ModelViewSet):
         profile = models.Profile.objects.get(id=pk)
         serializer = serializers.BlockedProfilesSerializer(profile, many=False)
         return Response(serializer.data)
-
+    
+    # TODO: get likes
 
 # ----------------------- PHOTOS VIEWS --------------------------------
 
