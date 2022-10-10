@@ -97,8 +97,7 @@ class Match(models.Model):
     created_at = models.DateTimeField(default=timezone.now)
 
     def __str__(self):
-        return self.profile1.firstname + ' ' + self.profile2.firstname
-
+        return self.profile1.firstname + " " + self.profile2.firstname
 
     # @background(schedule=60*60-24)
     # def delete_old_matches(self):
@@ -115,7 +114,6 @@ class Match(models.Model):
     #         print(f"Deleted {len(old_matches)} old matches")
     #     except Exception as e:
     #         print(f"Error deleting old matches: {e}")
-
 
 
 class Group(models.Model):

@@ -37,14 +37,13 @@ def filter_profiles(current_profile, profiles):
     else:
         show_profiles = profiles_not_in_group.filter(gender=show_gender)
 
-    # Exclude the blocked profiles the user has
-    for blocked_profile in blocked_profiles:
-        show_profiles = show_profiles.exclude(id=blocked_profile.id)
+    # Exclude the blocked profiles the user has    
+    show_profiles = show_profiles.exclude(id__in=blocked_profiles)
 
     # exclude any profile that has blocked the current user
     if current_profile.blocked_by.all().exists():
-        for blocked_by_profile in current_profile.blocked_by.all():
-            show_profiles = show_profiles.exclude(id=blocked_by_profile.id)
+        blocked_by_profiles = current_profile.blocked_by.all()
+        show_profiles = show_profiles.exclude(id__in=blocked_by_profiles)
 
     # Show profiles between in a range of ages
     if profile_age == 18 or profile_age == 19:
@@ -56,7 +55,6 @@ def filter_profiles(current_profile, profiles):
     show_profiles = show_profiles.exclude(id=current_profile.id)
 
     return show_profiles
-
 
 # Groups already filtered by distance
 def filter_groups(current_profile, groups):
@@ -71,19 +69,18 @@ def filter_groups(current_profile, groups):
         show_groups = groups.filter(gender=show_gender)
 
     # if the user in a group, don't show their group in the swipe
-    if current_profile.is_in_group:
+    if current_profile.member_group.all().exists():
         for group in groups:
             if group.members.filter(id=current_profile.id).exists():
                 show_groups = show_groups.exclude(id=group.id)
 
-    # TODO: implement a search algorithm (hash map)
     # exclude groups that has any blocked profile in their members
     for group in groups:
         for blocked_profile in blocked_profiles:
             if group.members.filter(id=blocked_profile.id).exists():
                 show_groups = show_groups.exclude(id=group.id)
 
-        # exclude any group that contains a member that has blocked the current user
+        #exclude any group that contains a member that has blocked the current user
         if current_profile.blocked_by.all().exists():
             for blocked_by_profile in current_profile.blocked_by.all():
                 if group.members.filter(id=blocked_by_profile.id).exists():
@@ -99,6 +96,9 @@ def filter_groups(current_profile, groups):
         show_groups = show_groups.filter(
             age__gte=profile_age - 5, age__lte=profile_age + 5
         )
+     
+    # filter by min of 2 members    
+    show_groups = show_groups.filter(total_members__gte = 2)
 
     return show_groups
 
@@ -108,13 +108,9 @@ def check_two_profiles_have_match(profile1_id, profile2_id):
         Q(profile1=profile1_id) | Q(profile2=profile1_id)
     )
 
-    print("current_matches ", current_matches)
-
     liked_matches = models.Match.objects.filter(
         Q(profile1=profile2_id) | Q(profile2=profile2_id)
     )
-
-    print("liked_matches ", liked_matches)
 
     if current_matches.filter(id__in=liked_matches).exists():
         # return the match
@@ -128,12 +124,8 @@ def check_profile_group_has_match(profile_id, group):
         Q(profile1=profile_id) | Q(profile2=profile_id)
     )
 
-    print("current_profile_matches -> ", current_profile_matches)
-
     # it is a many to many
     group_matches = group.matches.all()
-
-    print("group_matches -> ", group_matches)
 
     if current_profile_matches.filter(id__in=group_matches).exists():
         return True
@@ -144,8 +136,6 @@ def check_profile_group_has_match(profile_id, group):
 def check_two_group_has_match(group1, group2):
     group1_matches = group1.matches.all()
     group2_matches = group2.matches.all()
-
-    print("group mayched", group1_matches, group2_matches)
 
     if group1_matches.filter(id__in=group2_matches).exists():
         return True
@@ -158,13 +148,9 @@ def get_match(profile1_id, profile2_id):
         Q(profile1=profile1_id) | Q(profile2=profile1_id)
     )
 
-    print("current_matches ", current_matches)
-
     liked_matches = models.Match.objects.filter(
         Q(profile1=profile2_id) | Q(profile2=profile2_id)
     )
-
-    print("liked_matches ", liked_matches)
 
     if current_matches.filter(id__in=liked_matches).exists():
         return current_matches.filter(id__in=liked_matches)
@@ -176,8 +162,7 @@ def like_one_to_one(current_profile, liked_profile):
     # like the profile
     liked_profile.likes.add(current_profile)
 
-    # check if the current profile is already a like of the liked_profile,
-    # if true its a match - eso quiere decir que le dio like a alguien que ya le puse like a el
+    # check if the current profile is already a like of the liked_profile (mutual like)
     if current_profile.likes.filter(id=liked_profile.id).exists():
 
         already_matched = check_two_profiles_have_match(
@@ -200,20 +185,20 @@ def like_one_to_one(current_profile, liked_profile):
 def like_one_to_group(current_profile, liked_group):
     liked_group.likes.add(current_profile)
 
-    # check if two models has the same value in a many to many field
-    # eso quiere decir que este perfil ya ha hecho match con este grupo
-    # basicamente se le repetio en el swipe list
+    # check if the current profile has already a match with the group
     already_matched = check_profile_group_has_match(current_profile.id, liked_group)
     if already_matched:
         return Response({"details": "match already exists"})
 
-    # get the member that has given the like
+    # check and get all the members who has given a like to the current profile
     members = []
     for member in liked_group.members.all():
         if current_profile.likes.filter(id=member.id).exists():
             members.append(member)
 
+    # if any member has give a like to the current profile...
     if len(members) > 0:
+        # make a match with a member that does not have a previous match
         for member in members:
             already_matched = check_two_profiles_have_match(
                 current_profile.id, member.id
@@ -231,6 +216,7 @@ def like_one_to_group(current_profile, liked_group):
                     {"new_match": "group match", "match_data": match_serializer.data}
                 )
 
+        # if there is no member with which it does not have a match, recycle the previous match
         for member in members:
             if get_match(current_profile.id, member.id):
                 match = get_match(current_profile.id, member.id)
@@ -246,19 +232,18 @@ def like_group_to_one(current_profile, current_group, liked_profile):
     # add the like
     liked_profile.likes.add(current_profile)
 
-    # check if two models has the same value in a many to many field
-    # check if the group already has a match with the profile
+    # check if the liked profile has already a match with the group
     already_matched = check_profile_group_has_match(liked_profile.id, current_group)
     if already_matched:
         return Response({"details": "match already exists"})
 
-    # check if the user already like the group
-    # si el perfil ya le habia puesto like y no se ha encontrado ningun match en el foor loop de antes
-    # entonces debe ser pq este es el primer miembro en darle like a este perfil
+    # check if liked profile already like the group (mutual like)
+    # if there is a mutal like and a match has not been found in the foor,
+    # so it is because it must be the first member to like the profile
     if current_group.likes.filter(id=liked_profile.id).exists():
         # check if the current user has already a match with the liked profile
         already_match = get_match(current_profile.id, liked_profile.id)
-        # si ya tiene un match cn ese perfil entonces no crear otro match object
+        # if there is already a match, recycle the previous match
         if already_match:
             match = already_match[0]
             serializer = serializers.MatchSerializer(match, many=False)
@@ -269,7 +254,7 @@ def like_group_to_one(current_profile, current_group, liked_profile):
                 }
             )
 
-        # si es que el current profile no tenia un match ya con ese perfil, entonces crearlo
+        # if the current profile did not has any previous match, then create a new match
         match = models.Match.objects.create(
             profile1=current_profile, profile2=liked_profile
         )
@@ -281,7 +266,6 @@ def like_group_to_one(current_profile, current_group, liked_profile):
             {"new_match": "group match", "match_data": match_serializer.data}
         )
 
-    # si al usuario no le ha gustado el group entonces solo dar like
     return Response({"details": "like gived"})
 
 
@@ -289,12 +273,12 @@ def like_group_to_group(current_profile, current_group, liked_group):
     # add the like
     liked_group.likes.add(current_profile)
 
-    # check si los grupos tienen algun match en comun
+    # check if the groups have any matches in common
     group_already_matched = check_two_group_has_match(current_group, liked_group)
     if group_already_matched:
         return Response({"details": "already matched"})
 
-    # get tdos los miembros que ya le han dado like a mi grupo
+    # get all the members who have already liked my group
     members = []
     for member in liked_group.members.all():
         if current_group.likes.filter(id=member.id).exists():
@@ -305,6 +289,7 @@ def like_group_to_group(current_profile, current_group, liked_group):
             already_matched = check_two_profiles_have_match(
                 current_profile.id, member.id
             )
+            # make a match with a member that does not have a previous match
             if not already_matched:
                 match = models.Match.objects.create(
                     profile1=current_profile, profile2=member
@@ -318,6 +303,7 @@ def like_group_to_group(current_profile, current_group, liked_group):
                     {"new_match": "group match", "match_data": match_serializer.data}
                 )
 
+        # if there is no member with which it does not have a match, recycle the previous match
         for member in members:
             if get_match(current_profile.id, member.id):
                 match = get_match(current_profile.id, member.id)
@@ -342,15 +328,15 @@ class SwipeModelViewSet(ModelViewSet):
             location__distance_lt=(current_profile.location, D(km=8))
         )
 
-        groups_by_distance = models.Group.objects.none()
+        new_group_queryset = models.Group.objects.none()
 
         # get the groups that contain users in the distance ratio
         for profile in profiles_by_distance:
             # check if the profile is in a group
             if profile.member_group.all().exists():
                 # if at least one member is i the distance ratio add the group to the swipe
-                groups_by_distance = groups_by_distance.union(
-                    profile.member_group.all()
+                groups_by_distance = new_group_queryset.union(
+                    profile.member_group.all(), all=True
                 )
 
         # swipe filters

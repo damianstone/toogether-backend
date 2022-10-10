@@ -56,7 +56,6 @@ def get_likes_ids_not_in_match_and_not_in_block(user_id):
     return likes_ids
 
 
-
 # create a function that lists the likes ids that not belong to a any match model in django rest framework
 def get_likes_ids_not_in_match_and_not_in_block_and_not_in_report(user_id):
     # get all the likes ids that belong to a match
@@ -124,10 +123,10 @@ def get_likes_ids_not_in_match_and_not_in_block_and_not_in_report_and_not_in_lik
 
 # create a model class in django rest for a match between two users
 class Match(models.Model):
-    user1 = models.ForeignKey(User, on_delete=models.CASCADE, related_name='user1')
-    user2 = models.ForeignKey(User, on_delete=models.CASCADE, related_name='user2')
+    user1 = models.ForeignKey(User, on_delete=models.CASCADE, related_name="user1")
+    user2 = models.ForeignKey(User, on_delete=models.CASCADE, related_name="user2")
     match_date = models.DateTimeField(auto_now_add=True)
     match_status = models.BooleanField(default=False)
 
     def __str__(self):
-        return self.user1.username + ' ' + self.user2.username
+        return self.user1.username + " " + self.user2.username
