@@ -103,17 +103,73 @@ def filter_groups(current_profile, groups):
     return show_groups
 
 
-# TODO: think about this function
-# after creating a match remove the like conection
-# return true if the everything correct
-def remove_likes_after_match(current_profile, matched_profile):
-    pass
+def check_two_profiles_have_match(profile1_id, profile2_id):
+    current_matches = models.Match.objects.filter(
+        Q(profile1=profile1_id) | Q(profile2=profile1_id)
+    )
+
+    print("current_matches ", current_matches)
+
+    liked_matches = models.Match.objects.filter(
+        Q(profile1=profile2_id) | Q(profile2=profile2_id)
+    )
+
+    print("liked_matches ", liked_matches)
+
+    if current_matches.filter(id__in=liked_matches).exists():
+        # return the match
+        return True
+
+    return False
 
 
-def get_match(current_user, liked_profile):
-    for match in current_user.matches.all():
-        if match.profiles.filter(id=liked_profile.id).exists():
-            return match
+def check_profile_group_has_match(profile_id, group):
+    current_profile_matches = models.Match.objects.filter(
+        Q(profile1=profile_id) | Q(profile2=profile_id)
+    )
+
+    print("current_profile_matches -> ", current_profile_matches)
+
+    # it is a many to many
+    group_matches = group.matches.all()
+
+    print("group_matches -> ", group_matches)
+
+    if current_profile_matches.filter(id__in=group_matches).exists():
+        return True
+
+    return False
+
+
+def check_two_group_has_match(group1, group2):
+    group1_matches = group1.matches.all()
+    group2_matches = group2.matches.all()
+
+    print("group mayched", group1_matches, group2_matches)
+
+    if group1_matches.filter(id__in=group2_matches).exists():
+        return True
+
+    return False
+
+
+def get_match(profile1_id, profile2_id):
+    current_matches = models.Match.objects.filter(
+        Q(profile1=profile1_id) | Q(profile2=profile1_id)
+    )
+
+    print("current_matches ", current_matches)
+
+    liked_matches = models.Match.objects.filter(
+        Q(profile1=profile2_id) | Q(profile2=profile2_id)
+    )
+
+    print("liked_matches ", liked_matches)
+
+    if current_matches.filter(id__in=liked_matches).exists():
+        return current_matches.filter(id__in=liked_matches)
+
+    return False
 
 
 def like_one_to_one(current_profile, liked_profile):
@@ -124,24 +180,16 @@ def like_one_to_one(current_profile, liked_profile):
     # if true its a match - eso quiere decir que le dio like a alguien que ya le puse like a el
     if current_profile.likes.filter(id=liked_profile.id).exists():
 
-        current_matches = current_profile.matches.all()
-        liked_matches = liked_profile.matches.all()
-        print("current_matches ", current_matches)
-        # how to check if the current profile alreade has a match with the liked profile
-        # I mean how can I know if those two users belong to the same many to many field
-        # maybe filter lookup? how can I implement that
-        has_a_match = current_profile.matches.filter(
-            profiles__id__contains=liked_profile.id
+        already_matched = check_two_profiles_have_match(
+            current_profile.id, liked_profile.id
         )
-        print(has_a_match)
 
-        for match in current_matches:
-            if match.profiles.filter(id=liked_profile.id).exists():
-                # TODO: what to do here? display again the match or just give th like and continue
-                return Response({"details": "match already exists"})
+        if already_matched:
+            return Response({"details": "match already exists"})
 
-        match = models.Match.objects.create()
-        match.profiles.add(current_profile, liked_profile)
+        match = models.Match.objects.create(
+            profile1=current_profile, profile2=liked_profile
+        )
         match.save()
         match_serializer = serializers.MatchSerializer(match, many=False)
         return Response({"details": "its a match", "match_data": match_serializer.data})
@@ -153,10 +201,11 @@ def like_one_to_group(current_profile, liked_group):
     liked_group.likes.add(current_profile)
 
     # check if two models has the same value in a many to many field
-    for match in current_profile.matches.all():
-        # check si existe
-        if liked_group.matches.filter(id=match.id).exists():
-            return Response({"details": "match already exists"})
+    # eso quiere decir que este perfil ya ha hecho match con este grupo
+    # basicamente se le repetio en el swipe list
+    already_matched = check_profile_group_has_match(current_profile.id, liked_group)
+    if already_matched:
+        return Response({"details": "match already exists"})
 
     # get the member that has given the like
     members = []
@@ -164,36 +213,31 @@ def like_one_to_group(current_profile, liked_group):
         if current_profile.likes.filter(id=member.id).exists():
             members.append(member)
 
-    # que pasa si ya tenia un match cn uno de los miembros, entonces hacer el match cn el integrante que no tenga match
-    for match in current_profile.matches.all():
+    if len(members) > 0:
         for member in members:
-            if not match.profiles.filter(id=member.id).exists():
-                profile_to_match = member
-
-                match = models.Match.objects.create()
-                match.profiles.add(current_profile, profile_to_match)
+            already_matched = check_two_profiles_have_match(
+                current_profile.id, member.id
+            )
+            if not already_matched:
+                match = models.Match.objects.create(
+                    profile1=current_profile, profile2=member
+                )
                 match.save()
                 liked_group.matches.add(match)
                 liked_group.save()
 
-                # TODO: how to representate as just one user or as a group
                 match_serializer = serializers.MatchSerializer(match, many=False)
                 return Response(
-                    {"new match": "group match", "match_data": match_serializer.data}
+                    {"new_match": "group match", "match_data": match_serializer.data}
                 )
 
-    # si es que no se puede hacer un match cn un usuario nuevo, entonces no crear otro match pero
-    # pero buscar el match en comun y repetirlo
-    for member in members:
-        match = get_match(current_profile, member)
-        if match:
-            serializer = serializers.MatchSerializer(match, many=False)
-            return Response(
-                {
-                    "same match": "reusing the match",
-                    "match_data": serializer.data,
-                }
-            )
+        for member in members:
+            if get_match(current_profile.id, member.id):
+                match = get_match(current_profile.id, member.id)
+                match_serializer = serializers.MatchSerializer(match[0], many=False)
+                return Response(
+                    {"same_match": "group match", "match_data": match_serializer.data}
+                )
 
     return Response({"details": "like gived"})
 
@@ -204,37 +248,37 @@ def like_group_to_one(current_profile, current_group, liked_profile):
 
     # check if two models has the same value in a many to many field
     # check if the group already has a match with the profile
-    for match in current_group.matches.all():
-        # check si existe
-        if liked_profile.matches.filter(id=match.id).exists():
-            return Response({"details": "already matched"})
+    already_matched = check_profile_group_has_match(liked_profile.id, current_group)
+    if already_matched:
+        return Response({"details": "match already exists"})
 
     # check if the user already like the group
     # si el perfil ya le habia puesto like y no se ha encontrado ningun match en el foor loop de antes
     # entonces debe ser pq este es el primer miembro en darle like a este perfil
     if current_group.likes.filter(id=liked_profile.id).exists():
-        # check if the current user has already a match with the profile
-        for match in current_profile.matches.all():
-            # si ya tiene un match cn ese perfil entonces no crear otro match object
-            if liked_profile.matches.filter(id=match.id).exists():
-                # change representation of the matchn
-                serializer = serializers.MatchSerializer(match, many=False)
-                return Response(
-                    {
-                        "same match": "reusing the match",
-                        "match_data": serializer.data,
-                    }
-                )
+        # check if the current user has already a match with the liked profile
+        already_match = get_match(current_profile.id, liked_profile.id)
+        # si ya tiene un match cn ese perfil entonces no crear otro match object
+        if already_match:
+            match = already_match[0]
+            serializer = serializers.MatchSerializer(match, many=False)
+            return Response(
+                {
+                    "same_match": "same match",
+                    "match_data": serializer.data,
+                }
+            )
 
         # si es que el current profile no tenia un match ya con ese perfil, entonces crearlo
-        match = models.Match.objects.create()
-        match.profiles.add(current_profile, liked_profile)
+        match = models.Match.objects.create(
+            profile1=current_profile, profile2=liked_profile
+        )
         match.save()
         current_group.matches.add(match)
         current_group.save()
         match_serializer = serializers.MatchSerializer(match, many=False)
         return Response(
-            {"new match": "group match", "match_data": match_serializer.data}
+            {"new_match": "group match", "match_data": match_serializer.data}
         )
 
     # si al usuario no le ha gustado el group entonces solo dar like
@@ -246,10 +290,9 @@ def like_group_to_group(current_profile, current_group, liked_group):
     liked_group.likes.add(current_profile)
 
     # check si los grupos tienen algun match en comun
-    for match in current_group.matches.all():
-        if liked_group.matches.filter(id=match.id).exists():
-            # already match, show message that one of the mmeber is already in contact with the group
-            return Response({"details": "already matched"})
+    group_already_matched = check_two_group_has_match(current_group, liked_group)
+    if group_already_matched:
+        return Response({"details": "already matched"})
 
     # get tdos los miembros que ya le han dado like a mi grupo
     members = []
@@ -257,36 +300,31 @@ def like_group_to_group(current_profile, current_group, liked_group):
         if current_group.likes.filter(id=member.id).exists():
             members.append(member)
 
-    # que pasa si el current profile ya tenia un match cn uno de los miembros,
-    # entonces hacer el match cn el integrante que no tenga match
-    for match in current_profile.matches.all():
+    if len(members) > 0:
         for member in members:
-            if not match.profiles.filter(id=member.id).exists():
-                profile_to_match = member
-                match = models.Match.objects.create()
-                match.profiles.add(current_profile, profile_to_match)
+            already_matched = check_two_profiles_have_match(
+                current_profile.id, member.id
+            )
+            if not already_matched:
+                match = models.Match.objects.create(
+                    profile1=current_profile, profile2=member
+                )
                 match.save()
                 liked_group.matches.add(match)
                 liked_group.save()
 
-                # how to representate as just one user or as a group
                 match_serializer = serializers.MatchSerializer(match, many=False)
                 return Response(
-                    {"new match": "group match", "match_data": match_serializer.data}
+                    {"new_match": "group match", "match_data": match_serializer.data}
                 )
 
-    # si es que no se puede hacer un match cn un usuario nuevo, entonces no crear otro match pero
-    # pero buscar el match en comun y repetirlo
-    for member in members:
-        match = get_match(current_profile, member)
-        if match:
-            serializer = serializers.MatchSerializer(match, many=False)
-            return Response(
-                {
-                    "same match": "reusing the match",
-                    "match_data": serializer.data,
-                }
-            )
+        for member in members:
+            if get_match(current_profile.id, member.id):
+                match = get_match(current_profile.id, member.id)
+                match_serializer = serializers.MatchSerializer(match[0], many=False)
+                return Response(
+                    {"same_match": "group match", "match_data": match_serializer.data}
+                )
 
     return Response({"details": "like gived"})
 
@@ -389,17 +427,16 @@ class SwipeModelViewSet(ModelViewSet):
     @action(detail=False, methods=["get"], url_path=r"actions/get-likes")
     def list_likes(self, request):
         current_profile = request.user
-        # if the like (id) is also in a match so dont list
-        likes = current_profile.likes.all()
-        matches = current_profile.matches.all()
 
-        # TODO: get likes ids that are not in profiles in the match
+        # list of tuples with the two matched profiles ids
+        current_matches_ids = models.Match.objects.filter(
+            Q(profile1=current_profile.id) | Q(profile2=current_profile.id)
+        ).values_list("profile1", "profile2")
 
-        # listar los likes ID que no se encuentren en ningun match
+        # going two the list and tuples to exclude the likes
+        for i in range(len(current_matches_ids)):
+            likes = current_profile.likes.all().exclude(id__in=current_matches_ids[i])
 
-        # check if the like is in a group profile or not and display in that way
-
-        # serializer
         serializer = serializers.SwipeProfileSerializer(likes, many=True)
         return Response({"count": likes.count(), "results": serializer.data})
 

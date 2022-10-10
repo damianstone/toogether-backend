@@ -6,6 +6,7 @@ from django.contrib.gis.db import models
 from django.contrib.gis.geos import Point
 from model_utils import Choices
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
+
 # from background_task import background
 from .managers import CustomUserManager
 
@@ -87,20 +88,17 @@ class Photo(models.Model):
 
 class Match(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    profile1 = models.ForeignKey(
+        Profile, related_name="profile1_matches", default=None, on_delete=models.CASCADE
+    )
+    profile2 = models.ForeignKey(
+        Profile, related_name="profile2_matches", default=None, on_delete=models.CASCADE
+    )
     created_at = models.DateTimeField(default=timezone.now)
-    profiles = models.ManyToManyField(Profile, blank=True, related_name="matches")
 
     def __str__(self):
-        return "{} : {}".format(self.profile_id_1, self.profile_id_2)
+        return self.profile1.firstname + ' ' + self.profile2.firstname
 
-# class Match(models.Model):
-#     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-#     profile1 = models.ForeignKey(Profile, related_name='profile1_matches', on_delete=models.CASCADE)
-#     profile2 = models.ForeignKey(Profile, related_name='profile2_matches', on_delete=models.CASCADE)
-#     created_at = models.DateTimeField(default=timezone.now)
-    
-#     def __str__(self):
-#         return f"{self.profile1.__str__()} x {self.profile2.__str__()}"
 
     # @background(schedule=60*60-24)
     # def delete_old_matches(self):
@@ -117,6 +115,8 @@ class Match(models.Model):
     #         print(f"Deleted {len(old_matches)} old matches")
     #     except Exception as e:
     #         print(f"Error deleting old matches: {e}")
+
+
 
 class Group(models.Model):
     GENDER_CHOICES = Choices(

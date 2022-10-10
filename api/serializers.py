@@ -145,11 +145,12 @@ class GroupSerializerWithLink(GroupSerializer):
 
 
 class MatchSerializer(serializers.ModelSerializer):
-    profiles = SwipeProfileSerializer(read_only=True, many=True)
+    profile1 = SwipeProfileSerializer(read_only=True, many=False)
+    profile2 = SwipeProfileSerializer(read_only=True, many=False)
 
     class Meta:
         model = models.Match
-        fields = ["id", "profiles"]
+        fields = ["id", "profile1", "profile2"]
 
 
 # -------------------------- DATA ACTIONS SERIALIZERS -----------------------------
