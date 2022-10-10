@@ -50,7 +50,15 @@ class ProfileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Profile
-        exclude = ["user_permissions", "groups", "password"]
+        exclude = [
+            "user_permissions",
+            "groups",
+            "password",
+            "last_login",
+            "is_superuser",
+            "is_staff",
+            "is_active",
+        ]
 
     def get_token(self, obj):
         token = RefreshToken.for_user(obj)
@@ -134,14 +142,6 @@ class GroupSerializerWithLink(GroupSerializer):
 
 
 # -------------------------- BLOCKED PROFILES SERIALIZERS --------------------------------
-
-
-class BlockedProfilesSerializer(serializers.ModelSerializer):
-    blocked_profiles = SwipeProfileSerializer(read_only=True, many=True)
-
-    class Meta:
-        model = models.Profile
-        fields = ["blocked_profiles"]
 
 
 class MatchSerializer(serializers.ModelSerializer):

@@ -14,23 +14,6 @@ from django.db.models import Q
 import random
 
 
-# TODO: filter groups and profiles by gender --
-# TODO: Show profiles that are not in group --
-# TODO: exclude blocked profiles --
-# TODO: exclude the current user or the current group in the swipe list --
-# TODO: filter by age --
-# TODO: filter by distance --
-# TODO: if the user is blocked by someone dont show that someone --
-
-
-# TODO: give liked to another profile --
-# TODO: give like to the members of a group --
-# TODO: check if there is a match --
-
-# TODO: after match don't show in the likes list, in another words, list likes filtering the ones that are not a match yet
-# TODO: filter by groups with more than 2 members
-
-
 def age_range(data, min_age, max_age):
     current = now().date()
     min_date = date(current.year - min_age, current.month, current.day)
@@ -120,6 +103,13 @@ def filter_groups(current_profile, groups):
     return show_groups
 
 
+# TODO: think about this function
+# after creating a match remove the like conection
+# return true if the everything correct
+def remove_likes_after_match(current_profile, matched_profile):
+    pass
+
+
 def get_match(current_user, liked_profile):
     for match in current_user.matches.all():
         if match.profiles.filter(id=liked_profile.id).exists():
@@ -147,6 +137,7 @@ def like_one_to_one(current_profile, liked_profile):
 
         for match in current_matches:
             if match.profiles.filter(id=liked_profile.id).exists():
+                # TODO: what to do here? display again the match or just give th like and continue
                 return Response({"details": "match already exists"})
 
         match = models.Match.objects.create()
@@ -393,7 +384,24 @@ class SwipeModelViewSet(ModelViewSet):
     def remove_like(self, request, pk=None):
         current_profile = request.user
         current_profile.likes.remove(pk)
-        return Response({"details": "dislike success"})
+        return Response({"details": "Like removed"})
+
+    @action(detail=False, methods=["get"], url_path=r"actions/get-likes")
+    def list_likes(self, request):
+        current_profile = request.user
+        # if the like (id) is also in a match so dont list
+        likes = current_profile.likes.all()
+        matches = current_profile.matches.all()
+
+        # TODO: get likes ids that are not in profiles in the match
+
+        # listar los likes ID que no se encuentren en ningun match
+
+        # check if the like is in a group profile or not and display in that way
+
+        # serializer
+        serializer = serializers.SwipeProfileSerializer(likes, many=True)
+        return Response({"count": likes.count(), "results": serializer.data})
 
 
 class MatchModelViewSet(ModelViewSet):
@@ -413,3 +421,5 @@ class MatchModelViewSet(ModelViewSet):
         matches = current_profile.matches.all()
         serializer = serializers.MatchSerializer(matches, many=True)
         return Response({"count": matches.count(), "data": serializer.data})
+
+    # TODO: distroy match for both users

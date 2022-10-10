@@ -216,7 +216,7 @@ class ProfileViewSet(ModelViewSet):
             )
 
         profile.blocked_profiles.add(blocked_profile)
-        serializer = serializers.ProfileSerializer(blocked_profile, many=False)
+        serializer = serializers.SwipeProfileSerializer(blocked_profile, many=False)
         return Response(serializer.data)
 
     @action(detail=True, methods=["post"], url_path=r"actions/disblock-profile")
@@ -227,16 +227,16 @@ class ProfileViewSet(ModelViewSet):
         except ObjectDoesNotExist:
             return Response({"Error": "Profile does not exist"})
         profile.blocked_profiles.remove(blocked_profile)
-        serializer = serializers.ProfileSerializer(blocked_profile, many=False)
+        serializer = serializers.SwipeProfileSerializer(blocked_profile, many=False)
         return Response(serializer.data)
 
-    @action(detail=True, methods=["get"], url_path=r"actions/get-blocked-profiles")
-    def get_blocked_profiles(self, request, pk=None):
-        profile = models.Profile.objects.get(id=pk)
-        serializer = serializers.BlockedProfilesSerializer(profile, many=False)
-        return Response(serializer.data)
-    
-    # TODO: get likes
+    @action(detail=False, methods=["get"], url_path=r"actions/get-blocked-profiles")
+    def get_blocked_profiles(self, request):
+        current_profile = request.user
+        blocked_profiles = current_profile.blocked_profiles.all()
+        serializer = serializers.SwipeProfileSerializer(blocked_profiles, many=True)
+        return Response({"count": blocked_profiles.count(), "results": serializer.data})
+
 
 # ----------------------- PHOTOS VIEWS --------------------------------
 
