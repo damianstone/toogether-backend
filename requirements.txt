@@ -16,3 +16,4 @@ Pillow==8.0.1
 django-dotenv==1.4.2
 flake8-black==0.3.3
 shortuuid==1.0.9
+django-model-utils==4.2.0

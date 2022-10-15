@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     "corsheaders",
     "rest_framework_simplejwt",
     "rest_framework_simplejwt.token_blacklist",
+    "django.contrib.gis",
     "api.apps.ApiConfig",
 ]
 
@@ -56,6 +57,7 @@ REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
+    "DEFAULT_PAGINATION_CLASS": "service.core.pagination.CustomPagination",
 }
 
 # SIMPLE JWT TO CREATE JSON ACCESS TOKENS
@@ -130,7 +132,7 @@ print("DB NAME -->", os.environ.get("LOCAL_DB_PORT"))
 
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.postgresql",
+        "ENGINE": "django.contrib.gis.db.backends.postgis",
         "NAME": os.environ.get("LOCAL_DB_NAME"),
         "USER": os.environ.get("LOCAL_DB_USER"),
         "PASSWORD": os.environ.get("LOCAL_DB_PASSWORD"),

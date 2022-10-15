@@ -1,6 +1,6 @@
 from django.urls import path, include
 from rest_framework import routers
-from api.views import profile_views, group_views
+from api.views import profile_views, group_views, swipe_views
 from rest_framework_simplejwt.views import TokenRefreshView
 
 
@@ -22,6 +22,18 @@ router.register(
     r"groups",
     group_views.GroupViewSet,
     basename="group",
+)
+
+router.register(
+    r"swipe",
+    swipe_views.SwipeModelViewSet,
+    basename="swipe",
+)
+
+router.register(
+    r"matches",
+    swipe_views.MatchModelViewSet,
+    basename="match",
 )
 
 urlpatterns = [
