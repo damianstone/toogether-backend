@@ -5,13 +5,19 @@ from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 from django.core.exceptions import ObjectDoesNotExist
-from api import models, serializers
-from datetime import date
 from django.utils.timezone import now
 from django.contrib.gis.geos import GEOSGeometry
 from django.contrib.gis.measure import D
 from django.db.models import Q
+from api import models, serializers
+from datetime import date
 import random
+
+
+ALREADY_MATCHED = 'already_matched'
+NEW_MATCH = "new_match"
+SAME_MATCH = "same_match"
+LIKE = "like"
 
 
 def age_range(data, min_age, max_age):
@@ -22,6 +28,7 @@ def age_range(data, min_age, max_age):
     return data.filter(birthdate__gte=max_date, birthdate__lte=min_date)
 
 
+# TODO: filter liked profiles
 # Profiles already filtered by distance
 def filter_profiles(current_profile, profiles):
     profile_age = current_profile.age
@@ -37,7 +44,7 @@ def filter_profiles(current_profile, profiles):
     else:
         show_profiles = profiles_not_in_group.filter(gender=show_gender)
 
-    # Exclude the blocked profiles the user has    
+    # Exclude the blocked profiles the user has
     show_profiles = show_profiles.exclude(id__in=blocked_profiles)
 
     # exclude any profile that has blocked the current user
@@ -55,6 +62,7 @@ def filter_profiles(current_profile, profiles):
     show_profiles = show_profiles.exclude(id=current_profile.id)
 
     return show_profiles
+
 
 # Groups already filtered by distance
 def filter_groups(current_profile, groups):
@@ -80,7 +88,7 @@ def filter_groups(current_profile, groups):
             if group.members.filter(id=blocked_profile.id).exists():
                 show_groups = show_groups.exclude(id=group.id)
 
-        #exclude any group that contains a member that has blocked the current user
+        # exclude any group that contains a member that has blocked the current user
         if current_profile.blocked_by.all().exists():
             for blocked_by_profile in current_profile.blocked_by.all():
                 if group.members.filter(id=blocked_by_profile.id).exists():
@@ -96,9 +104,9 @@ def filter_groups(current_profile, groups):
         show_groups = show_groups.filter(
             age__gte=profile_age - 5, age__lte=profile_age + 5
         )
-     
-    # filter by min of 2 members    
-    show_groups = show_groups.filter(total_members__gte = 2)
+
+    # filter by min of 2 members
+    show_groups = show_groups.filter(total_members__gte=1)
 
     return show_groups
 
@@ -170,16 +178,16 @@ def like_one_to_one(current_profile, liked_profile):
         )
 
         if already_matched:
-            return Response({"details": "match already exists"})
+            return Response({"details": ALREADY_MATCHED})
 
         match = models.Match.objects.create(
             profile1=current_profile, profile2=liked_profile
         )
         match.save()
         match_serializer = serializers.MatchSerializer(match, many=False)
-        return Response({"details": "its a match", "match_data": match_serializer.data})
+        return Response({"details": NEW_MATCH, "match_data": match_serializer.data})
 
-    return Response({"details": "like gived"})
+    return Response({"details": LIKE, "name": liked_profile.firstname})
 
 
 def like_one_to_group(current_profile, liked_group):
@@ -188,7 +196,7 @@ def like_one_to_group(current_profile, liked_group):
     # check if the current profile has already a match with the group
     already_matched = check_profile_group_has_match(current_profile.id, liked_group)
     if already_matched:
-        return Response({"details": "match already exists"})
+        return Response({"details": ALREADY_MATCHED})
 
     # check and get all the members who has given a like to the current profile
     members = []
@@ -213,7 +221,7 @@ def like_one_to_group(current_profile, liked_group):
 
                 match_serializer = serializers.MatchSerializer(match, many=False)
                 return Response(
-                    {"new_match": "group match", "match_data": match_serializer.data}
+                    {"details": NEW_MATCH, "match_data": match_serializer.data}
                 )
 
         # if there is no member with which it does not have a match, recycle the previous match
@@ -222,10 +230,10 @@ def like_one_to_group(current_profile, liked_group):
                 match = get_match(current_profile.id, member.id)
                 match_serializer = serializers.MatchSerializer(match[0], many=False)
                 return Response(
-                    {"same_match": "group match", "match_data": match_serializer.data}
+                    {"details": SAME_MATCH, "match_data": match_serializer.data}
                 )
 
-    return Response({"details": "like gived"})
+    return Response({"details": LIKE})
 
 
 def like_group_to_one(current_profile, current_group, liked_profile):
@@ -235,7 +243,7 @@ def like_group_to_one(current_profile, current_group, liked_profile):
     # check if the liked profile has already a match with the group
     already_matched = check_profile_group_has_match(liked_profile.id, current_group)
     if already_matched:
-        return Response({"details": "match already exists"})
+        return Response({"details": ALREADY_MATCHED})
 
     # check if liked profile already like the group (mutual like)
     # if there is a mutal like and a match has not been found in the foor,
@@ -249,7 +257,7 @@ def like_group_to_one(current_profile, current_group, liked_profile):
             serializer = serializers.MatchSerializer(match, many=False)
             return Response(
                 {
-                    "same_match": "same match",
+                    "details": SAME_MATCH,
                     "match_data": serializer.data,
                 }
             )
@@ -263,10 +271,10 @@ def like_group_to_one(current_profile, current_group, liked_profile):
         current_group.save()
         match_serializer = serializers.MatchSerializer(match, many=False)
         return Response(
-            {"new_match": "group match", "match_data": match_serializer.data}
+            {"details": NEW_MATCH, "match_data": match_serializer.data}
         )
 
-    return Response({"details": "like gived"})
+    return Response({"details": LIKE})
 
 
 def like_group_to_group(current_profile, current_group, liked_group):
@@ -276,7 +284,7 @@ def like_group_to_group(current_profile, current_group, liked_group):
     # check if the groups have any matches in common
     group_already_matched = check_two_group_has_match(current_group, liked_group)
     if group_already_matched:
-        return Response({"details": "already matched"})
+        return Response({"details": ALREADY_MATCHED})
 
     # get all the members who have already liked my group
     members = []
@@ -300,7 +308,7 @@ def like_group_to_group(current_profile, current_group, liked_group):
 
                 match_serializer = serializers.MatchSerializer(match, many=False)
                 return Response(
-                    {"new_match": "group match", "match_data": match_serializer.data}
+                    {"details": NEW_MATCH, "match_data": match_serializer.data}
                 )
 
         # if there is no member with which it does not have a match, recycle the previous match
@@ -309,10 +317,10 @@ def like_group_to_group(current_profile, current_group, liked_group):
                 match = get_match(current_profile.id, member.id)
                 match_serializer = serializers.MatchSerializer(match[0], many=False)
                 return Response(
-                    {"same_match": "group match", "match_data": match_serializer.data}
+                    {"details": SAME_MATCH, "match_data": match_serializer.data}
                 )
 
-    return Response({"details": "like gived"})
+    return Response({"details": LIKE})
 
 
 class SwipeModelViewSet(ModelViewSet):
@@ -328,16 +336,19 @@ class SwipeModelViewSet(ModelViewSet):
             location__distance_lt=(current_profile.location, D(km=8))
         )
 
-        new_group_queryset = models.Group.objects.none()
+        # TODO: whats wrong with this approach
+        # groups_by_distance = models.Group.objects.none()
 
-        # get the groups that contain users in the distance ratio
-        for profile in profiles_by_distance:
-            # check if the profile is in a group
-            if profile.member_group.all().exists():
-                # if at least one member is i the distance ratio add the group to the swipe
-                groups_by_distance = new_group_queryset.union(
-                    profile.member_group.all(), all=True
-                )
+        # # get the groups that contain users in the distance ratio
+        # for profile in profiles_by_distance:
+        #     # check if the profile is in a group
+        #     if profile.member_group.all().exists():
+        #         # if at least one member is i the distance ratio add the group to the swipe
+        #         groups_by_distance = groups_by_distance.union(
+        #             profile.member_group.all(), all=True
+        #         )
+
+        groups_by_distance = groups.filter(members__in=profiles_by_distance)
 
         # swipe filters
         show_profiles = filter_profiles(current_profile, profiles_by_distance)
@@ -369,6 +380,22 @@ class SwipeModelViewSet(ModelViewSet):
         # TODO: check if the user in group and return the group
         serializer = serializers.SwipeProfileSerializer(profile, many=False)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=["get"], url_path=r"actions/get-swipe-profile")
+    def get_swipe_profile(self, request):
+        # get the current user as a profile or the group if he is an group
+        current_profile = request.user
+        if current_profile.member_group.all().exists():
+            current_group = current_profile.member_group.all()[0]
+            group_serializer = serializers.SwipeGroupSerializer(
+                current_group, many=False
+            )
+            return Response(group_serializer.data)
+
+        profile_serializer = serializers.SwipeProfileSerializer(
+            current_profile, many=False
+        )
+        return Response(profile_serializer.data)
 
     @action(detail=True, methods=["post"], url_path=r"actions/like")
     def like(self, request, pk=None):
@@ -441,7 +468,9 @@ class MatchModelViewSet(ModelViewSet):
     @action(detail=False, methods=["get"], url_path=r"actions/list-profile-matches")
     def list_profile_matches(self, request):
         current_profile = request.user
-        matches = current_profile.matches.all()
+        matches = models.Match.objects.filter(
+            Q(profile1=current_profile.id) | Q(profile2=current_profile.id)
+        )
         serializer = serializers.MatchSerializer(matches, many=True)
         return Response({"count": matches.count(), "data": serializer.data})
 

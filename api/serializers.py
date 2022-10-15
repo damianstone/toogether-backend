@@ -22,8 +22,6 @@ class ChoicesField(serializers.Field):
 
 
 # -------------------------- MODELS SERIALIZERS ----------------------------
-
-
 class PhotoSerializer(serializers.ModelSerializer):
     image = serializers.ImageField(
         required=True, allow_null=False, max_length=None, use_url=True
@@ -34,7 +32,6 @@ class PhotoSerializer(serializers.ModelSerializer):
         fields = ["id", "image", "profile"]
 
 
-# TODO: make this serializer just for retrieve (with more data)
 class ProfileSerializer(serializers.ModelSerializer):
     token = serializers.SerializerMethodField(read_only=True)
 
@@ -66,8 +63,6 @@ class ProfileSerializer(serializers.ModelSerializer):
 
 
 # -------------------------- SWIPE SERIALIZERS -----------------------------
-
-
 class SwipeProfileSerializer(serializers.ModelSerializer):
     gender = serializers.CharField(
         source="get_gender_display", required=True, allow_null=False
@@ -92,6 +87,7 @@ class SwipeProfileSerializer(serializers.ModelSerializer):
             "show_me",
             "nationality",
             "city",
+            "live_in",
             "university",
             "description",
             "location",
@@ -112,8 +108,6 @@ class SwipeGroupSerializer(serializers.ModelSerializer):
 
 
 # -------------------------- GROUP SERIALIZERS --------------------------------
-
-
 class GroupSerializer(serializers.ModelSerializer):
     owner = SwipeProfileSerializer(read_only=True, many=False)
     members = serializers.SerializerMethodField()
@@ -142,8 +136,6 @@ class GroupSerializerWithLink(GroupSerializer):
 
 
 # -------------------------- BLOCKED PROFILES SERIALIZERS --------------------------------
-
-
 class MatchSerializer(serializers.ModelSerializer):
     profile1 = SwipeProfileSerializer(read_only=True, many=False)
     profile2 = SwipeProfileSerializer(read_only=True, many=False)
@@ -154,8 +146,6 @@ class MatchSerializer(serializers.ModelSerializer):
 
 
 # -------------------------- DATA ACTIONS SERIALIZERS -----------------------------
-
-
 # serializer that gonna be stored in the local storage
 class CreateProfileSerializer(serializers.Serializer):
     firstname = serializers.CharField(required=True, allow_null=False)

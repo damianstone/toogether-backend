@@ -75,7 +75,7 @@ def getUsers(request):
 
 
 # ----------------------- PROFILES VIEWS --------------------------------
-
+# TODO: update and create profile with primary key
 
 class ProfileViewSet(ModelViewSet):
     queryset = models.Profile.objects.all().filter(has_account=True)
