@@ -14,10 +14,17 @@ from datetime import date
 import random
 
 
-ALREADY_MATCHED = 'already_matched'
-NEW_MATCH = "new_match"
-SAME_MATCH = "same_match"
-LIKE = "like"
+# response constants to identify the type of match in the frontend
+ALREADY_MATCHED = "ALREADY_MATCHED"
+NEW_MATCH = "NEW_MATCH"
+SAME_MATCH = "SAME_MATCH"
+LIKE = "LIKE"
+
+# constants to identify who is the group in the match
+NEITHER = "NEITHER"
+BOTH = "BOTH"
+LIKED = "LIKED"
+CURRENT = "CURRENT"
 
 
 def age_range(data, min_age, max_age):
@@ -28,7 +35,6 @@ def age_range(data, min_age, max_age):
     return data.filter(birthdate__gte=max_date, birthdate__lte=min_date)
 
 
-# TODO: filter liked profiles
 # Profiles already filtered by distance
 def filter_profiles(current_profile, profiles):
     profile_age = current_profile.age
@@ -60,6 +66,11 @@ def filter_profiles(current_profile, profiles):
 
     # exclude the current user in the swipe
     show_profiles = show_profiles.exclude(id=current_profile.id)
+
+    # filter liked profiles
+    profiles_already_liked = current_profile.liked_by.filter(id__in=show_profiles)
+    # exclude profiles already liked
+    show_profiles = show_profiles.exclude(id__in=profiles_already_liked)
 
     return show_profiles
 
@@ -105,8 +116,13 @@ def filter_groups(current_profile, groups):
             age__gte=profile_age - 5, age__lte=profile_age + 5
         )
 
-    # filter by min of 2 members
+    # TODO: filter by min of 2 members
     show_groups = show_groups.filter(total_members__gte=1)
+
+    # filter all the groups that has a like from the current profile
+    groups_liked_by_current_profile = show_groups.filter(likes=current_profile.id)
+    # exclude liked groups
+    show_groups = show_groups.exclude(id__in=groups_liked_by_current_profile)
 
     return show_groups
 
@@ -185,9 +201,15 @@ def like_one_to_one(current_profile, liked_profile):
         )
         match.save()
         match_serializer = serializers.MatchSerializer(match, many=False)
-        return Response({"details": NEW_MATCH, "match_data": match_serializer.data})
+        return Response(
+            {
+                "details": NEW_MATCH,
+                "group_match": NEITHER,
+                "match_data": match_serializer.data,
+            }
+        )
 
-    return Response({"details": LIKE, "name": liked_profile.firstname})
+    return Response({"details": LIKE})
 
 
 def like_one_to_group(current_profile, liked_group):
@@ -220,8 +242,13 @@ def like_one_to_group(current_profile, liked_group):
                 liked_group.save()
 
                 match_serializer = serializers.MatchSerializer(match, many=False)
+
                 return Response(
-                    {"details": NEW_MATCH, "match_data": match_serializer.data}
+                    {
+                        "details": NEW_MATCH,
+                        "group_match": LIKED,
+                        "match_data": match_serializer.data,
+                    }
                 )
 
         # if there is no member with which it does not have a match, recycle the previous match
@@ -230,7 +257,11 @@ def like_one_to_group(current_profile, liked_group):
                 match = get_match(current_profile.id, member.id)
                 match_serializer = serializers.MatchSerializer(match[0], many=False)
                 return Response(
-                    {"details": SAME_MATCH, "match_data": match_serializer.data}
+                    {
+                        "details": SAME_MATCH,
+                        "group_match": LIKED,
+                        "match_data": match_serializer.data,
+                    }
                 )
 
     return Response({"details": LIKE})
@@ -258,6 +289,7 @@ def like_group_to_one(current_profile, current_group, liked_profile):
             return Response(
                 {
                     "details": SAME_MATCH,
+                    "group_match": CURRENT,
                     "match_data": serializer.data,
                 }
             )
@@ -271,7 +303,11 @@ def like_group_to_one(current_profile, current_group, liked_profile):
         current_group.save()
         match_serializer = serializers.MatchSerializer(match, many=False)
         return Response(
-            {"details": NEW_MATCH, "match_data": match_serializer.data}
+            {
+                "details": NEW_MATCH,
+                "group_match": CURRENT,
+                "match_data": match_serializer.data,
+            }
         )
 
     return Response({"details": LIKE})
@@ -308,7 +344,11 @@ def like_group_to_group(current_profile, current_group, liked_group):
 
                 match_serializer = serializers.MatchSerializer(match, many=False)
                 return Response(
-                    {"details": NEW_MATCH, "match_data": match_serializer.data}
+                    {
+                        "details": NEW_MATCH,
+                        "group_match": BOTH,
+                        "match_data": match_serializer.data,
+                    }
                 )
 
         # if there is no member with which it does not have a match, recycle the previous match
@@ -317,7 +357,11 @@ def like_group_to_group(current_profile, current_group, liked_group):
                 match = get_match(current_profile.id, member.id)
                 match_serializer = serializers.MatchSerializer(match[0], many=False)
                 return Response(
-                    {"details": SAME_MATCH, "match_data": match_serializer.data}
+                    {
+                        "details": SAME_MATCH,
+                        "group_match": BOTH,
+                        "match_data": match_serializer.data,
+                    }
                 )
 
     return Response({"details": LIKE})
@@ -431,8 +475,28 @@ class SwipeModelViewSet(ModelViewSet):
             status=status.HTTP_400_BAD_REQUEST,
         )
 
+    @action(detail=True, methods=["post"], url_path=r"actions/unlike")
+    def unlike(self, request, pk=None):
+        # unlike profile - unlike profile or group that I already gave like previously
+        current_profile = request.user
+
+        try:
+            unliked_profile = models.Profile.objects.get(pk=pk)
+        except:
+            try:
+                unliked_profile = models.Group.objects.get(pk=pk)
+            except ObjectDoesNotExist:
+                return Response(
+                    {"Error": "Profile does not exist"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        unliked_profile.likes.remove(current_profile)
+        return Response({"details": "Unliked"})
+
     @action(detail=True, methods=["post"], url_path=r"actions/remove-like")
     def remove_like(self, request, pk=None):
+        # remove a like from my many to many field
         current_profile = request.user
         current_profile.likes.remove(pk)
         return Response({"details": "Like removed"})
@@ -459,7 +523,7 @@ class MatchModelViewSet(ModelViewSet):
     serializer_class = serializers.MatchSerializer
     permission_classes = [IsAuthenticated]
 
-    # TODO: just for admins
+    # TODO: update, get and create just for admins
     # def get_permissions(self):
     #     if self.action == "list":
     #         return [IsAdminUser()]
@@ -473,5 +537,3 @@ class MatchModelViewSet(ModelViewSet):
         )
         serializer = serializers.MatchSerializer(matches, many=True)
         return Response({"count": matches.count(), "data": serializer.data})
-
-    # TODO: distroy match for both users

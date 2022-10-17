@@ -36,3 +36,24 @@ python manage.py migrate
 ```python
 python manage.py runserver
 ```
+
+## Project structure
+
+### Views
+In Together the views are divided into the following areas, which cover the main features of the application
+
+- Profile views
+- Group views
+- Swipe views 
+
+#### Profile views
+In Toogether there is only one data model for the user, which is called a profile. 
+However, in the views a difference between the profile and the user is made.
+
+`User views` (or named like this) 
+those in charge of the most basic of the model, 
+such as creating the user, deleting it, and handling relevant information for Adins
+
+`Profile Modelview`
+these views cover all the actions that the user can do in their profile, 
+such as adding photos, updating information, blocking users, etc.
