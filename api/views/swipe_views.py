@@ -503,6 +503,7 @@ class SwipeModelViewSet(ModelViewSet):
 
     @action(detail=False, methods=["get"], url_path=r"actions/get-likes")
     def list_likes(self, request):
+        # TODO: serialize in group
         current_profile = request.user
 
         # list of tuples with the two matched profiles ids
