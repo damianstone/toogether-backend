@@ -18,8 +18,6 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
 
 # ----------------------- USER VIEWS (LOGIN / REGISTER) --------------------------------
-
-
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
         data = super().validate(attrs)
@@ -75,36 +73,34 @@ def getUsers(request):
 
 
 # ----------------------- PROFILES VIEWS --------------------------------
-# TODO: update and create profile with primary key
-
 class ProfileViewSet(ModelViewSet):
     queryset = models.Profile.objects.all().filter(has_account=True)
     serializer_class = serializers.ProfileSerializer
     permission_classes = [IsAuthenticated]
     pagination_class = CustomPagination
 
-    # TODO: just for admins
+    # TODO: list, update and destroy just for admins
     # def get_permissions(self):
     #     if self.action == "list":  # list all the profile just for admin users
     #         return [IsAdminUser()]
     #     return [permission() for permission in self.permission_classes]
 
-    # :
 
-    # NOTE:
     def retrieve(self, request, pk=None):
         profile = models.Profile.objects.get(pk=pk)
         # if profile.id != request.user.id:
         #     return Response(
-        #         {"detail": "Trying to get another profile"},
+        #         {"detail": "Not autherized",},
         #         status=status.HTTP_401_UNAUTHORIZED,
         #     )
 
         serializer = serializers.ProfileSerializer(profile, many=False)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    @action(detail=True, methods=["post"], url_path=r"actions/create-profile")
-    def create_profile(self, request, pk):
+    @action(detail=False, methods=["post"], url_path=r"actions/create-profile")
+    def create_profile(self, request):
+        profile = request.user
+        
         def age(birthdate):
             today = date.today()
             age = (
@@ -113,19 +109,6 @@ class ProfileViewSet(ModelViewSet):
                 - ((today.month, today.day) < (birthdate.month, birthdate.day))
             )
             return age
-
-        try:
-            profile = models.Profile.objects.get(pk=pk)
-        except ObjectDoesNotExist:
-            return Response(
-                {"Error": "Profile does not exist"}, status=status.HTTP_400_BAD_REQUEST
-            )
-
-        if profile.id != request.user.id:
-            return Response(
-                {"detail": "Trying to get another profile"},
-                status=status.HTTP_401_UNAUTHORIZED,
-            )
 
         fields_serializer = serializers.CreateProfileSerializer(data=request.data)
         fields_serializer.is_valid(raise_exception=True)
@@ -165,7 +148,7 @@ class ProfileViewSet(ModelViewSet):
 
         if profile.id != request.user.id:
             return Response(
-                {"detail": "Trying to get another profile"},
+                {"detail": "Not autherized"},
                 status=status.HTTP_401_UNAUTHORIZED,
             )
 
