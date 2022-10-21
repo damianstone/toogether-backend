@@ -3,7 +3,6 @@ from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.permissions import IsAuthenticated, IsAdminUser, AllowAny
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
-from django.contrib.auth import get_user_model
 from django.core.exceptions import ObjectDoesNotExist
 from api import models, serializers
 from service.core.pagination import CustomPagination
@@ -58,8 +57,7 @@ def registerUser(request):
 @api_view(["DELETE"])
 @permission_classes([IsAuthenticated])
 def deleteUser(request):
-    user = request.user
-    user_to_delete = models.Profile.objects.get(id=user.id)
+    user_to_delete = request.user
     user_to_delete.delete()
     return Response({"detail": "User deleted successfully"})
 
@@ -79,12 +77,12 @@ class ProfileViewSet(ModelViewSet):
     permission_classes = [IsAuthenticated]
     pagination_class = CustomPagination
 
-    # TODO: list, update and destroy just for admins
-    # def get_permissions(self):
-    #     if self.action == "list":  # list all the profile just for admin users
-    #         return [IsAdminUser()]
-    #     return [permission() for permission in self.permission_classes]
-
+    def get_permissions(self):
+        if (
+            self.action == "list" or self.action == "update" or self.action == "destroy"
+        ):  # list all the profile just for admin users
+            return [IsAdminUser()]
+        return [permission() for permission in self.permission_classes]
 
     def retrieve(self, request, pk=None):
         profile = models.Profile.objects.get(pk=pk)
@@ -100,7 +98,7 @@ class ProfileViewSet(ModelViewSet):
     @action(detail=False, methods=["post"], url_path=r"actions/create-profile")
     def create_profile(self, request):
         profile = request.user
-        
+
         def age(birthdate):
             today = date.today()
             age = (
@@ -244,7 +242,6 @@ class PhotoViewSet(ModelViewSet):
     def create(self, request):
         profile = request.user
         profile_photos = models.Photo.objects.filter(profile=profile.id)
-        # file = request.FILES.get("image")
 
         fields_serializer = serializers.PhotoSerializer(data=request.data)
         fields_serializer.is_valid(raise_exception=True)
@@ -265,7 +262,8 @@ class PhotoViewSet(ModelViewSet):
         photo = models.Photo.objects.get(pk=pk)
         fields_serializer = serializers.PhotoSerializer(data=request.data, partial=True)
         fields_serializer.is_valid(raise_exception=True)
-        photo.image = fields_serializer._validated_data["image"]
+        photo.image = fields_serializer.validated_data["image"]
+
         photo.save()
         serializer = serializers.PhotoSerializer(photo, many=False)
         return Response(serializer.data)
