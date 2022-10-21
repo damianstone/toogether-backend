@@ -3,7 +3,6 @@ from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.permissions import IsAuthenticated, IsAdminUser, AllowAny
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
-from django.contrib.auth import get_user_model
 from django.core.exceptions import ObjectDoesNotExist
 from api import models, serializers
 from service.core.pagination import CustomPagination

@@ -378,9 +378,15 @@ class SwipeModelViewSet(ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def list(self, request):
-        current_profile = models.Profile.objects.get(id=request.user.id)
+        current_profile = request.user
         profiles = models.Profile.objects.all().filter(has_account=True)
         groups = models.Group.objects.all()
+
+        if not current_profile.has_account or not current_profile.age:
+            return Response(
+                {"details": "You need an account to perform this action"},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
 
         # all the profiles by distance
         profiles_by_distance = profiles.filter(
