@@ -12,9 +12,6 @@ class GroupViewSet(ModelViewSet):
     serializer_class = serializers.GroupSerializer
     permission_classes = [IsAuthenticated]
 
-    # TODO: list by location using the swipe serializer
-    # TODO: in the group serializer get the total members of retun as a custom json
-
     def create(self, request):
         profile = request.user
         profile_has_group = models.Group.objects.filter(owner=profile.id).exists()

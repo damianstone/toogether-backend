@@ -127,6 +127,12 @@ def filter_groups(current_profile, groups):
     return show_groups
 
 
+def get_matched_profile(current_profile, match):
+    if current_profile.id == match.profile1.id:
+        return match.profile2
+    return match.profile1
+
+
 def check_two_profiles_have_match(profile1_id, profile2_id):
     current_matches = models.Match.objects.filter(
         Q(profile1=profile1_id) | Q(profile2=profile1_id)
@@ -177,7 +183,8 @@ def get_match(profile1_id, profile2_id):
     )
 
     if current_matches.filter(id__in=liked_matches).exists():
-        return current_matches.filter(id__in=liked_matches)
+        match = current_matches.filter(id__in=liked_matches)
+        return match[0]
 
     return False
 
@@ -255,7 +262,7 @@ def like_one_to_group(current_profile, liked_group):
         for member in members:
             if get_match(current_profile.id, member.id):
                 match = get_match(current_profile.id, member.id)
-                match_serializer = serializers.MatchSerializer(match[0], many=False)
+                match_serializer = serializers.MatchSerializer(match, many=False)
                 return Response(
                     {
                         "details": SAME_MATCH,
@@ -284,7 +291,7 @@ def like_group_to_one(current_profile, current_group, liked_profile):
         already_match = get_match(current_profile.id, liked_profile.id)
         # if there is already a match, recycle the previous match
         if already_match:
-            match = already_match[0]
+            match = already_match
             serializer = serializers.MatchSerializer(match, many=False)
             return Response(
                 {
@@ -355,7 +362,7 @@ def like_group_to_group(current_profile, current_group, liked_group):
         for member in members:
             if get_match(current_profile.id, member.id):
                 match = get_match(current_profile.id, member.id)
-                match_serializer = serializers.MatchSerializer(match[0], many=False)
+                match_serializer = serializers.MatchSerializer(match, many=False)
                 return Response(
                     {
                         "details": SAME_MATCH,
@@ -380,18 +387,6 @@ class SwipeModelViewSet(ModelViewSet):
             location__distance_lt=(current_profile.location, D(km=8))
         )
 
-        # TODO: whats wrong with this approach
-        # groups_by_distance = models.Group.objects.none()
-
-        # # get the groups that contain users in the distance ratio
-        # for profile in profiles_by_distance:
-        #     # check if the profile is in a group
-        #     if profile.member_group.all().exists():
-        #         # if at least one member is i the distance ratio add the group to the swipe
-        #         groups_by_distance = groups_by_distance.union(
-        #             profile.member_group.all(), all=True
-        #         )
-
         groups_by_distance = groups.filter(members__in=profiles_by_distance)
 
         # swipe filters
@@ -406,7 +401,7 @@ class SwipeModelViewSet(ModelViewSet):
         groups_serializer = serializers.SwipeGroupSerializer(show_groups, many=True)
 
         # show the groups first then the single profiles
-        data = groups_serializer.data + profiles_serializer.data
+        data = groups_serializer.data + profiles_serializer.data  # type: ignore
 
         # Custom respomse
         return Response(
@@ -421,7 +416,6 @@ class SwipeModelViewSet(ModelViewSet):
 
     def retrieve(self, request, pk=None):
         profile = models.Profile.objects.get(pk=pk)
-        # TODO: check if the user in group and return the group
         serializer = serializers.SwipeProfileSerializer(profile, many=False)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -503,8 +497,8 @@ class SwipeModelViewSet(ModelViewSet):
 
     @action(detail=False, methods=["get"], url_path=r"actions/get-likes")
     def list_likes(self, request):
-        # TODO: serialize in group
         current_profile = request.user
+        likes = current_profile.likes.all()
 
         # list of tuples with the two matched profiles ids
         current_matches_ids = models.Match.objects.filter(
@@ -512,11 +506,23 @@ class SwipeModelViewSet(ModelViewSet):
         ).values_list("profile1", "profile2")
 
         # going two the list and tuples to exclude the likes
-        for i in range(len(current_matches_ids)):
-            likes = current_profile.likes.all().exclude(id__in=current_matches_ids[i])
+        if len(current_matches_ids) > 0:
+            for i in range(len(current_matches_ids)):
+                likes = likes.exclude(id__in=current_matches_ids[i])
 
-        serializer = serializers.SwipeProfileSerializer(likes, many=True)
-        return Response({"count": likes.count(), "results": serializer.data})
+        profiles = []
+        groups = []
+
+        for like_profile in likes:
+            if like_profile.member_group.all().exists():
+                groups.append(like_profile.member_group.all()[0])
+            else:
+                profiles.append(like_profile)
+
+        groups_serializer = serializers.SwipeGroupSerializer(groups, many=True)
+        profiles_serializer = serializers.SwipeProfileSerializer(profiles, many=True)
+        data = groups_serializer.data + profiles_serializer.data
+        return Response({"count": likes.count(), "results": data})
 
 
 class MatchModelViewSet(ModelViewSet):
@@ -524,11 +530,15 @@ class MatchModelViewSet(ModelViewSet):
     serializer_class = serializers.MatchSerializer
     permission_classes = [IsAuthenticated]
 
-    # TODO: update, get and create just for admins
-    # def get_permissions(self):
-    #     if self.action == "list":
-    #         return [IsAdminUser()]
-    #     return [permission() for permission in self.permission_classes]
+    def get_permissions(self):
+        if (
+            self.action == "list"
+            or self.action == "get"
+            or self.action == "create"
+            or self.action == "update"
+        ):
+            return [IsAdminUser()]
+        return [permission() for permission in self.permission_classes]
 
     @action(detail=False, methods=["get"], url_path=r"actions/list-profile-matches")
     def list_profile_matches(self, request):
@@ -538,3 +548,20 @@ class MatchModelViewSet(ModelViewSet):
         )
         serializer = serializers.MatchSerializer(matches, many=True)
         return Response({"count": matches.count(), "data": serializer.data})
+
+    def destroy(self, request, pk=None):
+        current_profile = request.user
+
+        try:
+            match = models.Match.objects.get(pk=pk)
+        except ObjectDoesNotExist:
+            return Response(
+                {"details": "Match does not exist"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        matched_profile = get_matched_profile(current_profile, match)
+        matched_profile.likes.remove(current_profile)
+        current_profile.likes.remove(matched_profile)
+        match.delete()
+
+        return Response({"details": "Match deleted"}, status=status.HTTP_200_OK)
