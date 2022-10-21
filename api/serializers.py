@@ -13,7 +13,7 @@ class ChoicesField(serializers.Field):
     def to_representation(self, obj):
         if obj in self._choices:
             return self._choices[obj]
-        return obj  # TODO: return an error
+        return obj 
 
     def to_internal_value(self, data):
         if data in self._choices:
@@ -146,7 +146,6 @@ class MatchSerializer(serializers.ModelSerializer):
 
 
 # -------------------------- DATA ACTIONS SERIALIZERS -----------------------------
-# serializer that gonna be stored in the local storage
 class CreateProfileSerializer(serializers.Serializer):
     firstname = serializers.CharField(required=True, allow_null=False)
     lastname = serializers.CharField(required=True, allow_null=False)
