@@ -220,8 +220,6 @@ class ProfileViewSet(ModelViewSet):
 
 
 # ----------------------- PHOTOS VIEWS --------------------------------
-
-
 class PhotoViewSet(ModelViewSet):
     serializer_class = serializers.PhotoSerializer
     permission_classes = [IsAuthenticated]
@@ -262,6 +260,16 @@ class PhotoViewSet(ModelViewSet):
         photo = models.Photo.objects.get(pk=pk)
         fields_serializer = serializers.PhotoSerializer(data=request.data, partial=True)
         fields_serializer.is_valid(raise_exception=True)
+
+        # try:
+        #     photo.delete()
+        # except:
+        #     return Response(
+        #         {"details": "Error replacing image"},
+        #         status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        #     )
+            
+        
         photo.image = fields_serializer.validated_data["image"]
 
         photo.save()
