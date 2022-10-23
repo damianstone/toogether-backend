@@ -28,7 +28,7 @@ SECRET_KEY = "django-insecure-!htm_cu+s2g0c7wdk())m$3zk!u2ldj#9alx=a-n-&*uepr6-2
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["*", "127.0.0.1"]
+ALLOWED_HOSTS = ["*", "127.0.0.1", "http://api-env.eba-mgrapxiu.eu-west-1.elasticbeanstalk.com"]
 
 # cors headers
 CORS_ORIGIN_ALLOW_ALL = True

@@ -31,3 +31,7 @@ venv*
 #Images
 static*
 .static*
+# Elastic Beanstalk Files
+.elasticbeanstalk/*
+!.elasticbeanstalk/*.cfg.yml
+!.elasticbeanstalk/*.global.yml
