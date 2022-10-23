@@ -41,7 +41,7 @@ pathspec==0.9.0
 Pillow==8.0.1
 platformdirs==2.5.2
 # psycopg2==2.9.3
-# psycopg2-binary==2.9.3
+psycopg2-binary==2.9.3
 pycodestyle==2.9.1
 pycparser==2.21
 pyflakes==2.5.0
