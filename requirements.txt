@@ -4,7 +4,7 @@ awsebcli==3.20.3
 bcrypt==4.0.1
 black==22.6.0
 blessed==1.19.1
-boto3==1.24.95
+boto3==1.20.54
 botocore==1.23.54
 cached-property==1.5.2
 cement==2.8.2
