@@ -130,11 +130,10 @@ WSGI_APPLICATION = "service.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/4.0/ref/settings/#databases
 
-print("DB NAME -->", str(os.environ.get("LOCAL_DB_NAME")))
-print("DB NAME -->", os.environ.get("LOCAL_DB_USER"))
 print("DB NAME -->", os.environ.get("LOCAL_DB_HOST"))
-print("DB NAME -->", os.environ.get("AWS_DB_NAME"))
+print("DB HOST -->", os.environ.get("AWS_DB_HOST"))
 
+print("AWS -> ", 'AWS_DB_NAME' in os.environ)
 
 if 'AWS_DB_NAME' in os.environ:
     DATABASES = {
