@@ -57,3 +57,9 @@ such as creating the user, deleting it, and handling relevant information for Ad
 `Profile Modelview`
 these views cover all the actions that the user can do in their profile, 
 such as adding photos, updating information, blocking users, etc.
+
+
+# Deployment using Amazon Elastic Beanstalk
+1. python manage.py makemigrations
+2. python manage.py migrate
+3. python manage.py collectstatic
