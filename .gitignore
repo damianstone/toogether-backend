@@ -13,6 +13,7 @@ db.sqlite3
 
 # Environment Vars
 .env
+.env.production
 
 # Python cache
 .pytest_cache/

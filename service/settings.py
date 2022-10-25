@@ -132,17 +132,29 @@ print("DB NAME -->", os.environ.get("LOCAL_DB_USER"))
 print("DB NAME -->", os.environ.get("LOCAL_DB_HOST"))
 print("DB NAME -->", os.environ.get("LOCAL_DB_PORT"))
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.contrib.gis.db.backends.postgis",
-        "NAME": os.environ.get("LOCAL_DB_NAME"),
-        "USER": os.environ.get("LOCAL_DB_USER"),
-        "PASSWORD": os.environ.get("LOCAL_DB_PASSWORD"),
-        "HOST": os.environ.get("LOCAL_DB_HOST"),
-        "PORT": os.environ.get("LOCAL_DB_PORT"),
-    }
-}
 
+if 'RDS_DB_NAME' in os.environ:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql_psycopg2',
+            'NAME': os.environ['RDS_DB_NAME'],
+            'USER': os.environ['RDS_USERNAME'],
+            'PASSWORD': os.environ['RDS_PASSWORD'],
+            'HOST': os.environ['RDS_HOSTNAME'],
+            'PORT': os.environ['RDS_PORT'],
+        }
+    }
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.contrib.gis.db.backends.postgis",
+            "NAME": os.environ.get("LOCAL_DB_NAME"),
+            "USER": os.environ.get("LOCAL_DB_USER"),
+            "PASSWORD": os.environ.get("LOCAL_DB_PASSWORD"),
+            "HOST": os.environ.get("LOCAL_DB_HOST"),
+            "PORT": os.environ.get("LOCAL_DB_PORT"),
+        }
+    }
 
 
 # Password validation
