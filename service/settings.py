@@ -136,7 +136,7 @@ print("DB NAME -->", os.environ.get("AWS_DB_NAME"))
 if 'AWS_DB_NAME' in os.environ:
     DATABASES = {
         'default': {
-            'ENGINE': 'django.db.backends.postgresql_psycopg2',
+            'ENGINE': 'django.contrib.gis.db.backends.postgis',
             'NAME': os.environ.get("AWS_DB_NAME"),
             'USER': os.environ.get("AWS_DB_USER"),
             'PASSWORD': os.environ.get("AWS_DB_PASSWORD"),
