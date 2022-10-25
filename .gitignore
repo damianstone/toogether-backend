@@ -12,7 +12,8 @@ db.sqlite3
 .vscode/
 
 # Environment Vars
-.env
+.envs
+.env.dev
 .env.production
 
 # Python cache

@@ -130,18 +130,18 @@ WSGI_APPLICATION = "service.wsgi.application"
 print("DB NAME -->", str(os.environ.get("LOCAL_DB_NAME")))
 print("DB NAME -->", os.environ.get("LOCAL_DB_USER"))
 print("DB NAME -->", os.environ.get("LOCAL_DB_HOST"))
-print("DB NAME -->", os.environ.get("LOCAL_DB_PORT"))
+print("DB NAME -->", os.environ.get("AWS_DB_NAME"))
 
 
-if 'RDS_DB_NAME' in os.environ:
+if 'AWS_DB_NAME' in os.environ:
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql_psycopg2',
-            'NAME': os.environ['RDS_DB_NAME'],
-            'USER': os.environ['RDS_USERNAME'],
-            'PASSWORD': os.environ['RDS_PASSWORD'],
-            'HOST': os.environ['RDS_HOSTNAME'],
-            'PORT': os.environ['RDS_PORT'],
+            'NAME': os.environ.get("AWS_DB_NAME"),
+            'USER': os.environ.get("AWS_DB_USER"),
+            'PASSWORD': os.environ.get("AWS_DB_PASSWORD"),
+            'HOST': os.environ.get("AWS_DB_HOST"),
+            'PORT': os.environ.get("AWS_DB_PORT"),
         }
     }
 else:
