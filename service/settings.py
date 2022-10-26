@@ -36,10 +36,10 @@ DEBUG = False
 if DEBUG:
     ALLOWED_HOSTS = ["*", "127.0.0.1"]
 else:
-    ALLOWED_HOSTS = ['backend-env.eba-mgrapxiu.eu-west-1.elasticbeanstalk.com', '127.0.0.1', '172.31.40.98']
+    ALLOWED_HOSTS = ['backend-env.eba-mgrapxiu.eu-west-1.elasticbeanstalk.com', '127.0.0.1', '172.31.40.98', '127.0.0.1:8000']
 
 # cors headers
-CORS_ORIGIN_ALLOW_ALL = True
+CORS_ORIGIN_ALLOW_ALL = True 
 CORS_ALLOW_CREDENTIALS = True
 
 
