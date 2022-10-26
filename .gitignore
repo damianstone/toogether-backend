@@ -33,8 +33,7 @@ venv-backend
 .coverage
 
 #Images
-static*
-.static*
+
 # Elastic Beanstalk Files
 .elasticbeanstalk/*
 !.elasticbeanstalk/*.cfg.yml
