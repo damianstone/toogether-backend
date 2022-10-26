@@ -12,7 +12,8 @@ db.sqlite3
 .vscode/
 
 # Environment Vars
-.envs
+env
+.env
 .env.dev
 .env.production
 
