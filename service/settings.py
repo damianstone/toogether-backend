@@ -33,7 +33,8 @@ SECRET_KEY = "django-insecure-!htm_cu+s2g0c7wdk())m$3zk!u2ldj#9alx=a-n-&*uepr6-2
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-if DEBUG:
+# os environ come from the env variables of aws
+if os.environ["DEBUG"] == 1:
     ALLOWED_HOSTS = ["*", "127.0.0.1"]
 else:
     ALLOWED_HOSTS = ["backend-env.eba-mgrapxiu.eu-west-1.elasticbeanstalk.com"]
@@ -136,7 +137,7 @@ WSGI_APPLICATION = "service.wsgi.application"
 # https://docs.djangoproject.com/en/4.0/ref/settings/#databases
 
 print("DB NAME -->", os.environ.get("LOCAL_DB_HOST"))
-print("DB HOST -->", os.environ.get("AWS_DB_HOST"))
+print("DB HOST -->", os.environ["AWS_DB_HOST"])
 
 print("AWS -> ", "AWS_DB_NAME" in os.environ)
 
@@ -144,11 +145,11 @@ if "AWS_DB_NAME" in os.environ:
     DATABASES = {
         "default": {
             "ENGINE": "django.contrib.gis.db.backends.postgis",
-            "NAME": os.environ.get("AWS_DB_NAME"),
-            "USER": os.environ.get("AWS_DB_USER"),
-            "PASSWORD": os.environ.get("AWS_DB_PASSWORD"),
-            "HOST": os.environ.get("AWS_DB_HOST"),
-            "PORT": os.environ.get("AWS_DB_PORT"),
+            "NAME": os.environ["AWS_DB_NAME"],
+            "USER": os.environ["AWS_DB_USER"],
+            "PASSWORD": os.environ["AWS_DB_PASSWORD"],
+            "HOST": os.environ["AWS_DB_HOST"],
+            "PORT": os.environ["AWS_DB_PORT"],
         }
     }
 else:
