@@ -13,7 +13,7 @@ class ChoicesField(serializers.Field):
     def to_representation(self, obj):
         if obj in self._choices:
             return self._choices[obj]
-        return obj 
+        return obj
 
     def to_internal_value(self, data):
         if data in self._choices:

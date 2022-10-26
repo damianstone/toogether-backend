@@ -268,8 +268,7 @@ class PhotoViewSet(ModelViewSet):
         #         {"details": "Error replacing image"},
         #         status=status.HTTP_500_INTERNAL_SERVER_ERROR,
         #     )
-            
-        
+
         photo.image = fields_serializer.validated_data["image"]
 
         photo.save()

@@ -84,7 +84,7 @@ class Photo(models.Model):
     profile = models.ForeignKey(Profile, default=None, on_delete=models.CASCADE)
     image = models.ImageField(null=True, blank=True)
     created_at = models.DateTimeField(default=timezone.now)
-    
+
     def delete(self):
         self.image.delete(save=False)
         super().delete()

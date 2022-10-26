@@ -36,12 +36,12 @@ DEBUG = False
 if DEBUG:
     ALLOWED_HOSTS = ["*", "127.0.0.1"]
 else:
-    ALLOWED_HOSTS = ['backend-env.eba-mgrapxiu.eu-west-1.elasticbeanstalk.com', '127.0.0.1', '172.31.40.98', '127.0.0.1:8000']
+    ALLOWED_HOSTS = ["backend-env.eba-mgrapxiu.eu-west-1.elasticbeanstalk.com"]
 
 # cors headers
-CORS_ORIGIN_ALLOW_ALL = True 
+CORS_ORIGIN_ALLOW_ALL = True
 CORS_ALLOW_CREDENTIALS = True
-SECURE_CROSS_ORIGIN_OPENER_POLICY=None
+SECURE_CROSS_ORIGIN_OPENER_POLICY = None
 
 
 AUTH_USER_MODEL = "api.Profile"
@@ -138,17 +138,17 @@ WSGI_APPLICATION = "service.wsgi.application"
 print("DB NAME -->", os.environ.get("LOCAL_DB_HOST"))
 print("DB HOST -->", os.environ.get("AWS_DB_HOST"))
 
-print("AWS -> ", 'AWS_DB_NAME' in os.environ)
+print("AWS -> ", "AWS_DB_NAME" in os.environ)
 
-if 'AWS_DB_NAME' in os.environ:
+if "AWS_DB_NAME" in os.environ:
     DATABASES = {
-        'default': {
-            'ENGINE': 'django.contrib.gis.db.backends.postgis',
-            'NAME': os.environ.get("AWS_DB_NAME"),
-            'USER': os.environ.get("AWS_DB_USER"),
-            'PASSWORD': os.environ.get("AWS_DB_PASSWORD"),
-            'HOST': os.environ.get("AWS_DB_HOST"),
-            'PORT': os.environ.get("AWS_DB_PORT"),
+        "default": {
+            "ENGINE": "django.contrib.gis.db.backends.postgis",
+            "NAME": os.environ.get("AWS_DB_NAME"),
+            "USER": os.environ.get("AWS_DB_USER"),
+            "PASSWORD": os.environ.get("AWS_DB_PASSWORD"),
+            "HOST": os.environ.get("AWS_DB_HOST"),
+            "PORT": os.environ.get("AWS_DB_PORT"),
         }
     }
 else:
@@ -202,20 +202,18 @@ STATIC_URL = "/static/"
 MEDIA_URL = "/images/"
 
 if DEBUG:
-    STATICFILES_DIRS = [
-        os.path.join(BASE_DIR, 'static')
-    ]
+    STATICFILES_DIRS = [os.path.join(BASE_DIR, "static")]
 else:
-    STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+    STATIC_ROOT = os.path.join(BASE_DIR, "static")
 
 MEDIA_ROOT = "static/images"
 
-DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
 
-AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID')
-AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY')
+AWS_ACCESS_KEY_ID = os.environ.get("AWS_ACCESS_KEY_ID")
+AWS_SECRET_ACCESS_KEY = os.environ.get("AWS_SECRET_ACCESS_KEY")
 
-AWS_STORAGE_BUCKET_NAME = 'toogether-images'
+AWS_STORAGE_BUCKET_NAME = "toogether-images"
 AWS_QUERYSTRING_AUTH = False
 AWS_S3_FILE_OVERWRITE = True
 
