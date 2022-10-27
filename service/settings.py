@@ -38,8 +38,6 @@ if "PRODUCTION" in os.environ:
 
     ALLOWED_HOSTS = ["localhost", "mobile-api.toogether.app"]
     
-    SESSION_COOKIE_SECURE = False
-    CSRF_COOKIE_SECURE = False
 
     # CSRF_COOKIE_SECURE = True
     # SESSION_COOKIE_SECURE = True
@@ -48,6 +46,7 @@ if "PRODUCTION" in os.environ:
     CORS_ORIGIN_ALLOW_ALL = False
     CORS_ORIGIN_WHITELIST = ["https://mobile-api.toogether.app"]
     CORS_ALLOWED_ORIGINS = [
+        "toogether.app"
         "https://toogether.app",
         "https://mobile-api.toogether.app",
     ]
@@ -125,6 +124,7 @@ MIDDLEWARE = [
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     # "django.middleware.csrf.CsrfViewMiddleware",
+    "service.core.middle",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
