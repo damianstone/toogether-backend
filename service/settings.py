@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/4.0/ref/settings/
 """
 
 import os
+import platform
 from pathlib import Path
 from datetime import timedelta
 
@@ -22,17 +23,33 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.0/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-!htm_cu+s2g0c7wdk())m$3zk!u2ldj#9alx=a-n-&*uepr6-2"
-
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
-ALLOWED_HOSTS = ["*", "127.0.0.1"]
-
 # cors headers
-CORS_ORIGIN_ALLOW_ALL = True
 CORS_ALLOW_CREDENTIALS = True
+SECURE_CROSS_ORIGIN_OPENER_POLICY = None
+
+# os environ come from the env variables of aws
+if "PRODUCTION" in os.environ:
+    DEBUG = True
+
+    SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]
+
+    ALLOWED_HOSTS = ["localhost", "mobile-api.toogether.app"]
+
+    CORS_ORIGIN_ALLOW_ALL = False
+    CORS_ORIGIN_WHITELIST = ["https://mobile-api.toogether.app"]
+    CORS_ALLOWED_ORIGINS = [
+        "toogether.app"
+        "https://toogether.app",
+        "https://mobile-api.toogether.app",
+    ]
+
+else:
+    # Local config by defualt
+    DEBUG = True
+    ALLOWED_HOSTS = ["*", "127.0.0.1"]
+
+    CORS_ORIGIN_ALLOW_ALL = True
+    SECRET_KEY = "django-insecure-!htm_cu+s2g0c7wdk())m$3zk!u2ldj#9alx=a-n-&*uepr6-2"
 
 
 AUTH_USER_MODEL = "api.Profile"
@@ -55,9 +72,12 @@ INSTALLED_APPS = [
 ]
 
 REST_FRAMEWORK = {
-    "DEFAULT_AUTHENTICATION_CLASSES": (
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.AllowAny",
+    ],
+    "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework_simplejwt.authentication.JWTAuthentication",
-    ),
+    ],
     "DEFAULT_PAGINATION_CLASS": "service.core.pagination.CustomPagination",
 }
 
@@ -95,7 +115,8 @@ MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
-    "django.middleware.csrf.CsrfViewMiddleware",
+    # "django.middleware.csrf.CsrfViewMiddleware",
+    "service.core.middleware.DisableCSRFMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
@@ -126,21 +147,30 @@ WSGI_APPLICATION = "service.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/4.0/ref/settings/#databases
 
-print("DB NAME -->", str(os.environ.get("LOCAL_DB_NAME")))
-print("DB NAME -->", os.environ.get("LOCAL_DB_USER"))
-print("DB NAME -->", os.environ.get("LOCAL_DB_HOST"))
-print("DB NAME -->", os.environ.get("LOCAL_DB_PORT"))
+print("AWS -> ", "AWS_DB_NAME" in os.environ)
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.contrib.gis.db.backends.postgis",
-        "NAME": os.environ.get("LOCAL_DB_NAME"),
-        "USER": os.environ.get("LOCAL_DB_USER"),
-        "PASSWORD": os.environ.get("LOCAL_DB_PASSWORD"),
-        "HOST": os.environ.get("LOCAL_DB_HOST"),
-        "PORT": os.environ.get("LOCAL_DB_PORT"),
+if "AWS_DB_NAME" in os.environ:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.contrib.gis.db.backends.postgis",
+            "NAME": os.environ["AWS_DB_NAME"],
+            "USER": os.environ["AWS_DB_USER"],
+            "PASSWORD": os.environ["AWS_DB_PASSWORD"],
+            "HOST": os.environ["AWS_DB_HOST"],
+            "PORT": os.environ["AWS_DB_PORT"],
+        }
     }
-}
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.contrib.gis.db.backends.postgis",
+            "NAME": os.environ.get("LOCAL_DB_NAME"),
+            "USER": os.environ.get("LOCAL_DB_USER"),
+            "PASSWORD": os.environ.get("LOCAL_DB_PASSWORD"),
+            "HOST": os.environ.get("LOCAL_DB_HOST"),
+            "PORT": os.environ.get("LOCAL_DB_PORT"),
+        }
+    }
 
 
 # Password validation
@@ -177,20 +207,26 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.0/howto/static-files/
 
-STATIC_URL = "static/"
-
+STATIC_URL = "/static/"
 MEDIA_URL = "/images/"
 
-STATICFILES_DIRS = [BASE_DIR / "static"]
+if not "PRODUCTION" in os.environ:
+    STATICFILES_DIRS = [os.path.join(BASE_DIR, "static")]
+else:
+    STATIC_ROOT = os.path.join(BASE_DIR, "static")
 
 MEDIA_ROOT = "static/images"
 
-DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
 
-AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID')
-AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY')
+if "PRODUCTION" in os.environ:
+    AWS_ACCESS_KEY_ID = os.environ["AWS_ACCESS_KEY_ID"]
+    AWS_SECRET_ACCESS_KEY = os.environ["AWS_SECRET_ACCESS_KEY"]
+else:
+    AWS_ACCESS_KEY_ID = os.environ.get("AWS_ACCESS_KEY_ID")
+    AWS_SECRET_ACCESS_KEY = os.environ.get("AWS_SECRET_ACCESS_KEY")
 
-AWS_STORAGE_BUCKET_NAME = 'toogether-images'
+AWS_STORAGE_BUCKET_NAME = "toogether-images"
 AWS_QUERYSTRING_AUTH = False
 AWS_S3_FILE_OVERWRITE = True
 
@@ -198,6 +234,3 @@ AWS_S3_FILE_OVERWRITE = True
 # https://docs.djangoproject.com/en/4.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
-
-
-CORS_ALLOW_ALL_ORIGINS = True

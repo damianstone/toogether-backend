@@ -3,6 +3,7 @@ from rest_framework import routers
 from api.views import profile_views, group_views, swipe_views
 from rest_framework_simplejwt.views import TokenRefreshView
 
+# { "get": "list", "get": "retrieve", "post": "get": "get_blocked_profiles", "post": "create", "post": "create_profile", "post": "update_location", }
 
 router = routers.DefaultRouter()
 

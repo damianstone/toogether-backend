@@ -4,6 +4,7 @@ from rest_framework.permissions import IsAuthenticated, IsAdminUser, AllowAny
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 from django.core.exceptions import ObjectDoesNotExist
+from django.views.decorators.csrf import csrf_exempt
 from api import models, serializers
 from service.core.pagination import CustomPagination
 from django.contrib.auth.hashers import make_password
@@ -29,8 +30,10 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
 
 class MyTokenObtainPairView(TokenObtainPairView):
     serializer_class = MyTokenObtainPairSerializer
+    permission_classes = [AllowAny]
 
 
+@csrf_exempt
 @api_view(["POST"])
 @permission_classes([AllowAny])
 def registerUser(request):
@@ -54,6 +57,7 @@ def registerUser(request):
         return Response(message, status=status.HTTP_400_BAD_REQUEST)
 
 
+@csrf_exempt
 @api_view(["DELETE"])
 @permission_classes([IsAuthenticated])
 def deleteUser(request):
@@ -62,6 +66,7 @@ def deleteUser(request):
     return Response({"detail": "User deleted successfully"})
 
 
+@csrf_exempt
 @api_view(["GET"])
 @permission_classes([IsAdminUser])
 def getUsers(request):
@@ -268,8 +273,7 @@ class PhotoViewSet(ModelViewSet):
         #         {"details": "Error replacing image"},
         #         status=status.HTTP_500_INTERNAL_SERVER_ERROR,
         #     )
-            
-        
+
         photo.image = fields_serializer.validated_data["image"]
 
         photo.save()
