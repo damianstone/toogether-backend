@@ -32,14 +32,17 @@ SECRET_KEY = "django-insecure-!htm_cu+s2g0c7wdk())m$3zk!u2ldj#9alx=a-n-&*uepr6-2
 
 
 # os environ come from the env variables of aws
-print("DEBUG -> ", 'DEBUG' in os.environ)
 
-if "DEBUG" in os.environ:
-    print("DEBUG -> ", os.environ["DEBUG"])
+
+if "PRODUCTION" in os.environ:
     DEBUG = False
     ALLOWED_HOSTS = ["mobile-api.toogether.app"]
     CSRF_TRUSTED_ORIGINS = ["https://mobile-api.toogether.app"]
     CORS_ORIGIN_WHITELIST = ["https://mobile-api.toogether.app"]
+    CORS_ALLOWED_ORIGINS = [
+        "https://toogether.app",
+        "https://mobile-api.toogether.app",
+    ]
 else:
     DEBUG = True
     ALLOWED_HOSTS = ["*", "127.0.0.1"]
@@ -225,4 +228,3 @@ AWS_S3_FILE_OVERWRITE = True
 # https://docs.djangoproject.com/en/4.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
-
