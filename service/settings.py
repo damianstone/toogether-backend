@@ -30,7 +30,7 @@ SECURE_CROSS_ORIGIN_OPENER_POLICY = None
 
 # os environ come from the env variables of aws
 if "PRODUCTION" in os.environ:
-    DEBUG = True
+    DEBUG = False
     
     SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]
     
