@@ -37,7 +37,7 @@ router.register(
 )
 
 urlpatterns = [
-    path("token/", profile_views.getUsers.as_view(), name="token"),
+    path("token/", profile_views.getUsers, name="token"),
     path("token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
     path("users/", profile_views.getUsers, name="users"),
     path(
@@ -45,7 +45,7 @@ urlpatterns = [
         profile_views.MyTokenObtainPairView.as_view(),
         name="token_obtain_pair",
     ),
-    path("users/register/", profile_views.registerUser.as_view(), name="register"),
-    path("users/delete/", profile_views.deleteUser.as_view(), name="delete"),
+    path("users/register/", profile_views.registerUser, name="register"),
+    path("users/delete/", profile_views.deleteUser, name="delete"),
     path("", include(router.urls)),
 ]
