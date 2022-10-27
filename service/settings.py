@@ -38,6 +38,7 @@ if os.environ["DEBUG"] == 1:
     ALLOWED_HOSTS = ["*", "127.0.0.1"]
 else:
     ALLOWED_HOSTS = ["mobile-api.toogether.app"]
+    CSRF_TRUSTED_ORIGINS = ['https://mobile-api.toogether.app']
 
 # cors headers
 CORS_ORIGIN_ALLOW_ALL = True
