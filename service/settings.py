@@ -32,7 +32,7 @@ SECURE_CROSS_ORIGIN_OPENER_POLICY = None
 
 # os environ come from the env variables of aws
 if "PRODUCTION" in os.environ:
-    DEBUG = False
+    DEBUG = True
 
     SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]
 
@@ -218,7 +218,7 @@ USE_TZ = True
 STATIC_URL = "/static/"
 MEDIA_URL = "/images/"
 
-if DEBUG:
+if not "PRODUCTION" in os.environ:
     STATICFILES_DIRS = [os.path.join(BASE_DIR, "static")]
 else:
     STATIC_ROOT = os.path.join(BASE_DIR, "static")
