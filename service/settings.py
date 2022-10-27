@@ -15,6 +15,9 @@ import platform
 from pathlib import Path
 from datetime import timedelta
 
+# TODO: el probelma es que los cors solo dejan que las llamadas se hana desde la url que le puse
+# TODO: por lo que hay que permitir que tambien se puedan hacer desde postman 
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -37,7 +40,7 @@ if "PRODUCTION" in os.environ:
 
     # CSRF_COOKIE_SECURE = True
     # SESSION_COOKIE_SECURE = True
-    CSRF_TRUSTED_ORIGINS = ["https://mobile-api.toogether.app"]
+    # CSRF_TRUSTED_ORIGINS = ["https://mobile-api.toogether.app"]
 
     CORS_ORIGIN_ALLOW_ALL = False
     CORS_ORIGIN_WHITELIST = ["https://mobile-api.toogether.app"]
