@@ -388,12 +388,15 @@ class SwipeModelViewSet(ModelViewSet):
                 status=status.HTTP_401_UNAUTHORIZED,
             )
 
+        print("PRINT --> ", profiles_by_distance, groups_by_distance)
         # all the profiles by distance
         profiles_by_distance = profiles.filter(
             location__distance_lt=(current_profile.location, D(km=8))
         )
 
         groups_by_distance = groups.filter(members__in=profiles_by_distance)
+        
+        print("PRINT --> ", profiles_by_distance, groups_by_distance)
 
         # swipe filters
         show_profiles = filter_profiles(current_profile, profiles_by_distance)
