@@ -33,6 +33,8 @@ SECURE_CROSS_ORIGIN_OPENER_POLICY = None
 # os environ come from the env variables of aws
 if "PRODUCTION" in os.environ:
     DEBUG = False
+    
+    CSRF_COOKIE_SECURE = True
 
     SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]
 
@@ -48,7 +50,6 @@ if "PRODUCTION" in os.environ:
         "https://toogether.app",
         "https://mobile-api.toogether.app",
     ]
-    
     
 else:
     # Local config by defualt
