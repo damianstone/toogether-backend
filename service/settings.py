@@ -16,7 +16,6 @@ from pathlib import Path
 from datetime import timedelta
 
 
-
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -31,15 +30,15 @@ SECURE_CROSS_ORIGIN_OPENER_POLICY = None
 # os environ come from the env variables of aws
 if "PRODUCTION" in os.environ:
     DEBUG = False
-    
+
     SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]
-    
+
     ALLOWED_HOSTS = ["mobile-api.toogether.app"]
-        
+
     # CSRF_COOKIE_SECURE = True
     # SESSION_COOKIE_SECURE = True
     CSRF_TRUSTED_ORIGINS = ["https://mobile-api.toogether.app"]
-    
+
     CORS_ORIGIN_ALLOW_ALL = False
     CORS_ORIGIN_WHITELIST = ["https://mobile-api.toogether.app"]
     CORS_ALLOWED_ORIGINS = [
@@ -50,10 +49,9 @@ else:
     # Local config by defualt
     DEBUG = True
     ALLOWED_HOSTS = ["*", "127.0.0.1"]
-    
+
     CORS_ORIGIN_ALLOW_ALL = True
     SECRET_KEY = "django-insecure-!htm_cu+s2g0c7wdk())m$3zk!u2ldj#9alx=a-n-&*uepr6-2"
-    
 
 
 AUTH_USER_MODEL = "api.Profile"
@@ -76,9 +74,12 @@ INSTALLED_APPS = [
 ]
 
 REST_FRAMEWORK = {
-    "DEFAULT_AUTHENTICATION_CLASSES": (
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.AllowAny",
+    ],
+    "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework_simplejwt.authentication.JWTAuthentication",
-    ),
+    ],
     "DEFAULT_PAGINATION_CLASS": "service.core.pagination.CustomPagination",
 }
 
