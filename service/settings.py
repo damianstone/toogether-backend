@@ -15,9 +15,6 @@ import platform
 from pathlib import Path
 from datetime import timedelta
 
-# TODO: el probelma es que los cors solo dejan que las llamadas se hana desde la url que le puse
-# TODO: por lo que hay que permitir que tambien se puedan hacer desde postman
-
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -37,11 +34,6 @@ if "PRODUCTION" in os.environ:
     SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]
 
     ALLOWED_HOSTS = ["localhost", "mobile-api.toogether.app"]
-    
-
-    # CSRF_COOKIE_SECURE = True
-    # SESSION_COOKIE_SECURE = True
-    # CSRF_TRUSTED_ORIGINS = ["https://mobile-api.toogether.app"]
 
     CORS_ORIGIN_ALLOW_ALL = False
     CORS_ORIGIN_WHITELIST = ["https://mobile-api.toogether.app"]
@@ -227,8 +219,8 @@ MEDIA_ROOT = "static/images"
 
 DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
 
-AWS_ACCESS_KEY_ID = os.environ.get("AWS_ACCESS_KEY_ID")
-AWS_SECRET_ACCESS_KEY = os.environ.get("AWS_SECRET_ACCESS_KEY")
+AWS_ACCESS_KEY_ID = os.environ["AWS_ACCESS_KEY_ID"]
+AWS_SECRET_ACCESS_KEY = os.environ["AWS_SECRET_ACCESS_KEY"]
 
 AWS_STORAGE_BUCKET_NAME = "toogether-images"
 AWS_QUERYSTRING_AUTH = False
