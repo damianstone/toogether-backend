@@ -32,7 +32,7 @@ SECRET_KEY = "django-insecure-!htm_cu+s2g0c7wdk())m$3zk!u2ldj#9alx=a-n-&*uepr6-2
 
 
 # os environ come from the env variables of aws
-if os.environ["DEBUG"] == 1:
+if 'DEBUG' in os.environ:
     DEBUG = False
     ALLOWED_HOSTS = ["mobile-api.toogether.app"]
     CSRF_TRUSTED_ORIGINS = ["https://mobile-api.toogether.app"]
@@ -138,9 +138,6 @@ WSGI_APPLICATION = "service.wsgi.application"
 
 # Database
 # https://docs.djangoproject.com/en/4.0/ref/settings/#databases
-
-print("DB NAME -->", os.environ.get("LOCAL_DB_HOST"))
-print("DB HOST -->", os.environ["AWS_DB_HOST"])
 
 print("AWS -> ", "AWS_DB_NAME" in os.environ)
 
