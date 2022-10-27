@@ -37,6 +37,9 @@ if "PRODUCTION" in os.environ:
     SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]
 
     ALLOWED_HOSTS = ["localhost", "mobile-api.toogether.app"]
+    
+    SESSION_COOKIE_SECURE = False
+    CSRF_COOKIE_SECURE = False
 
     # CSRF_COOKIE_SECURE = True
     # SESSION_COOKIE_SECURE = True
