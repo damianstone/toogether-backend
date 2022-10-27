@@ -32,7 +32,10 @@ SECRET_KEY = "django-insecure-!htm_cu+s2g0c7wdk())m$3zk!u2ldj#9alx=a-n-&*uepr6-2
 
 
 # os environ come from the env variables of aws
-if 'DEBUG' in os.environ:
+print("DEBUG -> ", 'DEBUG' in os.environ)
+
+if "DEBUG" in os.environ:
+    print("DEBUG -> ", os.environ["DEBUG"])
     DEBUG = False
     ALLOWED_HOSTS = ["mobile-api.toogether.app"]
     CSRF_TRUSTED_ORIGINS = ["https://mobile-api.toogether.app"]
