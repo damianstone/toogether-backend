@@ -205,10 +205,10 @@ USE_TZ = True
 STATIC_URL = "/static/"
 MEDIA_URL = "/images/"
 
-if os.environ["DEBUG"] == 1:
-    STATIC_ROOT = os.path.join(BASE_DIR, "static")
-else:
+if DEBUG:
     STATICFILES_DIRS = [os.path.join(BASE_DIR, "static")]
+else:
+    STATIC_ROOT = os.path.join(BASE_DIR, "static")
 
 MEDIA_ROOT = "static/images"
 
@@ -226,5 +226,3 @@ AWS_S3_FILE_OVERWRITE = True
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-
-CORS_ALLOW_ALL_ORIGINS = True
