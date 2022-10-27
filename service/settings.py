@@ -36,8 +36,8 @@ if "PRODUCTION" in os.environ:
     
     ALLOWED_HOSTS = ["mobile-api.toogether.app"]
         
-    CSRF_COOKIE_SECURE = True
-    SESSION_COOKIE_SECURE = True
+    # CSRF_COOKIE_SECURE = True
+    # SESSION_COOKIE_SECURE = True
     CSRF_TRUSTED_ORIGINS = ["https://mobile-api.toogether.app"]
     
     CORS_ORIGIN_ALLOW_ALL = False
