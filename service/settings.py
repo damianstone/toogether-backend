@@ -48,6 +48,8 @@ if "PRODUCTION" in os.environ:
         "https://toogether.app",
         "https://mobile-api.toogether.app",
     ]
+    
+    
 else:
     # Local config by defualt
     DEBUG = True

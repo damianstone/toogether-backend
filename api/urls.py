@@ -8,31 +8,31 @@ router = routers.DefaultRouter()
 
 router.register(
     r"profiles",
-    profile_views.ProfileViewSet,
+    profile_views.ProfileViewSet.as_view(),
     basename="profile",
 )
 
 router.register(
     r"photos",
-    profile_views.PhotoViewSet,
+    profile_views.PhotoViewSet.as_view(),
     basename="photo",
 )
 
 router.register(
     r"groups",
-    group_views.GroupViewSet,
+    group_views.GroupViewSet.as_view(),
     basename="group",
 )
 
 router.register(
     r"swipe",
-    swipe_views.SwipeModelViewSet,
+    swipe_views.SwipeModelViewSet.as_view(),
     basename="swipe",
 )
 
 router.register(
     r"matches",
-    swipe_views.MatchModelViewSet,
+    swipe_views.MatchModelViewSet.as_view(),
     basename="match",
 )
 
