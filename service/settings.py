@@ -16,7 +16,7 @@ from pathlib import Path
 from datetime import timedelta
 
 # TODO: el probelma es que los cors solo dejan que las llamadas se hana desde la url que le puse
-# TODO: por lo que hay que permitir que tambien se puedan hacer desde postman 
+# TODO: por lo que hay que permitir que tambien se puedan hacer desde postman
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -33,12 +33,10 @@ SECURE_CROSS_ORIGIN_OPENER_POLICY = None
 # os environ come from the env variables of aws
 if "PRODUCTION" in os.environ:
     DEBUG = False
-    
-    CSRF_COOKIE_SECURE = True
 
     SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]
 
-    ALLOWED_HOSTS = ["mobile-api.toogether.app"]
+    ALLOWED_HOSTS = ["localhost", "mobile-api.toogether.app"]
 
     # CSRF_COOKIE_SECURE = True
     # SESSION_COOKIE_SECURE = True
@@ -50,7 +48,7 @@ if "PRODUCTION" in os.environ:
         "https://toogether.app",
         "https://mobile-api.toogether.app",
     ]
-    
+
 else:
     # Local config by defualt
     DEBUG = True
@@ -119,7 +117,6 @@ SIMPLE_JWT = {
 }
 
 MIDDLEWARE = [
-    "service.core.disable.DisableCSRF",
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
