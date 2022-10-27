@@ -9,7 +9,7 @@ router = routers.DefaultRouter()
 
 router.register(
     r"profiles",
-    profile_views.ProfileViewSet.as_view(),
+    profile_views.ProfileViewSet,
     basename="profile",
 )
 
