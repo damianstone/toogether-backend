@@ -387,8 +387,7 @@ class SwipeModelViewSet(ModelViewSet):
                 {"details": "You need an account to perform this action"},
                 status=status.HTTP_401_UNAUTHORIZED,
             )
-
-        print("PRINT --> ", profiles_by_distance, groups_by_distance)
+            
         # all the profiles by distance
         profiles_by_distance = profiles.filter(
             location__distance_lt=(current_profile.location, D(km=8))
