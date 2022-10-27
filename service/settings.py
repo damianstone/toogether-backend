@@ -119,6 +119,7 @@ SIMPLE_JWT = {
 }
 
 MIDDLEWARE = [
+    "service.disable.DisableCSRF",
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
