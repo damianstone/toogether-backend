@@ -16,9 +16,6 @@ from pathlib import Path
 from datetime import timedelta
 
 
-# GDAL_LIBRARY_PATH = '/opt/homebrew/opt/gdal/lib/libgdal.dylib'
-# GEOS_LIBRARY_PATH = '/opt/homebrew/opt/geos/lib/libgeos_c.dylib'
-
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -27,31 +24,35 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.0/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-!htm_cu+s2g0c7wdk())m$3zk!u2ldj#9alx=a-n-&*uepr6-2"
-
+# cors headers
+CORS_ALLOW_CREDENTIALS = True
+SECURE_CROSS_ORIGIN_OPENER_POLICY = None
 
 # os environ come from the env variables of aws
-
-
 if "PRODUCTION" in os.environ:
     DEBUG = False
+    
+    SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]
+    
     ALLOWED_HOSTS = ["mobile-api.toogether.app"]
+        
+    CSRF_COOKIE_SECURE = True
     CSRF_TRUSTED_ORIGINS = ["https://mobile-api.toogether.app"]
+    
+    CORS_ORIGIN_ALLOW_ALL = False
     CORS_ORIGIN_WHITELIST = ["https://mobile-api.toogether.app"]
     CORS_ALLOWED_ORIGINS = [
         "https://toogether.app",
         "https://mobile-api.toogether.app",
     ]
 else:
+    # Local config by defualt
     DEBUG = True
     ALLOWED_HOSTS = ["*", "127.0.0.1"]
+    
     CORS_ORIGIN_ALLOW_ALL = True
-
-
-# cors headers
-CORS_ALLOW_CREDENTIALS = True
-SECURE_CROSS_ORIGIN_OPENER_POLICY = None
+    SECRET_KEY = "django-insecure-!htm_cu+s2g0c7wdk())m$3zk!u2ldj#9alx=a-n-&*uepr6-2"
+    
 
 
 AUTH_USER_MODEL = "api.Profile"
