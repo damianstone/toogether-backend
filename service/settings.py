@@ -30,18 +30,20 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = "django-insecure-!htm_cu+s2g0c7wdk())m$3zk!u2ldj#9alx=a-n-&*uepr6-2"
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
 
 # os environ come from the env variables of aws
 if os.environ["DEBUG"] == 1:
-    ALLOWED_HOSTS = ["*", "127.0.0.1"]
-else:
+    DEBUG = False
     ALLOWED_HOSTS = ["mobile-api.toogether.app"]
-    CSRF_TRUSTED_ORIGINS = ['https://mobile-api.toogether.app']
+    CSRF_TRUSTED_ORIGINS = ["https://mobile-api.toogether.app"]
+    CORS_ORIGIN_WHITELIST = ["https://mobile-api.toogether.app"]
+else:
+    DEBUG = True
+    ALLOWED_HOSTS = ["*", "127.0.0.1"]
+    CORS_ORIGIN_ALLOW_ALL = True
+
 
 # cors headers
-CORS_ORIGIN_ALLOW_ALL = True
 CORS_ALLOW_CREDENTIALS = True
 SECURE_CROSS_ORIGIN_OPENER_POLICY = None
 
