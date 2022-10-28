@@ -65,3 +65,6 @@ such as adding photos, updating information, blocking users, etc.
 ```bash
 eb deploy
 ```
+
+### After deployment
+Delete all the folders and files inside the `static`, this is because when the code is deployed, the static files are automatically collected, but, in order to keep the repository clean and without "cache", those files must be deleted once the deployment is successful.
