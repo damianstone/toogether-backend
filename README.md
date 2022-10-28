@@ -60,6 +60,11 @@ such as adding photos, updating information, blocking users, etc.
 
 
 # Deployment using Amazon Elastic Beanstalk
-1. python manage.py makemigrations
-2. python manage.py migrate
-3. python manage.py collectstatic
+
+### Deploy using EB CLI
+```bash
+eb deploy
+```
+
+### After deployment
+Delete all the folders and files inside the `static`, this is because when the code is deployed, the static files are automatically collected, but, in order to keep the repository clean and without "cache", those files must be deleted once the deployment is successful.
