@@ -60,6 +60,8 @@ such as adding photos, updating information, blocking users, etc.
 
 
 # Deployment using Amazon Elastic Beanstalk
-1. python manage.py makemigrations
-2. python manage.py migrate
-3. python manage.py collectstatic
+
+### Deploy using EB CLI
+```bash
+eb deploy
+```
