@@ -29,7 +29,6 @@ SECURE_CROSS_ORIGIN_OPENER_POLICY = None
 
 # os environ come from the env variables of aws
 if "PRODUCTION" in os.environ:
-    GDAL_LIBRARY_PATH = r'C:\OSGeo4W64\bin\gdal300'
     
     DEBUG = False
 
