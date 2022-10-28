@@ -82,20 +82,23 @@ class ProfileViewSet(ModelViewSet):
     permission_classes = [IsAuthenticated]
     pagination_class = CustomPagination
 
+    # admin actions for this model view set
     def get_permissions(self):
         if (
             self.action == "list" or self.action == "update" or self.action == "destroy"
-        ):  # list all the profile just for admin users
+        ):
             return [IsAdminUser()]
         return [permission() for permission in self.permission_classes]
 
     def retrieve(self, request, pk=None):
         profile = models.Profile.objects.get(pk=pk)
-        # if profile.id != request.user.id:
-        #     return Response(
-        #         {"detail": "Not autherized",},
-        #         status=status.HTTP_401_UNAUTHORIZED,
-        #     )
+        
+        # only the current user and an admin can execute this function
+        if profile.id != request.user.id and not profile.is_superuser:
+            return Response(
+                {"detail": "Not autherized",},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
 
         serializer = serializers.ProfileSerializer(profile, many=False)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -265,22 +268,12 @@ class PhotoViewSet(ModelViewSet):
         photo = models.Photo.objects.get(pk=pk)
         fields_serializer = serializers.PhotoSerializer(data=request.data, partial=True)
         fields_serializer.is_valid(raise_exception=True)
-
-        # try:
-        #     photo.delete()
-        # except:
-        #     return Response(
-        #         {"details": "Error replacing image"},
-        #         status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        #     )
-
         photo.image = fields_serializer.validated_data["image"]
 
         photo.save()
         serializer = serializers.PhotoSerializer(photo, many=False)
         return Response(serializer.data)
 
-    # TODO: delete from the static folder as well
     def destroy(self, request, pk):
         photo = models.Photo.objects.get(pk=pk)
         photo.delete()

@@ -390,7 +390,7 @@ class SwipeModelViewSet(ModelViewSet):
 
         if current_profile.location == None:
             return Response(
-                {"details": "You need an account to perform this action"},
+                {"details": "You need to set your current location to perform this action"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -545,7 +545,7 @@ class MatchModelViewSet(ModelViewSet):
     def get_permissions(self):
         if (
             self.action == "list"
-            or self.action == "get"
+            or self.action == "retrieve"
             or self.action == "create"
             or self.action == "update"
         ):
