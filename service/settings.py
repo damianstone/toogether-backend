@@ -33,7 +33,7 @@ if "PRODUCTION" in os.environ:
 
     SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]
 
-    ALLOWED_HOSTS = ["localhost", "mobile-api.toogether.app"]
+    ALLOWED_HOSTS = ["mobile-api.toogether.app"]
 
     CORS_ORIGIN_ALLOW_ALL = False
     CORS_ORIGIN_WHITELIST = ["https://mobile-api.toogether.app"]
