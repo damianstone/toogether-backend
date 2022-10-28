@@ -141,3 +141,8 @@ cd gdal-3.2.1
 sudo make
 sudo make install
 
+
+
+    LD_LIBRARY_PATH: /usr/local/lib:$LD_LIBRARY_PATH
+    GDAL_LIBRARY_PATH: /usr/local/gdal/lib/libgdal.so
+    PROJ_LIB: usr/local/proj
