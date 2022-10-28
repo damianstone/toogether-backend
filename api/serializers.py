@@ -52,11 +52,11 @@ class ProfileSerializer(serializers.ModelSerializer):
             "groups",
             "password",
             "last_login",
-            "is_superuser",
             "is_staff",
             "is_active",
         ]
 
+    # refresh the token everytime the user is called
     def get_token(self, obj):
         token = RefreshToken.for_user(obj)
         return str(token.access_token)
