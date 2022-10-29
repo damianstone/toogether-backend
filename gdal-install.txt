@@ -132,17 +132,60 @@ files:
 
  ------------ THE ONE THATS WORKS ------------------------------------------------
 
-# GDAL
-cd /tmp
-wget https://github.com/OSGeo/gdal/releases/download/v3.2.1/gdal-3.2.1.tar.gz
-tar -xvf gdal-3.2.1.tar.gz
-cd gdal-3.2.1
-./configure --with-proj=/usr/local --with-python
-sudo make
-sudo make install
+commands:
+  01_install_gdal:
+    test: "[ ! -d /usr/local/gdal ]"
+    command: "/tmp/gdal_install.sh"
 
+files:
+  "/tmp/gdal_install.sh":
+    mode: "000755"
+    owner: root
+    group: root
+    content: |
+      #!/usr/bin/env bash
+      sudo yum-config-manager --enable epel
+      sudo yum -y install make automake gcc gcc-c++ libcurl-devel proj-devel geos-devel 
 
+      # Geos
+      cd /
+      sudo mkdir -p /usr/local/geos
+      cd usr/local/geos/geos-3.7.2
+      sudo wget geos-3.7.2.tar.bz2 http://download.osgeo.org/geos/geos-3.7.2.tar.bz2
+      sudo tar -xvf geos-3.7.2.tar.bz2
+      cd geos-3.7.2
+      sudo ./configure
+      sudo make
+      sudo make install
+      sudo ldconfig
 
+      # Proj4
+      cd /
+      sudo mkdir -p /usr/local/proj
+      cd usr/local/proj
+      sudo wget -O proj-5.2.0.tar.gz http://download.osgeo.org/proj/proj-5.2.0.tar.gz
+      sudo wget -O proj-datumgrid-1.8.tar.gz http://download.osgeo.org/proj/proj-datumgrid-1.8.tar.gz
+      sudo tar xvf proj-5.2.0.tar.gz
+      sudo tar xvf proj-datumgrid-1.8.tar.gz
+      cd proj-5.2.0
+      sudo ./configure
+      sudo make
+      sudo make install
+      sudo ldconfig
+
+      # GDAL
+      cd /
+      sudo mkdir -p /usr/local/gdal
+      cd usr/local/gdal
+      sudo wget -O gdal-3.5.1.tar.gz https://download.osgeo.org/gdal/3.5.1/gdal-3.5.1.tar.gz
+      sudo tar xvf gdal-3.5.1.tar.gz
+      cd gdal-3.5.1
+      sudo ./configure
+      sudo make
+      sudo make install
+      sudo ldconfig
+
+option_settings:
+  aws:elasticbeanstalk:application:environment:
     LD_LIBRARY_PATH: /usr/local/lib:$LD_LIBRARY_PATH
-    GDAL_LIBRARY_PATH: /usr/local/gdal/lib/libgdal.so
     PROJ_LIB: usr/local/proj
