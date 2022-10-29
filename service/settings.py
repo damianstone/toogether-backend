@@ -26,7 +26,6 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # cors headers
 CORS_ALLOW_CREDENTIALS = True
 SECURE_CROSS_ORIGIN_OPENER_POLICY = None
-GDAL_LIBRARY_PATH = '/usr/local/gdal/lib/libgdal.so'
 
 # os environ come from the env variables of aws
 if "PRODUCTION" in os.environ:
