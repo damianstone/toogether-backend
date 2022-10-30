@@ -35,7 +35,7 @@ if "PRODUCTION" in os.environ:
 
     DEBUG = False
     
-    GDAL_LIBRARY_PATH = os.environ["GDAL_LIBRARY_PATH"]
+    GDAL_LIBRARY_PATH = os.environ["LD_LIBRARY_PATH"]
 
     SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]
 
