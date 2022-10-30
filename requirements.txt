@@ -30,7 +30,7 @@ docopt==0.6.2
 flake8==5.0.4
 flake8-black==0.3.3
 future==0.16.0
-GDAL==3.3.0
+GDAL==3.5.2
 gunicorn==20.1.0
 idna==3.4
 jmespath==0.10.0
