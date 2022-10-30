@@ -41,18 +41,18 @@ if "PRODUCTION" in os.environ:
 
     ALLOWED_HOSTS = [
         "mobile-api.toogether.app",
-        "mobile-api-env.eba-mgrapxiu.eu-west-1.elasticbeanstalk.com",
+        "toogether.eu-west-1.elasticbeanstalk.com",
     ]
 
     CORS_ORIGIN_ALLOW_ALL = False
     CORS_ORIGIN_WHITELIST = [
         "https://mobile-api.toogether.app",
-        "http://mobile-api-env.eba-mgrapxiu.eu-west-1.elasticbeanstalk.com",
+        "http://toogether.eu-west-1.elasticbeanstalk.com",
     ]
     CORS_ALLOWED_ORIGINS = [
         "https://toogether.app",
         "https://mobile-api.toogether.app",
-        "http://mobile-api-env.eba-mgrapxiu.eu-west-1.elasticbeanstalk.com",
+        "http://toogether.eu-west-1.elasticbeanstalk.com",
     ]
 
 else:
