@@ -49,7 +49,7 @@ if "PRODUCTION" in os.environ:
         "http://mobile-api-env.eba-mgrapxiu.eu-west-1.elasticbeanstalk.com",
     ]
     CORS_ALLOWED_ORIGINS = [
-        "toogether.app", "https://toogether.app",
+        "https://toogether.app",
         "https://mobile-api.toogether.app",
         "http://mobile-api-env.eba-mgrapxiu.eu-west-1.elasticbeanstalk.com",
     ]
