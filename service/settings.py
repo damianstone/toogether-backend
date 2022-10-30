@@ -31,10 +31,11 @@ SECURE_CROSS_ORIGIN_OPENER_POLICY = None
 if "PRODUCTION" in os.environ:
 
     # GDAL_LIBRARY_PATH = '/usr/local/lib/libgdal.dylib'
-    # GDAL_LIBRARY_PATH = '/usr/local/lib/libgdal.dylib'
     # GEOS_LIBRARY_PATH = '/usr/local/lib/libgeos_c.dylib'
 
     DEBUG = False
+    
+    GDAL_LIBRARY_PATH = os.environ["GDAL_LIBRARY_PATH"]
 
     SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]
 
