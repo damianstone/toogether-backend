@@ -31,8 +31,8 @@ SECURE_CROSS_ORIGIN_OPENER_POLICY = None
 if "PRODUCTION" in os.environ:
 
     # GDAL_LIBRARY_PATH = '/usr/local/lib/libgdal.dylib'
-    GDAL_LIBRARY_PATH = '/opt/homebrew/opt/gdal/lib/libgdal.dylib'
-    GEOS_LIBRARY_PATH = '/opt/homebrew/opt/geos/lib/libgeos_c.dylib'
+    GDAL_LIBRARY_PATH = '/usr/local/lib/libgdal.dylib'
+    GEOS_LIBRARY_PATH = '/usr/local/lib/libgeos_c.dylib'
 
     DEBUG = False
 
@@ -40,18 +40,18 @@ if "PRODUCTION" in os.environ:
 
     ALLOWED_HOSTS = [
         "mobile-api.toogether.app",
-        "mobile-api-env.eba-mgrapxiu.eu-west-1.elasticbeanstalk.com/",
+        "mobile-api-env.eba-mgrapxiu.eu-west-1.elasticbeanstalk.com",
     ]
 
     CORS_ORIGIN_ALLOW_ALL = False
     CORS_ORIGIN_WHITELIST = [
         "https://mobile-api.toogether.app",
-        "http://mobile-api-env.eba-mgrapxiu.eu-west-1.elasticbeanstalk.com/",
+        "http://mobile-api-env.eba-mgrapxiu.eu-west-1.elasticbeanstalk.com",
     ]
     CORS_ALLOWED_ORIGINS = [
-        "toogether.app" "https://toogether.app",
+        "toogether.app", "https://toogether.app",
         "https://mobile-api.toogether.app",
-        "http://mobile-api-env.eba-mgrapxiu.eu-west-1.elasticbeanstalk.com/",
+        "http://mobile-api-env.eba-mgrapxiu.eu-west-1.elasticbeanstalk.com",
     ]
 
 else:
