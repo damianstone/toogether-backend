@@ -33,7 +33,7 @@ if "PRODUCTION" in os.environ:
 
     SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]
 
-    ALLOWED_HOSTS = ["mobile-api.toogether.app"]
+    ALLOWED_HOSTS = ["*", "mobile-api.toogether.app", "https://toogether-api.herokuapp.com"]
 
     CORS_ORIGIN_ALLOW_ALL = False
     CORS_ORIGIN_WHITELIST = ["https://mobile-api.toogether.app"]
@@ -113,6 +113,7 @@ SIMPLE_JWT = {
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     # "django.middleware.csrf.CsrfViewMiddleware",
@@ -218,6 +219,7 @@ else:
 MEDIA_ROOT = "static/images"
 
 DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 if "PRODUCTION" in os.environ:
     AWS_ACCESS_KEY_ID = os.environ["AWS_ACCESS_KEY_ID"]
