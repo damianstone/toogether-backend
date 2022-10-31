@@ -84,19 +84,19 @@ class ProfileViewSet(ModelViewSet):
 
     # admin actions for this model view set
     def get_permissions(self):
-        if (
-            self.action == "list" or self.action == "update" or self.action == "destroy"
-        ):
+        if self.action == "list" or self.action == "update" or self.action == "destroy":
             return [IsAdminUser()]
         return [permission() for permission in self.permission_classes]
 
     def retrieve(self, request, pk=None):
         profile = models.Profile.objects.get(pk=pk)
-        
+
         # only the current user and an admin can execute this function
         if profile.id != request.user.id and not profile.is_superuser:
             return Response(
-                {"detail": "Not autherized",},
+                {
+                    "detail": "Not autherized",
+                },
                 status=status.HTTP_401_UNAUTHORIZED,
             )
 

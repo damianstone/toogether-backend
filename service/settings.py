@@ -33,14 +33,12 @@ if "PRODUCTION" in os.environ:
 
     SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]
 
-    ALLOWED_HOSTS = ["*", "mobile-api.toogether.app", "https://toogether-api.herokuapp.com"]
+    ALLOWED_HOSTS = ["mobile-api.toogether.app"]
 
     CORS_ORIGIN_ALLOW_ALL = False
     CORS_ORIGIN_WHITELIST = ["https://mobile-api.toogether.app"]
     CORS_ALLOWED_ORIGINS = [
-        "toogether.app"
-        "https://toogether.app",
-        "https://mobile-api.toogether.app",
+        "toogether.app" "https://mobile-api.toogether.app",
     ]
 
 else:

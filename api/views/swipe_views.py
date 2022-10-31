@@ -390,7 +390,9 @@ class SwipeModelViewSet(ModelViewSet):
 
         if current_profile.location == None:
             return Response(
-                {"details": "You need to set your current location to perform this action"},
+                {
+                    "details": "You need to set your current location to perform this action"
+                },
                 status=status.HTTP_400_BAD_REQUEST,
             )
 

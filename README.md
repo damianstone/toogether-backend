@@ -58,6 +58,75 @@ such as creating the user, deleting it, and handling relevant information for Ad
 these views cover all the actions that the user can do in their profile, 
 such as adding photos, updating information, blocking users, etc.
 
+# Deployment with Heroku
+
+### Buildpakcs information
+Geolocation: GDAL, Geos and PROJ: https://github.com/heroku/heroku-geo-buildpack
+
+
+### Install Heroku CLI
+Using the following link: https://devcenter.heroku.com/articles/heroku-cli
+
+Login and check the apps
+```bash
+heroku login
+heroku apps
+```
+
+### Update .env
+Update .env with the production database variables
+
+```
+PRODUCTION=1
+DJANGO_SECRET_KEY="django-insecure-!htm_cu+s2g0c7wdk())m$3zk!u2ldj#9alx=a-n-&*uepr6-2"
+
+AWS_DB_HOST=toogether-db.cqdgwin85ctd.eu-west-1.rds.amazonaws.com
+AWS_DB_NAME=postgres
+AWS_DB_PASSWORD=PrograToorxs2008
+AWS_DB_PORT=5432
+AWS_DB_USER=toorxs2008
+```
+
+### Before deploy
+From the heroku branch run the following
+```bash
+python mangage.py makemigrations
+python manage.py migrate
+python manage.py collectstatic
+```
+
+In order to use the last builpacks of GDAL and Geos, make sure you do not have set BUILD_WITH_GEO_LIBRARIES
+
+If you do, run the following command
+```bash
+heroku config:unset BUILD_WITH_GEO_LIBRARIES --app toogether-api
+```
+
+Besides, as we are collecting then static files manually, we need to disable the auto coollect static 
+```bash
+heroku config:set DISABLE_COLLECTSTATIC=1 --app toogether-api
+```
+
+### Push the latest changes 
+```bash
+git push heroku
+```
+
+### Manual deploy in Heroku
+
+
+### After deployment
+Delete all the folders and files inside the `static`, this is because when the code is deployed, 
+the static files are automatically collected, but, in order to keep the repository clean and without 
+"cache", those files must be deleted once the deployment is successful.
+
+### Troubleshooting
+To check the logs 
+```bash
+heroku logs --tail --app toogether-api
+```
+
+
 
 # Deployment using Amazon Elastic Beanstalk
 
@@ -67,4 +136,6 @@ eb deploy
 ```
 
 ### After deployment
-Delete all the folders and files inside the `static`, this is because when the code is deployed, the static files are automatically collected, but, in order to keep the repository clean and without "cache", those files must be deleted once the deployment is successful.
+Delete all the folders and files inside the `static`, this is because when the code is deployed, 
+the static files are automatically collected, but, in order to keep the repository clean and without 
+"cache", those files must be deleted once the deployment is successful.
