@@ -40,6 +40,9 @@ if "PRODUCTION" in os.environ:
     CORS_ALLOWED_ORIGINS = [
         "toogether.app" "https://mobile-api.toogether.app",
     ]
+    
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    SECURE_SSL_REDIRECT = True
 
 else:
     # Local config by defualt
@@ -47,7 +50,7 @@ else:
     ALLOWED_HOSTS = ["*", "127.0.0.1"]
 
     CORS_ORIGIN_ALLOW_ALL = True
-    SECRET_KEY = "django-insecure-!htm_cu+s2g0c7wdk())m$3zk!u2ldj#9alx=a-n-&*uepr6-2"
+    SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY')
 
 
 AUTH_USER_MODEL = "api.Profile"
