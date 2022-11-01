@@ -3,6 +3,7 @@ from dataclasses import fields
 from rest_framework import serializers
 from api import models
 from rest_framework_simplejwt.tokens import RefreshToken
+from django.db.models import Q
 
 
 class ChoicesField(serializers.Field):
@@ -44,6 +45,9 @@ class ProfileSerializer(serializers.ModelSerializer):
     )
 
     photos = PhotoSerializer(source="photo_set", many=True, read_only=True)
+    
+    total_likes = serializers.SerializerMethodField()
+    total_matches = serializers.SerializerMethodField()
 
     class Meta:
         model = models.Profile
@@ -60,6 +64,18 @@ class ProfileSerializer(serializers.ModelSerializer):
     def get_token(self, obj):
         token = RefreshToken.for_user(obj)
         return str(token.access_token)
+    
+    def get_total_likes(self, profile):
+        likes = profile.likes.all()
+        count = likes.count()
+        return count
+    
+    def get_total_matches(self, profile):
+        matches = matches = models.Match.objects.filter(
+            Q(profile1=profile.id) | Q(profile2=profile.id)
+        )
+        count = matches.count()
+        return count
 
 
 # -------------------------- SWIPE SERIALIZERS -----------------------------
