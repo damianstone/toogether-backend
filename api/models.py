@@ -26,8 +26,7 @@ class Profile(AbstractBaseUser, PermissionsMixin):
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     email = models.CharField(max_length=200, unique=True)
-    firstname = models.CharField(max_length=200, null=True)
-    lastname = models.CharField(max_length=200, null=True)
+    name = models.CharField(max_length=200, null=True)
     password = models.CharField(max_length=200)
     is_staff = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
@@ -41,9 +40,10 @@ class Profile(AbstractBaseUser, PermissionsMixin):
     age = models.PositiveIntegerField(null=True)
     nationality = models.TextField(max_length=20, null=True)
     city = models.TextField(max_length=15, null=True)
-    live_in = models.TextField(max_length=15, null=True)
     university = models.TextField(max_length=40, null=True)
     description = models.TextField(max_length=500, null=True)
+    
+    instagram = models.TextField(max_length=15, null=True)
 
     gender = models.CharField(
         choices=GENDER_CHOICES,
