@@ -92,7 +92,7 @@ class ProfileViewSet(ModelViewSet):
         profile = models.Profile.objects.get(pk=pk)
 
         # only the current user and an admin can execute this function
-        if profile.id != request.user.id and not profile.is_superuser:
+        if profile.id != request.user.id and not request.user.is_superuser:
             return Response(
                 {
                     "detail": "Not autherized",
@@ -151,9 +151,12 @@ class ProfileViewSet(ModelViewSet):
                 {"Error": "Profile does not exist"}, status=status.HTTP_400_BAD_REQUEST
             )
 
-        if profile.id != request.user.id:
+        # only the current user and an admin can execute this function
+        if profile.id != request.user.id and not request.user.is_superuser:
             return Response(
-                {"detail": "Not autherized"},
+                {
+                    "detail": "Not autherized",
+                },
                 status=status.HTTP_401_UNAUTHORIZED,
             )
 

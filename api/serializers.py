@@ -45,7 +45,7 @@ class ProfileSerializer(serializers.ModelSerializer):
     )
 
     photos = PhotoSerializer(source="photo_set", many=True, read_only=True)
-    
+
     total_likes = serializers.SerializerMethodField()
     total_matches = serializers.SerializerMethodField()
 
@@ -64,12 +64,12 @@ class ProfileSerializer(serializers.ModelSerializer):
     def get_token(self, obj):
         token = RefreshToken.for_user(obj)
         return str(token.access_token)
-    
+
     def get_total_likes(self, profile):
         likes = profile.likes.all()
         count = likes.count()
         return count
-    
+
     def get_total_matches(self, profile):
         matches = matches = models.Match.objects.filter(
             Q(profile1=profile.id) | Q(profile2=profile.id)
@@ -106,6 +106,7 @@ class SwipeProfileSerializer(serializers.ModelSerializer):
             "description",
             "location",
             "photos",
+            "instagram",
         ]
 
 
