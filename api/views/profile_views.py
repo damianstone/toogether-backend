@@ -119,8 +119,7 @@ class ProfileViewSet(ModelViewSet):
         fields_serializer = serializers.CreateProfileSerializer(data=request.data)
         fields_serializer.is_valid(raise_exception=True)
 
-        profile.firstname = fields_serializer.validated_data["firstname"]
-        profile.lastname = fields_serializer.validated_data["lastname"]
+        profile.name = fields_serializer.validated_data["name"]
         profile.birthdate = fields_serializer.validated_data["birthdate"]
         profile.university = fields_serializer.validated_data["university"]
         profile.description = fields_serializer.validated_data["description"]
@@ -166,6 +165,8 @@ class ProfileViewSet(ModelViewSet):
             profile.nationality = fields_serializer.validated_data["nationality"]
         if "city" in request.data:
             profile.city = fields_serializer.validated_data["city"]
+        if "instagram" in request.data:
+            profile.instagram = fields_serializer.validated_data["instagram"]
         if "university" in request.data:
             profile.university = fields_serializer.validated_data["university"]
         if "description" in request.data:

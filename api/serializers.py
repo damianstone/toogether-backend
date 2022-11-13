@@ -95,15 +95,13 @@ class SwipeProfileSerializer(serializers.ModelSerializer):
             "id",
             "email",
             "is_in_group",
-            "firstname",
-            "lastname",
+            "name",
             "birthdate",
             "age",
             "gender",
             "show_me",
             "nationality",
             "city",
-            "live_in",
             "university",
             "description",
             "location",
@@ -163,8 +161,7 @@ class MatchSerializer(serializers.ModelSerializer):
 
 # -------------------------- DATA ACTIONS SERIALIZERS -----------------------------
 class CreateProfileSerializer(serializers.Serializer):
-    firstname = serializers.CharField(required=True, allow_null=False)
-    lastname = serializers.CharField(required=True, allow_null=False)
+    name = serializers.CharField(required=True, allow_null=False)
     birthdate = serializers.DateField(required=True, allow_null=False)
     university = serializers.CharField(required=False, allow_null=True)
     description = serializers.CharField(required=False, allow_null=True)
@@ -181,6 +178,7 @@ class CreateProfileSerializer(serializers.Serializer):
 
 
 class UpdateProfileSerializer(serializers.Serializer):
+    instagram = serializers.CharField(required=False, allow_null=True)
     nationality = serializers.CharField(required=False, allow_null=True)
     city = serializers.CharField(required=False, allow_null=True)
     university = serializers.CharField(required=False, allow_null=True)
