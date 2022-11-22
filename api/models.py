@@ -149,7 +149,7 @@ class Group(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.share_link:
-            self.share_link = f"https://start.the.night/{shortuuid.uuid()}"
+            self.share_link = f"start.the.night/{shortuuid.uuid()}"
         if not self.age:
             self.age = self.owner.age
         super().save(*args, **kwargs)
