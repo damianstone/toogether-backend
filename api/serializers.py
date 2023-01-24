@@ -1,9 +1,10 @@
 from cProfile import Profile
 from dataclasses import fields
 from rest_framework import serializers
-from api import models
+from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.db.models import Q
+from api import models
 
 
 class ChoicesField(serializers.Field):
@@ -161,6 +162,7 @@ class GroupSerializer(serializers.ModelSerializer):
         model = models.Group
         fields = "__all__"
 
+    # Exclude the owner from members
     def get_members(self, group):
         # get the group
         group = models.Group.objects.get(pk=group.id)
@@ -178,14 +180,52 @@ class GroupSerializerWithLink(GroupSerializer):
     share_link = serializers.CharField(required=True, allow_null=False)
 
 
-# -------------------------- BLOCKED PROFILES SERIALIZERS --------------------------------
+# -------------------------- MATCHED PROFILES SERIALIZERS --------------------------------
 class MatchSerializer(serializers.ModelSerializer):
-    profile1 = SwipeProfileSerializer(read_only=True, many=False)
-    profile2 = SwipeProfileSerializer(read_only=True, many=False)
+    current_profile = serializers.SerializerMethodField()
+    matched_data = serializers.SerializerMethodField()
 
     class Meta:
         model = models.Match
-        fields = ["id", "profile1", "profile2"]
+        fields = ["id", "current_profile", "matched_data"]
+
+    def get_current_profile(self, match):
+        request = self.context.get("request")
+        current_profile = request.user
+
+        if match.profile1 == current_profile:
+            serializer = SwipeProfileSerializer(match.profile1, many=False)
+            return serializer.data
+        else:
+            serializer = SwipeProfileSerializer(match.profile2, many=False)
+            return serializer.data
+
+    def get_matched_data(self, match):
+        request = self.context.get("request")
+        current_profile = request.user
+
+        if match.profile1 != current_profile:
+            matched_profile = match.profile2
+        else:
+            matched_profile = match.profile2
+
+        #  check if the matched profile is in a group
+        if matched_profile.member_group.all().exists():
+            matched_group = matched_profile.member_group.all()[0]
+            profile_serializer = SwipeProfileSerializer(matched_profile, many=False)
+            group_serializer = SwipeGroupSerializer(matched_group, many=False)
+
+            return {
+                "matched_profile": profile_serializer.data,
+                "group": group_serializer.data,
+                "group_match": True,
+            }
+
+        serializer = SwipeProfileSerializer(matched_profile, many=False)
+        return {
+            "matched_profile": serializer.data,
+            "group_match": False,
+        }
 
 
 # -------------------------- DATA ACTIONS SERIALIZERS -----------------------------

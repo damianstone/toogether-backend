@@ -559,7 +559,9 @@ class MatchModelViewSet(ModelViewSet):
         matches = models.Match.objects.filter(
             Q(profile1=current_profile.id) | Q(profile2=current_profile.id)
         )
-        serializer = serializers.MatchSerializer(matches, many=True)
+        
+        # Context enable the access of the current user (the user that make the request) in the serializers
+        serializer = serializers.MatchSerializer(matches, many=True, context={'request': request})
         return Response({"count": matches.count(), "data": serializer.data})
 
     def destroy(self, request, pk=None):

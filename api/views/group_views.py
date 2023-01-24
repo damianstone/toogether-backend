@@ -25,6 +25,7 @@ class GroupViewSet(ModelViewSet):
 
     def create(self, request):
         profile = request.user
+        # TODO: we dont need the profile_has_group check, since we dont need to check if its the owner 
         profile_has_group = models.Group.objects.filter(owner=profile.id).exists()
         profile_is_in_another_group = profile.member_group.all().exists()
 
@@ -45,8 +46,8 @@ class GroupViewSet(ModelViewSet):
 
         group = models.Group.objects.create(owner=profile)
         group.members.add(profile)
+        # Need to add a gender property for the swipe algorithm
         group.gender = fields_serializer._validated_data["gender"]
-
         group.save()
         serializer = serializers.GroupSerializer(group, many=False)
         return Response(serializer.data)
@@ -67,7 +68,6 @@ class GroupViewSet(ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
         group.delete()
-        profile.is_in_group = False
         profile.save()
         return Response(
             {"detail": "Group deleted"},
