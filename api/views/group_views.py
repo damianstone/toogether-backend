@@ -13,8 +13,13 @@ class GroupViewSet(ModelViewSet):
     serializer_class = serializers.GroupSerializer
     permission_classes = [IsAuthenticated]
 
+    # Internal endpoints
     def get_permissions(self):
-        if self.action == "list" or self.action == "update":
+        if (
+            self.action == "list"
+            or self.action == "update"
+            or self.action == "add_member"
+        ):
             return [IsAdminUser()]
         return [permission() for permission in self.permission_classes]
 
@@ -168,5 +173,40 @@ class GroupViewSet(ModelViewSet):
         profile_to_remove.is_in_group = False
         group.save()
         profile.save()
+        serializer = serializers.GroupSerializer(group, many=False)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=["post"], url_path=r"actions/add-member")
+    def add_member(self, request, pk=None):
+        fields_serializer = serializers.GroupSerializerWithMember(data=request.data)
+        fields_serializer.is_valid(raise_exception=True)
+
+        try:
+            group = models.Group.objects.get(pk=pk)
+            profile_to_add = models.Profile.objects.get(
+                id=fields_serializer._validated_data["member_id"]
+            )
+            
+            # check if the profile to add is in another group
+            profile_has_group = models.Group.objects.filter(owner=profile_to_add.id).exists()
+            profile_is_in_another_group = profile_to_add.member_group.all().exists()
+            
+        except ObjectDoesNotExist:
+            return Response(
+                {"detail": "Object does not exist"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if profile_has_group or profile_is_in_another_group:
+            return Response(
+                {"detail": "The member is already in another group"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        group.members.add(profile_to_add)
+        group.total_members += 1
+        profile_to_add.is_in_group = True
+        group.save()
+        profile_to_add.save()
         serializer = serializers.GroupSerializer(group, many=False)
         return Response(serializer.data)
