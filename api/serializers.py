@@ -46,6 +46,7 @@ class ProfileSerializer(serializers.ModelSerializer):
 
     photos = PhotoSerializer(source="photo_set", many=True, read_only=True)
 
+    is_in_group = serializers.SerializerMethodField()
     total_likes = serializers.SerializerMethodField()
     total_matches = serializers.SerializerMethodField()
 
@@ -65,8 +66,17 @@ class ProfileSerializer(serializers.ModelSerializer):
         token = RefreshToken.for_user(obj)
         return str(token.access_token)
 
+    def get_is_in_group(self, profile):
+        return profile.member_group.all().exists()
+
     def get_total_likes(self, profile):
-        likes = profile.likes.all()
+        matches = matches = models.Match.objects.filter(
+            Q(profile1=profile.id) | Q(profile2=profile.id)
+        )
+        matched_profiles = [match.profile1.id for match in matches] + [
+            match.profile2.id for match in matches
+        ]
+        likes = profile.likes.exclude(id__in=matched_profiles)
         count = likes.count()
         return count
 
@@ -80,6 +90,7 @@ class ProfileSerializer(serializers.ModelSerializer):
 
 # -------------------------- SWIPE SERIALIZERS -----------------------------
 class SwipeProfileSerializer(serializers.ModelSerializer):
+    is_in_group = serializers.SerializerMethodField()
     gender = serializers.CharField(
         source="get_gender_display", required=True, allow_null=False
     )
@@ -109,8 +120,18 @@ class SwipeProfileSerializer(serializers.ModelSerializer):
             "instagram",
         ]
 
+    def get_is_in_group(self, profile):
+        return profile.member_group.all().exists()
+
+
+""" 
+    Swipe group serializer show a owner property and show 
+    all the members (including the owner) in the members property 
+"""
+
 
 class SwipeGroupSerializer(serializers.ModelSerializer):
+    total_members = serializers.SerializerMethodField()
     owner = SwipeProfileSerializer(read_only=True, many=False)
     members = SwipeProfileSerializer(read_only=True, many=True)
     gender = serializers.CharField(
@@ -121,11 +142,15 @@ class SwipeGroupSerializer(serializers.ModelSerializer):
         model = models.Group
         fields = ["id", "gender", "total_members", "created_at", "owner", "members"]
 
+    def get_total_members(self, group):
+        return group.members.count()
+
 
 # -------------------------- GROUP SERIALIZERS --------------------------------
 class GroupSerializer(serializers.ModelSerializer):
-    owner = SwipeProfileSerializer(read_only=True, many=False)
+    total_members = serializers.SerializerMethodField()
     members = serializers.SerializerMethodField()
+    owner = SwipeProfileSerializer(read_only=True, many=False)
     gender = ChoicesField(
         choices=models.Group.GENDER_CHOICES,
         required=False,
@@ -144,6 +169,9 @@ class GroupSerializer(serializers.ModelSerializer):
         # serialize the members
         serializer = SwipeProfileSerializer(instance=members_without_owner, many=True)
         return serializer.data
+
+    def get_total_members(self, group):
+        return group.members.count()
 
 
 class GroupSerializerWithLink(GroupSerializer):

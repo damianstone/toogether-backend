@@ -45,12 +45,9 @@ class GroupViewSet(ModelViewSet):
 
         group = models.Group.objects.create(owner=profile)
         group.members.add(profile)
-        profile.is_in_group = True
-        group.total_members = 1
         group.gender = fields_serializer._validated_data["gender"]
 
         group.save()
-        profile.save()
         serializer = serializers.GroupSerializer(group, many=False)
         return Response(serializer.data)
 
@@ -108,10 +105,7 @@ class GroupViewSet(ModelViewSet):
             )
 
         group.members.add(profile)
-        group.total_members += 1
-        profile.is_in_group = True
         group.save()
-        profile.save()
         serializer = serializers.GroupSerializer(group, many=False)
         return Response(serializer.data)
 
@@ -136,10 +130,7 @@ class GroupViewSet(ModelViewSet):
             )
 
         group.members.remove(profile)
-        group.total_members -= 1
-        profile.is_in_group = False
         group.save()
-        profile.save()
         return Response(
             {"detail": "You left the group"},
             status=status.HTTP_200_OK,
@@ -169,10 +160,7 @@ class GroupViewSet(ModelViewSet):
             )
 
         group.members.remove(profile_to_remove)
-        group.total_members -= 1
-        profile_to_remove.is_in_group = False
         group.save()
-        profile.save()
         serializer = serializers.GroupSerializer(group, many=False)
         return Response(serializer.data)
 
@@ -186,11 +174,13 @@ class GroupViewSet(ModelViewSet):
             profile_to_add = models.Profile.objects.get(
                 id=fields_serializer._validated_data["member_id"]
             )
-            
+
             # check if the profile to add is in another group
-            profile_has_group = models.Group.objects.filter(owner=profile_to_add.id).exists()
+            profile_has_group = models.Group.objects.filter(
+                owner=profile_to_add.id
+            ).exists()
             profile_is_in_another_group = profile_to_add.member_group.all().exists()
-            
+
         except ObjectDoesNotExist:
             return Response(
                 {"detail": "Object does not exist"},
@@ -204,9 +194,6 @@ class GroupViewSet(ModelViewSet):
             )
 
         group.members.add(profile_to_add)
-        group.total_members += 1
-        profile_to_add.is_in_group = True
         group.save()
-        profile_to_add.save()
         serializer = serializers.GroupSerializer(group, many=False)
         return Response(serializer.data)
