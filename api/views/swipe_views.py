@@ -432,19 +432,28 @@ class SwipeModelViewSet(ModelViewSet):
         serializer = serializers.SwipeProfileSerializer(profile, many=False)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    @action(detail=False, methods=["get"], url_path=r"actions/get-swipe-profile")
-    def get_swipe_profile(self, request):
-        # get the current user as a profile or the group if he is an group
-        current_profile = request.user
-        if current_profile.member_group.all().exists():
-            current_group = current_profile.member_group.all()[0]
+    @action(detail=True, methods=["get"], url_path=r"actions/get-swipe-profile")
+    def get_swipe_profile(self, request, pk=None):
+        # get a profile as single or as a group
+        try: 
+            profile = models.Profile.objects.get(pk=pk)
+        except ObjectDoesNotExist:
+            return Response(
+                {"Error": "Profile does not exist"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        # check if the profile is in a group
+        if profile.member_group.all().exists():
+            profile_group = profile.member_group.all()[0]
             group_serializer = serializers.SwipeGroupSerializer(
-                current_group, many=False
+                profile_group, many=False
             )
             return Response(group_serializer.data)
 
+        # if the profile is not in a group then return it as a single profile
         profile_serializer = serializers.SwipeProfileSerializer(
-            current_profile, many=False
+            profile, many=False
         )
         return Response(profile_serializer.data)
 

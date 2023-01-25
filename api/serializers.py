@@ -212,19 +212,21 @@ class MatchSerializer(serializers.ModelSerializer):
         #  check if the matched profile is in a group
         if matched_profile.member_group.all().exists():
             matched_group = matched_profile.member_group.all()[0]
+            members = matched_group.members.count()
             profile_serializer = SwipeProfileSerializer(matched_profile, many=False)
             group_serializer = SwipeGroupSerializer(matched_group, many=False)
 
             return {
                 "matched_profile": profile_serializer.data,
                 "group": group_serializer.data,
-                "group_match": True,
+                "is_group_match": True,
+                "members_count": members
             }
 
         serializer = SwipeProfileSerializer(matched_profile, many=False)
         return {
             "matched_profile": serializer.data,
-            "group_match": False,
+            "is_group_match": False,
         }
 
 
