@@ -183,24 +183,20 @@ class GroupSerializerWithLink(GroupSerializer):
 # -------------------------- MATCHED PROFILES SERIALIZERS --------------------------------
 class MatchSerializer(serializers.ModelSerializer):
     current_profile = serializers.SerializerMethodField()
-    matched_data = serializers.SerializerMethodField()
+    matched_profile = serializers.SerializerMethodField()
 
     class Meta:
         model = models.Match
-        fields = ["id", "current_profile", "matched_data"]
+        fields = ["id", "current_profile", "matched_profile"]
 
     def get_current_profile(self, match):
         request = self.context.get("request")
         current_profile = request.user
+        
+        serializer = SwipeProfileSerializer(current_profile, many=False)
+        return serializer.data
 
-        if match.profile1 == current_profile:
-            serializer = SwipeProfileSerializer(match.profile1, many=False)
-            return serializer.data
-        else:
-            serializer = SwipeProfileSerializer(match.profile2, many=False)
-            return serializer.data
-
-    def get_matched_data(self, match):
+    def get_matched_profile(self, match):
         request = self.context.get("request")
         current_profile = request.user
 
@@ -209,25 +205,9 @@ class MatchSerializer(serializers.ModelSerializer):
         else:
             matched_profile = match.profile2
 
-        #  check if the matched profile is in a group
-        if matched_profile.member_group.all().exists():
-            matched_group = matched_profile.member_group.all()[0]
-            members = matched_group.members.count()
-            profile_serializer = SwipeProfileSerializer(matched_profile, many=False)
-            group_serializer = SwipeGroupSerializer(matched_group, many=False)
-
-            return {
-                "matched_profile": profile_serializer.data,
-                "group": group_serializer.data,
-                "is_group_match": True,
-                "members_count": members
-            }
-
         serializer = SwipeProfileSerializer(matched_profile, many=False)
-        return {
-            "matched_profile": serializer.data,
-            "is_group_match": False,
-        }
+        return serializer.data
+        
 
 
 # -------------------------- DATA ACTIONS SERIALIZERS -----------------------------
