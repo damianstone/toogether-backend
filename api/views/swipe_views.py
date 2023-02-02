@@ -9,6 +9,7 @@ from django.utils.timezone import now
 from django.contrib.gis.geos import GEOSGeometry
 from django.contrib.gis.measure import D
 from django.db.models import Q
+from django.conf import settings
 from api import models, serializers
 from datetime import date
 import random
@@ -435,14 +436,14 @@ class SwipeModelViewSet(ModelViewSet):
     @action(detail=True, methods=["get"], url_path=r"actions/get-swipe-profile")
     def get_swipe_profile(self, request, pk=None):
         # get a profile as single or as a group
-        try: 
+        try:
             profile = models.Profile.objects.get(pk=pk)
         except ObjectDoesNotExist:
             return Response(
                 {"Error": "Profile does not exist"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        
+
         # check if the profile is in a group
         if profile.member_group.all().exists():
             profile_group = profile.member_group.all()[0]
@@ -452,13 +453,14 @@ class SwipeModelViewSet(ModelViewSet):
             return Response(group_serializer.data)
 
         # if the profile is not in a group then return it as a single profile
-        profile_serializer = serializers.SwipeProfileSerializer(
-            profile, many=False
-        )
+        profile_serializer = serializers.SwipeProfileSerializer(profile, many=False)
         return Response(profile_serializer.data)
 
     @action(detail=True, methods=["post"], url_path=r"actions/like")
     def like(self, request, pk=None):
+        # give a profile to a profile or group, this means that my id will be added to
+        # the many-to-many property of that profile
+
         current_profile = request.user
         # profile to give like
         liked_profile = models.Profile.objects.get(pk=pk)
@@ -493,7 +495,7 @@ class SwipeModelViewSet(ModelViewSet):
 
     @action(detail=True, methods=["post"], url_path=r"actions/unlike")
     def unlike(self, request, pk=None):
-        # unlike profile - unlike profile or group that I already gave like previously
+        # unlike profile or group that I liked previously
         current_profile = request.user
 
         try:
@@ -546,6 +548,65 @@ class SwipeModelViewSet(ModelViewSet):
         data = groups_serializer.data + profiles_serializer.data
         return Response({"count": likes.count(), "results": data})
 
+    @action(detail=False, methods=["post"], url_path=r"internal/actions/add-likes")
+    def internal_add_likes(self, request, pk=None):
+        # make all the (fake) profiles in the dev database like the admin user
+        current_profile = request.user
+        # check if the current profile is an admin profile
+        if not current_profile.is_superuser:
+            return Response(
+                {"error": "You do not have permission to perform this action"},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        # check to which database I’m connected (prevent execute this action using the real db)
+        if not settings.DEBUG:
+            return Response(
+                {"error": "This action cannot be performed in production"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+            
+        profiles = models.Profile.objects.all().filter(has_account=True)
+        count_profiles = profiles.count()
+        
+        for profile in profiles:
+            current_profile.likes.add(profile)
+            if current_profile.member_group.all().exists():
+              current_profile_group = current_profile.member_group.all()[0]
+              current_profile_group.likes.add(profile)
+            
+        return Response({"success": f'{count_profiles} profiles added to likes'})
+
+
+    @action(detail=False, methods=["post"], url_path=r"internal/actions/remove-likes")
+    def internal_remove_likes(self, request, pk=None):
+        # revert add likes action
+        current_profile = request.user
+        # check if the current profile is an admin profile
+        if not current_profile.is_superuser:
+            return Response(
+                {"error": "You do not have permission to perform this action"},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        # check to which database I’m connected (prevent execute this action using the real db)
+        if not settings.DEBUG:
+            return Response(
+                {"error": "This action cannot be performed in production"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+            
+        profiles = models.Profile.objects.all().filter(has_account=True)
+        count_profiles = profiles.count()
+        
+        for profile in profiles:
+            current_profile.likes.remove(profile)
+            if current_profile.member_group.all().exists():
+                current_profile_group = current_profile.member_group.all()[0]
+                current_profile_group.likes.remove(profile)
+            
+        return Response({"success": f'{count_profiles} profiles removed from likes'})
+
 
 class MatchModelViewSet(ModelViewSet):
     queryset = models.Match.objects.all()
@@ -568,9 +629,11 @@ class MatchModelViewSet(ModelViewSet):
         matches = models.Match.objects.filter(
             Q(profile1=current_profile.id) | Q(profile2=current_profile.id)
         )
-        
+
         # Context enable the access of the current user (the user that make the request) in the serializers
-        serializer = serializers.MatchSerializer(matches, many=True, context={'request': request})
+        serializer = serializers.MatchSerializer(
+            matches, many=True, context={"request": request}
+        )
         return Response({"count": matches.count(), "data": serializer.data})
 
     def destroy(self, request, pk=None):

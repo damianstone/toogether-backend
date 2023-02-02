@@ -183,11 +183,11 @@ class GroupSerializerWithLink(GroupSerializer):
 # -------------------------- MATCHED PROFILES SERIALIZERS --------------------------------
 class MatchSerializer(serializers.ModelSerializer):
     current_profile = serializers.SerializerMethodField()
-    matched_profile = serializers.SerializerMethodField()
+    matched_data = serializers.SerializerMethodField()
 
     class Meta:
         model = models.Match
-        fields = ["id", "current_profile", "matched_profile"]
+        fields = ["id", "current_profile", "matched_data"]
 
     def get_current_profile(self, match):
         request = self.context.get("request")
@@ -196,7 +196,7 @@ class MatchSerializer(serializers.ModelSerializer):
         serializer = SwipeProfileSerializer(current_profile, many=False)
         return serializer.data
 
-    def get_matched_profile(self, match):
+    def get_matched_data(self, match):
         request = self.context.get("request")
         current_profile = request.user
 
@@ -205,8 +205,23 @@ class MatchSerializer(serializers.ModelSerializer):
         else:
             matched_profile = match.profile2
 
+        #  check if the matched profile is in a group
+        if matched_profile.member_group.all().exists():
+            matched_group = matched_profile.member_group.all()[0]
+            members = matched_group.members.count()
+            profile_serializer = SwipeProfileSerializer(matched_profile, many=False)
+
+            return {
+                "matched_profile": profile_serializer.data,
+                "is_group_match": True,
+                "members_count": members
+            }
+
         serializer = SwipeProfileSerializer(matched_profile, many=False)
-        return serializer.data
+        return {
+            "matched_profile": serializer.data,
+            "is_group_match": False,
+        }
         
 
 
