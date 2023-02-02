@@ -189,7 +189,7 @@ def get_match(profile1_id, profile2_id):
     return False
 
 
-def like_one_to_one(current_profile, liked_profile):
+def like_one_to_one(request, current_profile, liked_profile):
     # like the profile
     liked_profile.likes.add(current_profile)
 
@@ -207,7 +207,9 @@ def like_one_to_one(current_profile, liked_profile):
             profile1=current_profile, profile2=liked_profile
         )
         match.save()
-        match_serializer = serializers.MatchSerializer(match, many=False)
+        match_serializer = serializers.MatchSerializer(
+            match, many=False, context={"request": request}
+        )
         return Response(
             {
                 "details": NEW_MATCH,
@@ -219,7 +221,7 @@ def like_one_to_one(current_profile, liked_profile):
     return Response({"details": LIKE})
 
 
-def like_one_to_group(current_profile, liked_group):
+def like_one_to_group(request, current_profile, liked_group):
     liked_group.likes.add(current_profile)
 
     # check if the current profile has already a match with the group
@@ -248,7 +250,9 @@ def like_one_to_group(current_profile, liked_group):
                 liked_group.matches.add(match)
                 liked_group.save()
 
-                match_serializer = serializers.MatchSerializer(match, many=False)
+                match_serializer = serializers.MatchSerializer(
+                    match, many=False, context={"request": request}
+                )
 
                 return Response(
                     {
@@ -262,7 +266,9 @@ def like_one_to_group(current_profile, liked_group):
         for member in members:
             if get_match(current_profile.id, member.id):
                 match = get_match(current_profile.id, member.id)
-                match_serializer = serializers.MatchSerializer(match, many=False)
+                match_serializer = serializers.MatchSerializer(
+                    match, many=False, context={"request": request}
+                )
                 return Response(
                     {
                         "details": SAME_MATCH,
@@ -274,7 +280,7 @@ def like_one_to_group(current_profile, liked_group):
     return Response({"details": LIKE})
 
 
-def like_group_to_one(current_profile, current_group, liked_profile):
+def like_group_to_one(request, current_profile, current_group, liked_profile):
     # add the like
     liked_profile.likes.add(current_profile)
 
@@ -292,7 +298,9 @@ def like_group_to_one(current_profile, current_group, liked_profile):
         # if there is already a match, recycle the previous match
         if already_match:
             match = already_match
-            serializer = serializers.MatchSerializer(match, many=False)
+            serializer = serializers.MatchSerializer(
+                match, many=False, context={"request": request}
+            )
             return Response(
                 {
                     "details": SAME_MATCH,
@@ -308,7 +316,9 @@ def like_group_to_one(current_profile, current_group, liked_profile):
         match.save()
         current_group.matches.add(match)
         current_group.save()
-        match_serializer = serializers.MatchSerializer(match, many=False)
+        match_serializer = serializers.MatchSerializer(
+            match, many=False, context={"request": request}
+        )
         return Response(
             {
                 "details": NEW_MATCH,
@@ -320,7 +330,7 @@ def like_group_to_one(current_profile, current_group, liked_profile):
     return Response({"details": LIKE})
 
 
-def like_group_to_group(current_profile, current_group, liked_group):
+def like_group_to_group(request, current_profile, current_group, liked_group):
     # add the like
     liked_group.likes.add(current_profile)
 
@@ -349,7 +359,9 @@ def like_group_to_group(current_profile, current_group, liked_group):
                 liked_group.matches.add(match)
                 liked_group.save()
 
-                match_serializer = serializers.MatchSerializer(match, many=False)
+                match_serializer = serializers.MatchSerializer(
+                    match, many=False, context={"request": request}
+                )
                 return Response(
                     {
                         "details": NEW_MATCH,
@@ -362,7 +374,9 @@ def like_group_to_group(current_profile, current_group, liked_group):
         for member in members:
             if get_match(current_profile.id, member.id):
                 match = get_match(current_profile.id, member.id)
-                match_serializer = serializers.MatchSerializer(match, many=False)
+                match_serializer = serializers.MatchSerializer(
+                    match, many=False, context={"request": request}
+                )
                 return Response(
                     {
                         "details": SAME_MATCH,
@@ -470,23 +484,27 @@ class SwipeModelViewSet(ModelViewSet):
 
         # check for one to one
         if not current_is_in_group and not liked_is_in_group:
-            return like_one_to_one(current_profile, liked_profile)
+            return like_one_to_one(request, current_profile, liked_profile)
 
         # like one to group
         if not current_is_in_group and liked_is_in_group:
             liked_group = liked_profile.member_group.all()[0]
-            return like_one_to_group(current_profile, liked_group)
+            return like_one_to_group(request, current_profile, liked_group)
 
         # like group to one
         if current_is_in_group and not liked_is_in_group:
             current_group = current_profile.member_group.all()[0]
-            return like_group_to_one(current_profile, current_group, liked_profile)
+            return like_group_to_one(
+                request, current_profile, current_group, liked_profile
+            )
 
         # like group to group
         if current_is_in_group and liked_is_in_group:
             current_group = current_profile.member_group.all()[0]
             liked_group = liked_profile.member_group.all()[0]
-            return like_group_to_group(current_profile, current_group, liked_group)
+            return like_group_to_group(
+                request, current_profile, current_group, liked_group
+            )
 
         return Response(
             {"details": "Something went wrong when giving like"},
@@ -565,18 +583,17 @@ class SwipeModelViewSet(ModelViewSet):
                 {"error": "This action cannot be performed in production"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-            
+
         profiles = models.Profile.objects.all().filter(has_account=True)
         count_profiles = profiles.count()
-        
+
         for profile in profiles:
             current_profile.likes.add(profile)
             if current_profile.member_group.all().exists():
-              current_profile_group = current_profile.member_group.all()[0]
-              current_profile_group.likes.add(profile)
-            
-        return Response({"success": f'{count_profiles} profiles added to likes'})
+                current_profile_group = current_profile.member_group.all()[0]
+                current_profile_group.likes.add(profile)
 
+        return Response({"success": f"{count_profiles} profiles added to likes"})
 
     @action(detail=False, methods=["post"], url_path=r"internal/actions/remove-likes")
     def internal_remove_likes(self, request, pk=None):
@@ -595,17 +612,17 @@ class SwipeModelViewSet(ModelViewSet):
                 {"error": "This action cannot be performed in production"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-            
+
         profiles = models.Profile.objects.all().filter(has_account=True)
         count_profiles = profiles.count()
-        
+
         for profile in profiles:
             current_profile.likes.remove(profile)
             if current_profile.member_group.all().exists():
                 current_profile_group = current_profile.member_group.all()[0]
                 current_profile_group.likes.remove(profile)
-            
-        return Response({"success": f'{count_profiles} profiles removed from likes'})
+
+        return Response({"success": f"{count_profiles} profiles removed from likes"})
 
 
 class MatchModelViewSet(ModelViewSet):

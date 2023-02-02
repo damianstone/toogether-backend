@@ -25,7 +25,7 @@ class GroupViewSet(ModelViewSet):
 
     def create(self, request):
         profile = request.user
-        # TODO: we dont need the profile_has_group check, since we dont need to check if its the owner 
+        # TODO: we dont need the profile_has_group check, since we dont need to check if its the owner
         profile_has_group = models.Group.objects.filter(owner=profile.id).exists()
         profile_is_in_another_group = profile.member_group.all().exists()
 

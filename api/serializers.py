@@ -192,7 +192,7 @@ class MatchSerializer(serializers.ModelSerializer):
     def get_current_profile(self, match):
         request = self.context.get("request")
         current_profile = request.user
-        
+
         serializer = SwipeProfileSerializer(current_profile, many=False)
         return serializer.data
 
@@ -214,7 +214,7 @@ class MatchSerializer(serializers.ModelSerializer):
             return {
                 "matched_profile": profile_serializer.data,
                 "is_group_match": True,
-                "members_count": members
+                "members_count": members,
             }
 
         serializer = SwipeProfileSerializer(matched_profile, many=False)
@@ -222,7 +222,6 @@ class MatchSerializer(serializers.ModelSerializer):
             "matched_profile": serializer.data,
             "is_group_match": False,
         }
-        
 
 
 # -------------------------- DATA ACTIONS SERIALIZERS -----------------------------
