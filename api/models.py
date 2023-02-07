@@ -42,7 +42,7 @@ class Profile(AbstractBaseUser, PermissionsMixin):
     city = models.TextField(max_length=15, null=True)
     university = models.TextField(max_length=40, null=True)
     description = models.TextField(max_length=500, null=True)
-    
+
     instagram = models.TextField(max_length=15, null=True)
 
     gender = models.CharField(

@@ -9,6 +9,7 @@ from django.utils.timezone import now
 from django.contrib.gis.geos import GEOSGeometry
 from django.contrib.gis.measure import D
 from django.db.models import Q
+from django.conf import settings
 from api import models, serializers
 from datetime import date
 import random
@@ -188,7 +189,7 @@ def get_match(profile1_id, profile2_id):
     return False
 
 
-def like_one_to_one(current_profile, liked_profile):
+def like_one_to_one(request, current_profile, liked_profile):
     # like the profile
     liked_profile.likes.add(current_profile)
 
@@ -206,7 +207,9 @@ def like_one_to_one(current_profile, liked_profile):
             profile1=current_profile, profile2=liked_profile
         )
         match.save()
-        match_serializer = serializers.MatchSerializer(match, many=False)
+        match_serializer = serializers.MatchSerializer(
+            match, many=False, context={"request": request}
+        )
         return Response(
             {
                 "details": NEW_MATCH,
@@ -218,7 +221,7 @@ def like_one_to_one(current_profile, liked_profile):
     return Response({"details": LIKE})
 
 
-def like_one_to_group(current_profile, liked_group):
+def like_one_to_group(request, current_profile, liked_group):
     liked_group.likes.add(current_profile)
 
     # check if the current profile has already a match with the group
@@ -247,7 +250,9 @@ def like_one_to_group(current_profile, liked_group):
                 liked_group.matches.add(match)
                 liked_group.save()
 
-                match_serializer = serializers.MatchSerializer(match, many=False)
+                match_serializer = serializers.MatchSerializer(
+                    match, many=False, context={"request": request}
+                )
 
                 return Response(
                     {
@@ -261,7 +266,9 @@ def like_one_to_group(current_profile, liked_group):
         for member in members:
             if get_match(current_profile.id, member.id):
                 match = get_match(current_profile.id, member.id)
-                match_serializer = serializers.MatchSerializer(match, many=False)
+                match_serializer = serializers.MatchSerializer(
+                    match, many=False, context={"request": request}
+                )
                 return Response(
                     {
                         "details": SAME_MATCH,
@@ -273,7 +280,7 @@ def like_one_to_group(current_profile, liked_group):
     return Response({"details": LIKE})
 
 
-def like_group_to_one(current_profile, current_group, liked_profile):
+def like_group_to_one(request, current_profile, current_group, liked_profile):
     # add the like
     liked_profile.likes.add(current_profile)
 
@@ -291,7 +298,9 @@ def like_group_to_one(current_profile, current_group, liked_profile):
         # if there is already a match, recycle the previous match
         if already_match:
             match = already_match
-            serializer = serializers.MatchSerializer(match, many=False)
+            serializer = serializers.MatchSerializer(
+                match, many=False, context={"request": request}
+            )
             return Response(
                 {
                     "details": SAME_MATCH,
@@ -307,7 +316,9 @@ def like_group_to_one(current_profile, current_group, liked_profile):
         match.save()
         current_group.matches.add(match)
         current_group.save()
-        match_serializer = serializers.MatchSerializer(match, many=False)
+        match_serializer = serializers.MatchSerializer(
+            match, many=False, context={"request": request}
+        )
         return Response(
             {
                 "details": NEW_MATCH,
@@ -319,7 +330,7 @@ def like_group_to_one(current_profile, current_group, liked_profile):
     return Response({"details": LIKE})
 
 
-def like_group_to_group(current_profile, current_group, liked_group):
+def like_group_to_group(request, current_profile, current_group, liked_group):
     # add the like
     liked_group.likes.add(current_profile)
 
@@ -348,7 +359,9 @@ def like_group_to_group(current_profile, current_group, liked_group):
                 liked_group.matches.add(match)
                 liked_group.save()
 
-                match_serializer = serializers.MatchSerializer(match, many=False)
+                match_serializer = serializers.MatchSerializer(
+                    match, many=False, context={"request": request}
+                )
                 return Response(
                     {
                         "details": NEW_MATCH,
@@ -361,7 +374,9 @@ def like_group_to_group(current_profile, current_group, liked_group):
         for member in members:
             if get_match(current_profile.id, member.id):
                 match = get_match(current_profile.id, member.id)
-                match_serializer = serializers.MatchSerializer(match, many=False)
+                match_serializer = serializers.MatchSerializer(
+                    match, many=False, context={"request": request}
+                )
                 return Response(
                     {
                         "details": SAME_MATCH,
@@ -432,24 +447,34 @@ class SwipeModelViewSet(ModelViewSet):
         serializer = serializers.SwipeProfileSerializer(profile, many=False)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    @action(detail=False, methods=["get"], url_path=r"actions/get-swipe-profile")
-    def get_swipe_profile(self, request):
-        # get the current user as a profile or the group if he is an group
-        current_profile = request.user
-        if current_profile.member_group.all().exists():
-            current_group = current_profile.member_group.all()[0]
+    @action(detail=True, methods=["get"], url_path=r"actions/get-swipe-profile")
+    def get_swipe_profile(self, request, pk=None):
+        # get a profile as single or as a group
+        try:
+            profile = models.Profile.objects.get(pk=pk)
+        except ObjectDoesNotExist:
+            return Response(
+                {"Error": "Profile does not exist"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # check if the profile is in a group
+        if profile.member_group.all().exists():
+            profile_group = profile.member_group.all()[0]
             group_serializer = serializers.SwipeGroupSerializer(
-                current_group, many=False
+                profile_group, many=False
             )
             return Response(group_serializer.data)
 
-        profile_serializer = serializers.SwipeProfileSerializer(
-            current_profile, many=False
-        )
+        # if the profile is not in a group then return it as a single profile
+        profile_serializer = serializers.SwipeProfileSerializer(profile, many=False)
         return Response(profile_serializer.data)
 
     @action(detail=True, methods=["post"], url_path=r"actions/like")
     def like(self, request, pk=None):
+        # give a profile to a profile or group, this means that my id will be added to
+        # the many-to-many property of that profile
+
         current_profile = request.user
         # profile to give like
         liked_profile = models.Profile.objects.get(pk=pk)
@@ -459,23 +484,27 @@ class SwipeModelViewSet(ModelViewSet):
 
         # check for one to one
         if not current_is_in_group and not liked_is_in_group:
-            return like_one_to_one(current_profile, liked_profile)
+            return like_one_to_one(request, current_profile, liked_profile)
 
         # like one to group
         if not current_is_in_group and liked_is_in_group:
             liked_group = liked_profile.member_group.all()[0]
-            return like_one_to_group(current_profile, liked_group)
+            return like_one_to_group(request, current_profile, liked_group)
 
         # like group to one
         if current_is_in_group and not liked_is_in_group:
             current_group = current_profile.member_group.all()[0]
-            return like_group_to_one(current_profile, current_group, liked_profile)
+            return like_group_to_one(
+                request, current_profile, current_group, liked_profile
+            )
 
         # like group to group
         if current_is_in_group and liked_is_in_group:
             current_group = current_profile.member_group.all()[0]
             liked_group = liked_profile.member_group.all()[0]
-            return like_group_to_group(current_profile, current_group, liked_group)
+            return like_group_to_group(
+                request, current_profile, current_group, liked_group
+            )
 
         return Response(
             {"details": "Something went wrong when giving like"},
@@ -484,7 +513,7 @@ class SwipeModelViewSet(ModelViewSet):
 
     @action(detail=True, methods=["post"], url_path=r"actions/unlike")
     def unlike(self, request, pk=None):
-        # unlike profile - unlike profile or group that I already gave like previously
+        # unlike profile or group that I liked previously
         current_profile = request.user
 
         try:
@@ -537,6 +566,64 @@ class SwipeModelViewSet(ModelViewSet):
         data = groups_serializer.data + profiles_serializer.data
         return Response({"count": likes.count(), "results": data})
 
+    @action(detail=False, methods=["post"], url_path=r"internal/actions/add-likes")
+    def internal_add_likes(self, request, pk=None):
+        # make all the (fake) profiles in the dev database like the admin user
+        current_profile = request.user
+        # check if the current profile is an admin profile
+        if not current_profile.is_superuser:
+            return Response(
+                {"error": "You do not have permission to perform this action"},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        # check to which database I’m connected (prevent execute this action using the real db)
+        if not settings.DEBUG:
+            return Response(
+                {"error": "This action cannot be performed in production"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        profiles = models.Profile.objects.all().filter(has_account=True)
+        count_profiles = profiles.count()
+
+        for profile in profiles:
+            current_profile.likes.add(profile)
+            if current_profile.member_group.all().exists():
+                current_profile_group = current_profile.member_group.all()[0]
+                current_profile_group.likes.add(profile)
+
+        return Response({"success": f"{count_profiles} profiles added to likes"})
+
+    @action(detail=False, methods=["post"], url_path=r"internal/actions/remove-likes")
+    def internal_remove_likes(self, request, pk=None):
+        # revert add likes action
+        current_profile = request.user
+        # check if the current profile is an admin profile
+        if not current_profile.is_superuser:
+            return Response(
+                {"error": "You do not have permission to perform this action"},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        # check to which database I’m connected (prevent execute this action using the real db)
+        if not settings.DEBUG:
+            return Response(
+                {"error": "This action cannot be performed in production"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        profiles = models.Profile.objects.all().filter(has_account=True)
+        count_profiles = profiles.count()
+
+        for profile in profiles:
+            current_profile.likes.remove(profile)
+            if current_profile.member_group.all().exists():
+                current_profile_group = current_profile.member_group.all()[0]
+                current_profile_group.likes.remove(profile)
+
+        return Response({"success": f"{count_profiles} profiles removed from likes"})
+
 
 class MatchModelViewSet(ModelViewSet):
     queryset = models.Match.objects.all()
@@ -559,7 +646,11 @@ class MatchModelViewSet(ModelViewSet):
         matches = models.Match.objects.filter(
             Q(profile1=current_profile.id) | Q(profile2=current_profile.id)
         )
-        serializer = serializers.MatchSerializer(matches, many=True)
+
+        # Context enable the access of the current user (the user that make the request) in the serializers
+        serializer = serializers.MatchSerializer(
+            matches, many=True, context={"request": request}
+        )
         return Response({"count": matches.count(), "data": serializer.data})
 
     def destroy(self, request, pk=None):

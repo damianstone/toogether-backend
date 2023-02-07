@@ -1,9 +1,10 @@
 from cProfile import Profile
 from dataclasses import fields
 from rest_framework import serializers
-from api import models
+from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.db.models import Q
+from api import models
 
 
 class ChoicesField(serializers.Field):
@@ -46,6 +47,7 @@ class ProfileSerializer(serializers.ModelSerializer):
 
     photos = PhotoSerializer(source="photo_set", many=True, read_only=True)
 
+    is_in_group = serializers.SerializerMethodField()
     total_likes = serializers.SerializerMethodField()
     total_matches = serializers.SerializerMethodField()
 
@@ -65,8 +67,17 @@ class ProfileSerializer(serializers.ModelSerializer):
         token = RefreshToken.for_user(obj)
         return str(token.access_token)
 
+    def get_is_in_group(self, profile):
+        return profile.member_group.all().exists()
+
     def get_total_likes(self, profile):
-        likes = profile.likes.all()
+        matches = matches = models.Match.objects.filter(
+            Q(profile1=profile.id) | Q(profile2=profile.id)
+        )
+        matched_profiles = [match.profile1.id for match in matches] + [
+            match.profile2.id for match in matches
+        ]
+        likes = profile.likes.exclude(id__in=matched_profiles)
         count = likes.count()
         return count
 
@@ -80,6 +91,7 @@ class ProfileSerializer(serializers.ModelSerializer):
 
 # -------------------------- SWIPE SERIALIZERS -----------------------------
 class SwipeProfileSerializer(serializers.ModelSerializer):
+    is_in_group = serializers.SerializerMethodField()
     gender = serializers.CharField(
         source="get_gender_display", required=True, allow_null=False
     )
@@ -109,8 +121,18 @@ class SwipeProfileSerializer(serializers.ModelSerializer):
             "instagram",
         ]
 
+    def get_is_in_group(self, profile):
+        return profile.member_group.all().exists()
+
+
+""" 
+    Swipe group serializer show a owner property and show 
+    all the members (including the owner) in the members property 
+"""
+
 
 class SwipeGroupSerializer(serializers.ModelSerializer):
+    total_members = serializers.SerializerMethodField()
     owner = SwipeProfileSerializer(read_only=True, many=False)
     members = SwipeProfileSerializer(read_only=True, many=True)
     gender = serializers.CharField(
@@ -121,11 +143,15 @@ class SwipeGroupSerializer(serializers.ModelSerializer):
         model = models.Group
         fields = ["id", "gender", "total_members", "created_at", "owner", "members"]
 
+    def get_total_members(self, group):
+        return group.members.count()
+
 
 # -------------------------- GROUP SERIALIZERS --------------------------------
 class GroupSerializer(serializers.ModelSerializer):
-    owner = SwipeProfileSerializer(read_only=True, many=False)
+    total_members = serializers.SerializerMethodField()
     members = serializers.SerializerMethodField()
+    owner = SwipeProfileSerializer(read_only=True, many=False)
     gender = ChoicesField(
         choices=models.Group.GENDER_CHOICES,
         required=False,
@@ -136,6 +162,7 @@ class GroupSerializer(serializers.ModelSerializer):
         model = models.Group
         fields = "__all__"
 
+    # Exclude the owner from members
     def get_members(self, group):
         # get the group
         group = models.Group.objects.get(pk=group.id)
@@ -145,19 +172,56 @@ class GroupSerializer(serializers.ModelSerializer):
         serializer = SwipeProfileSerializer(instance=members_without_owner, many=True)
         return serializer.data
 
+    def get_total_members(self, group):
+        return group.members.count()
+
 
 class GroupSerializerWithLink(GroupSerializer):
     share_link = serializers.CharField(required=True, allow_null=False)
 
 
-# -------------------------- BLOCKED PROFILES SERIALIZERS --------------------------------
+# -------------------------- MATCHED PROFILES SERIALIZERS --------------------------------
 class MatchSerializer(serializers.ModelSerializer):
-    profile1 = SwipeProfileSerializer(read_only=True, many=False)
-    profile2 = SwipeProfileSerializer(read_only=True, many=False)
+    current_profile = serializers.SerializerMethodField()
+    matched_data = serializers.SerializerMethodField()
 
     class Meta:
         model = models.Match
-        fields = ["id", "profile1", "profile2"]
+        fields = ["id", "current_profile", "matched_data"]
+
+    def get_current_profile(self, match):
+        request = self.context.get("request")
+        current_profile = request.user
+
+        serializer = SwipeProfileSerializer(current_profile, many=False)
+        return serializer.data
+
+    def get_matched_data(self, match):
+        request = self.context.get("request")
+        current_profile = request.user
+
+        if match.profile1 != current_profile:
+            matched_profile = match.profile2
+        else:
+            matched_profile = match.profile2
+
+        #  check if the matched profile is in a group
+        if matched_profile.member_group.all().exists():
+            matched_group = matched_profile.member_group.all()[0]
+            members = matched_group.members.count()
+            profile_serializer = SwipeProfileSerializer(matched_profile, many=False)
+
+            return {
+                "matched_profile": profile_serializer.data,
+                "is_group_match": True,
+                "members_count": members,
+            }
+
+        serializer = SwipeProfileSerializer(matched_profile, many=False)
+        return {
+            "matched_profile": serializer.data,
+            "is_group_match": False,
+        }
 
 
 # -------------------------- DATA ACTIONS SERIALIZERS -----------------------------
