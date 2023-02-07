@@ -132,10 +132,10 @@ features: Profile views, Group views, and Swipe views.
 
 In Together, there is a single data model for users known as the profile model. The distinction between a user and a profile is that a user may log into the app but has not yet created a profile.
 
-User views
+`User views`
 These views manage the basic functionality of the user model, such as creating and deleting a user.
 
-Profile Modelview
+`Profile Modelview`
 This set of views manages all the actions that a user can perform on their profile, such as adding photos, updating information, and blocking other users.
 
 ### Grup Views
@@ -144,7 +144,7 @@ These endpoints manage all the actions related to groups, such as creating a gro
 
 ### Swipe Views
 
-The swipe views manage the "liking" functionality between users, as well as the matchmaking algorithm. This includes all the processes and calculations involved in determining the profiles that a user is matched with. These views are an integral part of the application as they enable the core user interaction and facilitate the potential formation of relationships.
+The swipe views manage the "liking" functionality between users, as well as the `matchmaking algorithm`. This includes all the processes and calculations involved in determining the profiles that a user is matched with. These views are an integral part of the application as they enable the core user interaction and facilitate the potential formation of relationships.
 
 # Matchmaking Algorithm
 
@@ -155,9 +155,9 @@ The algorithm is implemented in the like function and uses several checks to det
 1. One profile to one profile
 2. One profile to a group
 3. A group to one profile
-4. A group to a group
+4. A group to another group
 
-Each **scenario** is handled by a different function that performs the necessary operations to determine the match.
+Each scenario is handled by a different function that performs the necessary operations to determine the match.
 
 ## Function Structure
 
@@ -169,13 +169,5 @@ Each **scenario** is handled by a different function that performs the necessary
 ### Outputs
 A Django response object containing:
 - `details`: a string indicating the status of the like, either `LIKE`, `ALREADY_MATCHED`, `NEW_MATCH` or `SAME_MATCH`
-- `group_match`: a string indicating whether the match was between groups, in this case it will be `NEITHER`
+- `group_match`: a string indicating whether the match was between groups: `NEITHER`, `BOTH`, `LIKED` or `CURRENT`
 - `match_data`: the match serialization in case a new match was created, otherwise this field will not be present.
-
-## Scenarios
-
-### 1️⃣ One profile to one profile
-
-### 2️⃣ One profile to a group
-
-###
