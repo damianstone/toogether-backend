@@ -534,7 +534,18 @@ class SwipeModelViewSet(ModelViewSet):
     def remove_like(self, request, pk=None):
         # remove a like from my many to many field
         current_profile = request.user
-        current_profile.likes.remove(pk)
+        try:
+            profile_to_remove = models.Profile.objects.get(pk=pk)
+        except:
+            try:
+                profile_to_remove = models.Group.objects.get(pk=pk)
+            except ObjectDoesNotExist:
+                return Response(
+                    {"Error": "Profile does not exist"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+        
+        current_profile.likes.remove(profile_to_remove)
         return Response({"details": "Like removed"})
 
     @action(detail=False, methods=["get"], url_path=r"actions/get-likes")
@@ -564,6 +575,7 @@ class SwipeModelViewSet(ModelViewSet):
         groups_serializer = serializers.SwipeGroupSerializer(groups, many=True)
         profiles_serializer = serializers.SwipeProfileSerializer(profiles, many=True)
         data = groups_serializer.data + profiles_serializer.data
+        
         return Response({"count": likes.count(), "results": data})
 
     @action(detail=False, methods=["post"], url_path=r"internal/actions/add-likes")
