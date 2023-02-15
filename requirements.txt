@@ -1,6 +1,5 @@
 asgiref==3.5.0
 attrs==22.1.0
-awsebcli==3.20.3
 bcrypt==4.0.1
 black==22.6.0
 blessed==1.19.1

@@ -3,6 +3,7 @@ from dataclasses import fields
 from rest_framework import serializers
 from api import models
 from rest_framework_simplejwt.tokens import RefreshToken
+from django.db.models import Q
 
 
 class ChoicesField(serializers.Field):
@@ -45,6 +46,9 @@ class ProfileSerializer(serializers.ModelSerializer):
 
     photos = PhotoSerializer(source="photo_set", many=True, read_only=True)
 
+    total_likes = serializers.SerializerMethodField()
+    total_matches = serializers.SerializerMethodField()
+
     class Meta:
         model = models.Profile
         exclude = [
@@ -60,6 +64,18 @@ class ProfileSerializer(serializers.ModelSerializer):
     def get_token(self, obj):
         token = RefreshToken.for_user(obj)
         return str(token.access_token)
+
+    def get_total_likes(self, profile):
+        likes = profile.likes.all()
+        count = likes.count()
+        return count
+
+    def get_total_matches(self, profile):
+        matches = matches = models.Match.objects.filter(
+            Q(profile1=profile.id) | Q(profile2=profile.id)
+        )
+        count = matches.count()
+        return count
 
 
 # -------------------------- SWIPE SERIALIZERS -----------------------------
@@ -79,19 +95,18 @@ class SwipeProfileSerializer(serializers.ModelSerializer):
             "id",
             "email",
             "is_in_group",
-            "firstname",
-            "lastname",
+            "name",
             "birthdate",
             "age",
             "gender",
             "show_me",
             "nationality",
             "city",
-            "live_in",
             "university",
             "description",
             "location",
             "photos",
+            "instagram",
         ]
 
 
@@ -147,8 +162,7 @@ class MatchSerializer(serializers.ModelSerializer):
 
 # -------------------------- DATA ACTIONS SERIALIZERS -----------------------------
 class CreateProfileSerializer(serializers.Serializer):
-    firstname = serializers.CharField(required=True, allow_null=False)
-    lastname = serializers.CharField(required=True, allow_null=False)
+    name = serializers.CharField(required=True, allow_null=False)
     birthdate = serializers.DateField(required=True, allow_null=False)
     university = serializers.CharField(required=False, allow_null=True)
     description = serializers.CharField(required=False, allow_null=True)
@@ -165,6 +179,7 @@ class CreateProfileSerializer(serializers.Serializer):
 
 
 class UpdateProfileSerializer(serializers.Serializer):
+    instagram = serializers.CharField(required=False, allow_null=True)
     nationality = serializers.CharField(required=False, allow_null=True)
     city = serializers.CharField(required=False, allow_null=True)
     university = serializers.CharField(required=False, allow_null=True)

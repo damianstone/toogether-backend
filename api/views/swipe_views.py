@@ -116,8 +116,7 @@ def filter_groups(current_profile, groups):
             age__gte=profile_age - 5, age__lte=profile_age + 5
         )
 
-    # TODO: filter by min of 2 members
-    show_groups = show_groups.filter(total_members__gte=1)
+    show_groups = show_groups.filter(total_members__gte=2)
 
     # filter all the groups that has a like from the current profile
     groups_liked_by_current_profile = show_groups.filter(likes=current_profile.id)
@@ -390,7 +389,9 @@ class SwipeModelViewSet(ModelViewSet):
 
         if current_profile.location == None:
             return Response(
-                {"details": "You need to set your current location to perform this action"},
+                {
+                    "details": "You need to set your current location to perform this action"
+                },
                 status=status.HTTP_400_BAD_REQUEST,
             )
 

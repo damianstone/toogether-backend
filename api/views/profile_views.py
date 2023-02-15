@@ -84,19 +84,19 @@ class ProfileViewSet(ModelViewSet):
 
     # admin actions for this model view set
     def get_permissions(self):
-        if (
-            self.action == "list" or self.action == "update" or self.action == "destroy"
-        ):
+        if self.action == "list" or self.action == "update" or self.action == "destroy":
             return [IsAdminUser()]
         return [permission() for permission in self.permission_classes]
 
     def retrieve(self, request, pk=None):
         profile = models.Profile.objects.get(pk=pk)
-        
+
         # only the current user and an admin can execute this function
-        if profile.id != request.user.id and not profile.is_superuser:
+        if profile.id != request.user.id and not request.user.is_superuser:
             return Response(
-                {"detail": "Not autherized",},
+                {
+                    "detail": "Not autherized",
+                },
                 status=status.HTTP_401_UNAUTHORIZED,
             )
 
@@ -119,8 +119,7 @@ class ProfileViewSet(ModelViewSet):
         fields_serializer = serializers.CreateProfileSerializer(data=request.data)
         fields_serializer.is_valid(raise_exception=True)
 
-        profile.firstname = fields_serializer.validated_data["firstname"]
-        profile.lastname = fields_serializer.validated_data["lastname"]
+        profile.name = fields_serializer.validated_data["name"]
         profile.birthdate = fields_serializer.validated_data["birthdate"]
         profile.university = fields_serializer.validated_data["university"]
         profile.description = fields_serializer.validated_data["description"]
@@ -152,9 +151,12 @@ class ProfileViewSet(ModelViewSet):
                 {"Error": "Profile does not exist"}, status=status.HTTP_400_BAD_REQUEST
             )
 
-        if profile.id != request.user.id:
+        # only the current user and an admin can execute this function
+        if profile.id != request.user.id and not request.user.is_superuser:
             return Response(
-                {"detail": "Not autherized"},
+                {
+                    "detail": "Not autherized",
+                },
                 status=status.HTTP_401_UNAUTHORIZED,
             )
 
@@ -166,6 +168,8 @@ class ProfileViewSet(ModelViewSet):
             profile.nationality = fields_serializer.validated_data["nationality"]
         if "city" in request.data:
             profile.city = fields_serializer.validated_data["city"]
+        if "instagram" in request.data:
+            profile.instagram = fields_serializer.validated_data["instagram"]
         if "university" in request.data:
             profile.university = fields_serializer.validated_data["university"]
         if "description" in request.data:
