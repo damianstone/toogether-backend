@@ -544,7 +544,7 @@ class SwipeModelViewSet(ModelViewSet):
                     {"Error": "Profile does not exist"},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
-        
+
         current_profile.likes.remove(profile_to_remove)
         return Response({"details": "Like removed"})
 
@@ -568,14 +568,19 @@ class SwipeModelViewSet(ModelViewSet):
 
         for like_profile in likes:
             if like_profile.member_group.all().exists():
-                groups.append(like_profile.member_group.all()[0])
+                group_like = like_profile.member_group.all()[0]
+                has_match = check_profile_group_has_match(
+                    current_profile.id, group_like
+                )
+                if group_like not in groups and not has_match:
+                    groups.append(group_like)
             else:
                 profiles.append(like_profile)
 
         groups_serializer = serializers.SwipeGroupSerializer(groups, many=True)
         profiles_serializer = serializers.SwipeProfileSerializer(profiles, many=True)
         data = groups_serializer.data + profiles_serializer.data
-        
+
         return Response({"count": likes.count(), "results": data})
 
     @action(detail=False, methods=["post"], url_path=r"internal/actions/add-likes")
