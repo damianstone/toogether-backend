@@ -532,20 +532,31 @@ class SwipeModelViewSet(ModelViewSet):
 
     @action(detail=True, methods=["post"], url_path=r"actions/remove-like")
     def remove_like(self, request, pk=None):
-        # remove a like from my many to many field
         current_profile = request.user
         try:
             profile_to_remove = models.Profile.objects.get(pk=pk)
-        except:
+        except ObjectDoesNotExist:
+            return Response(
+                {"Error": "Profile does not exist"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        # if its a group then remove all members likes        
+        if profile_to_remove.member_group.all().exists():
+            group_id = profile_to_remove.member_group.all()[0].id
             try:
-                profile_to_remove = models.Group.objects.get(pk=pk)
+                group = models.Group.objects.get(pk=group_id)
             except ObjectDoesNotExist:
                 return Response(
                     {"Error": "Profile does not exist"},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
-        
-        current_profile.likes.remove(profile_to_remove)
+                
+            for member in group.members.all():
+                current_profile.likes.remove(member)
+        else:
+            current_profile.likes.remove(profile_to_remove)
+            
         return Response({"details": "Like removed"})
 
     @action(detail=False, methods=["get"], url_path=r"actions/get-likes")
@@ -568,14 +579,19 @@ class SwipeModelViewSet(ModelViewSet):
 
         for like_profile in likes:
             if like_profile.member_group.all().exists():
-                groups.append(like_profile.member_group.all()[0])
+                group_like = like_profile.member_group.all()[0]
+                has_match = check_profile_group_has_match(
+                    current_profile.id, group_like
+                )
+                if group_like not in groups and not has_match:
+                    groups.append(group_like)
             else:
                 profiles.append(like_profile)
 
         groups_serializer = serializers.SwipeGroupSerializer(groups, many=True)
         profiles_serializer = serializers.SwipeProfileSerializer(profiles, many=True)
         data = groups_serializer.data + profiles_serializer.data
-        
+
         return Response({"count": likes.count(), "results": data})
 
     @action(detail=False, methods=["post"], url_path=r"internal/actions/add-likes")
@@ -676,8 +692,23 @@ class MatchModelViewSet(ModelViewSet):
             )
 
         matched_profile = get_matched_profile(current_profile, match)
+        
+        # if its a group then remove all members likes        
+        if matched_profile.member_group.all().exists():
+            group_id = matched_profile.member_group.all()[0].id
+            try:
+                group = models.Group.objects.get(pk=group_id)
+            except ObjectDoesNotExist:
+                return Response(
+                    {"Error": "Profile does not exist"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+                
+            for member in group.members.all():
+                current_profile.likes.remove(member)
+        else:
+            current_profile.likes.remove(matched_profile)
+            
         matched_profile.likes.remove(current_profile)
-        current_profile.likes.remove(matched_profile)
         match.delete()
-
         return Response({"details": "Match deleted"}, status=status.HTTP_200_OK)
