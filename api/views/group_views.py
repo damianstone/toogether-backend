@@ -7,19 +7,21 @@ from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from django.core.exceptions import ObjectDoesNotExist
 from api import models, serializers
 
+# Response constants
+NO_GROUP = "NO_GROUP"
+
+# Internal actions
+internal_actions = ["list", "retrieve", "update", "add_member"]
+
 
 class GroupViewSet(ModelViewSet):
     queryset = models.Group.objects.all()
     serializer_class = serializers.GroupSerializer
     permission_classes = [IsAuthenticated]
 
-    # Internal endpoints
+    # Manage permissions 
     def get_permissions(self):
-        if (
-            self.action == "list"
-            or self.action == "update"
-            or self.action == "add_member"
-        ):
+        if self.action in internal_actions:
             return [IsAdminUser()]
         return [permission() for permission in self.permission_classes]
 
@@ -73,6 +75,16 @@ class GroupViewSet(ModelViewSet):
             {"detail": "Group deleted"},
             status=status.HTTP_200_OK,
         )
+
+    @action(detail=False, methods=["get"], url_path=r"actions/get-group")
+    def get_group(self, request):
+        profile = request.user
+        if profile.member_group.all().exists():
+            group = profile.member_group.all()[0]
+            serializer = serializers.GroupSerializer(group, many=False)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        return Response({"detail": NO_GROUP})
 
     @action(detail=False, methods=["post"], url_path=r"actions/join")
     def join(self, request):
@@ -164,7 +176,7 @@ class GroupViewSet(ModelViewSet):
         serializer = serializers.GroupSerializer(group, many=False)
         return Response(serializer.data)
 
-    @action(detail=True, methods=["post"], url_path=r"actions/add-member")
+    @action(detail=True, methods=["post"], url_path=r"internal/add-member")
     def add_member(self, request, pk=None):
         fields_serializer = serializers.GroupSerializerWithMember(data=request.data)
         fields_serializer.is_valid(raise_exception=True)
