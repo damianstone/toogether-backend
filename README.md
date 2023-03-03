@@ -9,8 +9,8 @@
 ### Create a virtual environment
 
 ``` python
-python3 -m venv venv-backend
-source venv-backend/bin/activate 
+python3 -m venv venv-people
+source venv-people/bin/activate 
 ```
 
 ### Install requirements.txt
