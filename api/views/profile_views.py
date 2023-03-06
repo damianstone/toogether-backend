@@ -47,7 +47,9 @@ class ProfileViewSet(ModelViewSet):
         return [permission() for permission in self.permission_classes]
 
     def list(self, request):
-        return Response({"detail": "Not authorized"}, status=status.HTTP_401_UNAUTHORIZED)
+        return Response(
+            {"detail": "Not authorized"}, status=status.HTTP_401_UNAUTHORIZED
+        )
 
     # * Register
     def create(self, request):
@@ -147,8 +149,10 @@ class ProfileViewSet(ModelViewSet):
             )
 
         profile.delete()
-        return Response({"detail": "User deleted successfully"}, status=status.HTTP_200_OK)
-        
+        return Response(
+            {"detail": "User deleted successfully"}, status=status.HTTP_200_OK
+        )
+
     @action(detail=False, methods=["post"], url_path=r"actions/create-profile")
     def create_profile(self, request):
         profile = request.user

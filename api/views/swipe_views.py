@@ -143,7 +143,6 @@ def check_two_profiles_have_match(profile1_id, profile2_id):
     )
 
     if current_matches.filter(id__in=liked_matches).exists():
-        # return the match
         return True
 
     return False
@@ -540,8 +539,8 @@ class SwipeModelViewSet(ModelViewSet):
                 {"Error": "Profile does not exist"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        
-        # if its a group then remove all members likes        
+
+        # if its a group then remove all members likes
         if profile_to_remove.member_group.all().exists():
             group_id = profile_to_remove.member_group.all()[0].id
             try:
@@ -551,12 +550,12 @@ class SwipeModelViewSet(ModelViewSet):
                     {"Error": "Profile does not exist"},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
-                
+
             for member in group.members.all():
                 current_profile.likes.remove(member)
         else:
             current_profile.likes.remove(profile_to_remove)
-            
+
         return Response({"details": "Like removed"})
 
     @action(detail=False, methods=["get"], url_path=r"actions/get-likes")
@@ -659,17 +658,12 @@ class MatchModelViewSet(ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_permissions(self):
-        if (
-            self.action == "list"
-            or self.action == "retrieve"
-            or self.action == "create"
-            or self.action == "update"
-        ):
+        if self.action == "create" or self.action == "update":
             return [IsAdminUser()]
         return [permission() for permission in self.permission_classes]
 
-    @action(detail=False, methods=["get"], url_path=r"actions/list-profile-matches")
-    def list_profile_matches(self, request):
+    # list the current profile matches
+    def list(self, request):
         current_profile = request.user
         matches = models.Match.objects.filter(
             Q(profile1=current_profile.id) | Q(profile2=current_profile.id)
@@ -680,6 +674,29 @@ class MatchModelViewSet(ModelViewSet):
             matches, many=True, context={"request": request}
         )
         return Response({"count": matches.count(), "data": serializer.data})
+
+    def retrieve(self, request, pk=None):
+        current_profile = request.user
+
+        try:
+            match = models.Match.objects.get(pk=pk)
+        except ObjectDoesNotExist:
+            return Response(
+                {"Error": "Profile does not exist"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if (
+            current_profile.id == match.profile1.id
+            or current_profile.id == match.profile2.id
+        ):
+            serializer = serializers.MatchSerializer(
+                match, many=False, context={"request": request}
+            )
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        return Response(
+            {"detail": "Not authorized"}, status=status.HTTP_401_UNAUTHORIZED
+        )
 
     def destroy(self, request, pk=None):
         current_profile = request.user
@@ -692,8 +709,8 @@ class MatchModelViewSet(ModelViewSet):
             )
 
         matched_profile = get_matched_profile(current_profile, match)
-        
-        # if its a group then remove all members likes        
+
+        # if its a group then remove all members likes
         if matched_profile.member_group.all().exists():
             group_id = matched_profile.member_group.all()[0].id
             try:
@@ -703,12 +720,12 @@ class MatchModelViewSet(ModelViewSet):
                     {"Error": "Profile does not exist"},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
-                
+
             for member in group.members.all():
                 current_profile.likes.remove(member)
         else:
             current_profile.likes.remove(matched_profile)
-            
+
         matched_profile.likes.remove(current_profile)
         match.delete()
         return Response({"details": "Match deleted"}, status=status.HTTP_200_OK)

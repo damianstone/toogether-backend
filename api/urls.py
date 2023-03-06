@@ -1,6 +1,7 @@
 from django.urls import path, include
 from rest_framework import routers
 from api.views import profile_views, group_views, swipe_views
+from api.internal import internal_profile
 from rest_framework_simplejwt.views import TokenRefreshView
 
 
@@ -37,11 +38,15 @@ router.register(
 )
 
 urlpatterns = [
+    # Internal endpoints
+    path("internal/users/", internal_profile.list_profiles, name="list_profiles"),
+    # Public endpoints - authentication
     path("token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
     path(
         "users/login/",
         profile_views.MyTokenObtainPairView.as_view(),
         name="login",
     ),
+    # Public endpoints
     path("", include(router.urls)),
 ]

@@ -19,18 +19,22 @@ class GroupViewSet(ModelViewSet):
     serializer_class = serializers.GroupSerializer
     permission_classes = [IsAuthenticated]
 
-    # Manage permissions 
+    # Manage permissions
     def get_permissions(self):
         if self.action in internal_actions:
             return [IsAdminUser()]
         return [permission() for permission in self.permission_classes]
 
     def list(self, request):
-        return Response({"detail": "Not authorized"}, status=status.HTTP_401_UNAUTHORIZED)
-    
+        return Response(
+            {"detail": "Not authorized"}, status=status.HTTP_401_UNAUTHORIZED
+        )
+
     def retrieve(self, request, pk=None):
-        return Response({"detail": "Not authorized"}, status=status.HTTP_401_UNAUTHORIZED)
-    
+        return Response(
+            {"detail": "Not authorized"}, status=status.HTTP_401_UNAUTHORIZED
+        )
+
     def create(self, request):
         profile = request.user
         profile_has_group = models.Group.objects.filter(owner=profile.id).exists()
@@ -60,7 +64,9 @@ class GroupViewSet(ModelViewSet):
         return Response(serializer.data)
 
     def update(self, request, pk=None):
-        return Response({"detail": "Not authorized"}, status=status.HTTP_401_UNAUTHORIZED)
+        return Response(
+            {"detail": "Not authorized"}, status=status.HTTP_401_UNAUTHORIZED
+        )
 
     def destroy(self, request, pk):
         profile = request.user
