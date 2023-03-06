@@ -5,7 +5,7 @@ from django.contrib.gis.measure import D
 from django.db.models import Q
 from api import models, serializers
 
-
+# response constants to identify the type of match in the frontend
 ALREADY_MATCHED = "ALREADY_MATCHED"
 NEW_MATCH = "NEW_MATCH"
 SAME_MATCH = "SAME_MATCH"
