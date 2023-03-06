@@ -39,7 +39,12 @@ router.register(
 
 urlpatterns = [
     # Internal endpoints
-    path("internal/users/", internal_profile.list_profiles, name="list_profiles"),
+    path("internal/profiles/", internal_profile.list_profiles, name="list_profiles"),
+    path(
+        "internal/generate-profiles/",
+        internal_profile.generated_profiles,
+        name="generate-profiles",
+    ),
     # Public endpoints - authentication
     path("token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
     path(
