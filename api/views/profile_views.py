@@ -17,7 +17,7 @@ import json
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
 
-# ----------------------- USER VIEWS (LOGIN / REGISTER) --------------------------------
+# ----------------------- LOGIN --------------------------------
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
         data = super().validate(attrs)
@@ -33,63 +33,49 @@ class MyTokenObtainPairView(TokenObtainPairView):
     permission_classes = [AllowAny]
 
 
-@csrf_exempt
-@api_view(["POST"])
-@permission_classes([AllowAny])
-def registerUser(request):
-    data = request.data
-    password = data["password"]
-    repeated_password = data["repeated_password"]
-
-    if password != repeated_password:
-        message = {"detail": "Your password does not match"}
-        return Response(message, status=status.HTTP_400_BAD_REQUEST)
-
-    try:
-        # create a new user data model
-        user = models.Profile.objects.create(
-            email=data["email"], password=make_password(data["password"])
-        )
-        serializer = serializers.ProfileSerializer(user, many=False)
-        return Response(serializer.data)
-    except:
-        message = {"detail": "User with this email already exist"}
-        return Response(message, status=status.HTTP_400_BAD_REQUEST)
-
-
-@csrf_exempt
-@api_view(["DELETE"])
-@permission_classes([IsAuthenticated])
-def deleteUser(request):
-    user_to_delete = request.user
-    user_to_delete.delete()
-    return Response({"detail": "User deleted successfully"})
-
-
-@csrf_exempt
-@api_view(["GET"])
-@permission_classes([IsAdminUser])
-def getUsers(request):
-    profiles = models.Profile.objects.all()
-    serializer = serializers.ProfileSerializer(profiles, many=True)
-    return Response(serializer.data)
-
-
 # ----------------------- PROFILES VIEWS --------------------------------
 class ProfileViewSet(ModelViewSet):
-    queryset = models.Profile.objects.all().filter(has_account=True)
+    queryset = models.Profile.objects.all()
     serializer_class = serializers.ProfileSerializer
     permission_classes = [IsAuthenticated]
     pagination_class = CustomPagination
 
     # admin actions for this model view set
     def get_permissions(self):
-        if self.action == "list" or self.action == "update" or self.action == "destroy":
+        if self.action == "list":
             return [IsAdminUser()]
+        if self.action == "create":
+            return [AllowAny()]
         return [permission() for permission in self.permission_classes]
 
+    # * Register
+    def create(self, request):
+        data = request.data
+        password = data["password"]
+        repeated_password = data["repeated_password"]
+
+        if password != repeated_password:
+            message = {"detail": "Your password does not match"}
+            return Response(message, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            # create a new user data model
+            user = models.Profile.objects.create(
+                email=data["email"], password=make_password(data["password"])
+            )
+            serializer = serializers.ProfileSerializer(user, many=False)
+            return Response(serializer.data)
+        except:
+            message = {"detail": "User with this email already exist"}
+            return Response(message, status=status.HTTP_400_BAD_REQUEST)
+
     def retrieve(self, request, pk=None):
-        profile = models.Profile.objects.get(pk=pk)
+        try:
+            profile = models.Profile.objects.get(pk=pk)
+        except ObjectDoesNotExist:
+            return Response(
+                {"Error": "Profile does not exist"}, status=status.HTTP_400_BAD_REQUEST
+            )
 
         # only the current user and an admin can execute this function
         if profile.id != request.user.id and not request.user.is_superuser:
@@ -103,44 +89,7 @@ class ProfileViewSet(ModelViewSet):
         serializer = serializers.ProfileSerializer(profile, many=False)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    @action(detail=False, methods=["post"], url_path=r"actions/create-profile")
-    def create_profile(self, request):
-        profile = request.user
-
-        def age(birthdate):
-            today = date.today()
-            age = (
-                today.year
-                - birthdate.year
-                - ((today.month, today.day) < (birthdate.month, birthdate.day))
-            )
-            return age
-
-        fields_serializer = serializers.CreateProfileSerializer(data=request.data)
-        fields_serializer.is_valid(raise_exception=True)
-
-        profile.name = fields_serializer.validated_data["name"]
-        profile.birthdate = fields_serializer.validated_data["birthdate"]
-        profile.university = fields_serializer.validated_data["university"]
-        profile.description = fields_serializer.validated_data["description"]
-        profile.gender = fields_serializer.validated_data["gender"]
-        profile.show_me = fields_serializer.validated_data["show_me"]
-
-        if age(profile.birthdate) < 18:
-            return Response(
-                {"detail": "You must be over 18 years old to use this app"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        else:
-            profile.age = age(profile.birthdate)
-            profile.has_account = True
-
-        profile.save()
-        profile_serializer = serializers.ProfileSerializer(profile, many=False)
-        return Response(profile_serializer.data)
-
-    @action(detail=True, methods=["patch"], url_path=r"actions/update-profile")
-    def update_profile(self, request, pk):
+    def update(self, request, pk=None):
         fields_serializer = serializers.UpdateProfileSerializer(data=request.data)
         fields_serializer.is_valid(raise_exception=True)
 
@@ -174,6 +123,62 @@ class ProfileViewSet(ModelViewSet):
             profile.university = fields_serializer.validated_data["university"]
         if "description" in request.data:
             profile.description = fields_serializer.validated_data["description"]
+
+        profile.save()
+        profile_serializer = serializers.ProfileSerializer(profile, many=False)
+        return Response(profile_serializer.data)
+
+    def destroy(self, request, pk=None):
+        try:
+            profile = models.Profile.objects.get(pk=pk)
+        except ObjectDoesNotExist:
+            return Response(
+                {"Error": "Profile does not exist"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # only the current user and an admin can execute this function
+        if profile.id != request.user.id and not request.user.is_superuser:
+            return Response(
+                {
+                    "detail": "Not autherized",
+                },
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        profile.delete()
+        return Response({"detail": "User deleted successfully"}, status=status.HTTP_200_OK)
+        
+    @action(detail=False, methods=["post"], url_path=r"actions/create-profile")
+    def create_profile(self, request):
+        profile = request.user
+
+        def age(birthdate):
+            today = date.today()
+            age = (
+                today.year
+                - birthdate.year
+                - ((today.month, today.day) < (birthdate.month, birthdate.day))
+            )
+            return age
+
+        fields_serializer = serializers.CreateProfileSerializer(data=request.data)
+        fields_serializer.is_valid(raise_exception=True)
+
+        profile.name = fields_serializer.validated_data["name"]
+        profile.birthdate = fields_serializer.validated_data["birthdate"]
+        profile.university = fields_serializer.validated_data["university"]
+        profile.description = fields_serializer.validated_data["description"]
+        profile.gender = fields_serializer.validated_data["gender"]
+        profile.show_me = fields_serializer.validated_data["show_me"]
+
+        if age(profile.birthdate) < 18:
+            return Response(
+                {"detail": "You must be over 18 years old to use this app"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        else:
+            profile.age = age(profile.birthdate)
+            profile.has_account = True
 
         profile.save()
         profile_serializer = serializers.ProfileSerializer(profile, many=False)
