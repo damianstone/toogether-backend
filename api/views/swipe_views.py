@@ -46,7 +46,9 @@ class SwipeModelViewSet(ModelViewSet):
         groups_by_distance = groups.filter(members__in=profiles_by_distance)
 
         # Apply swipe filters
-        show_profiles = swipefilters.filter_profiles(current_profile, profiles_by_distance)
+        show_profiles = swipefilters.filter_profiles(
+            current_profile, profiles_by_distance
+        )
         show_groups = swipefilters.filter_groups(current_profile, groups_by_distance)
 
         # Serialize data

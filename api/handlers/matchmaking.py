@@ -17,6 +17,7 @@ BOTH = "BOTH"
 LIKED = "LIKED"
 CURRENT = "CURRENT"
 
+
 def get_matched_profile(current_profile, match):
     if current_profile.id == match.profile1.id:
         return match.profile2
@@ -90,7 +91,7 @@ def like_one_to_one(request, current_profile, liked_profile):
         )
 
         if already_matched:
-            return Response({"details": ALREADY_MATCHED})
+            return Response({"details": ALREADY_MATCHED}, status=status.HTTP_200_OK)
 
         match = models.Match.objects.create(
             profile1=current_profile, profile2=liked_profile
@@ -104,10 +105,11 @@ def like_one_to_one(request, current_profile, liked_profile):
                 "details": NEW_MATCH,
                 "group_match": NEITHER,
                 "match_data": match_serializer.data,
-            }
+            },
+            status=status.HTTP_200_OK,
         )
 
-    return Response({"details": LIKE})
+    return Response({"details": LIKE}, status=status.HTTP_200_OK)
 
 
 def like_one_to_group(request, current_profile, liked_group):
@@ -116,7 +118,7 @@ def like_one_to_group(request, current_profile, liked_group):
     # check if the current profile has already a match with the group
     already_matched = check_profile_group_has_match(current_profile.id, liked_group)
     if already_matched:
-        return Response({"details": ALREADY_MATCHED})
+        return Response({"details": ALREADY_MATCHED}, status=status.HTTP_200_OK)
 
     # check and get all the members who has given a like to the current profile
     members = []
@@ -148,7 +150,8 @@ def like_one_to_group(request, current_profile, liked_group):
                         "details": NEW_MATCH,
                         "group_match": LIKED,
                         "match_data": match_serializer.data,
-                    }
+                    },
+                    status=status.HTTP_200_OK,
                 )
 
         # if there is no member with which it does not have a match, recycle the previous match
@@ -163,10 +166,11 @@ def like_one_to_group(request, current_profile, liked_group):
                         "details": SAME_MATCH,
                         "group_match": LIKED,
                         "match_data": match_serializer.data,
-                    }
+                    },
+                    status=status.HTTP_200_OK,
                 )
 
-    return Response({"details": LIKE})
+    return Response({"details": LIKE}, status=status.HTTP_200_OK)
 
 
 def like_group_to_one(request, current_profile, current_group, liked_profile):
@@ -176,7 +180,7 @@ def like_group_to_one(request, current_profile, current_group, liked_profile):
     # check if the liked profile has already a match with the group
     already_matched = check_profile_group_has_match(liked_profile.id, current_group)
     if already_matched:
-        return Response({"details": ALREADY_MATCHED})
+        return Response({"details": ALREADY_MATCHED}, status=status.HTTP_200_OK)
 
     # check if liked profile already like the group (mutual like)
     # if there is a mutal like and a match has not been found in the foor,
@@ -195,7 +199,8 @@ def like_group_to_one(request, current_profile, current_group, liked_profile):
                     "details": SAME_MATCH,
                     "group_match": CURRENT,
                     "match_data": serializer.data,
-                }
+                },
+                status=status.HTTP_200_OK,
             )
 
         # if the current profile did not has any previous match, then create a new match
@@ -213,10 +218,11 @@ def like_group_to_one(request, current_profile, current_group, liked_profile):
                 "details": NEW_MATCH,
                 "group_match": CURRENT,
                 "match_data": match_serializer.data,
-            }
+            },
+            status=status.HTTP_200_OK,
         )
 
-    return Response({"details": LIKE})
+    return Response({"details": LIKE}, status=status.HTTP_200_OK)
 
 
 def like_group_to_group(request, current_profile, current_group, liked_group):
@@ -226,7 +232,7 @@ def like_group_to_group(request, current_profile, current_group, liked_group):
     # check if the groups have any matches in common
     group_already_matched = check_two_group_has_match(current_group, liked_group)
     if group_already_matched:
-        return Response({"details": ALREADY_MATCHED})
+        return Response({"details": ALREADY_MATCHED}, status=status.HTTP_200_OK)
 
     # get all the members who have already liked my group
     members = []
@@ -256,7 +262,8 @@ def like_group_to_group(request, current_profile, current_group, liked_group):
                         "details": NEW_MATCH,
                         "group_match": BOTH,
                         "match_data": match_serializer.data,
-                    }
+                    },
+                    status=status.HTTP_200_OK,
                 )
 
         # if there is no member with which it does not have a match, recycle the previous match
@@ -271,7 +278,8 @@ def like_group_to_group(request, current_profile, current_group, liked_group):
                         "details": SAME_MATCH,
                         "group_match": BOTH,
                         "match_data": match_serializer.data,
-                    }
+                    },
+                    status=status.HTTP_200_OK,
                 )
 
-    return Response({"details": LIKE})
+    return Response({"details": LIKE}, status=status.HTTP_200_OK)
