@@ -78,7 +78,14 @@ def get_match(profile1_id, profile2_id):
 
     return False
 
-
+"""
+    Like a profile and create a match if it is a mutual like
+    @param request - the HTTP request
+    @param current_profile - the profile that gives the like
+    @param liked_profile - the profile that receives the like
+    @return HTTP response with JSON object containing match details if it is a mutual like,
+    or a response indicating that the like was successful if it is not
+"""
 def like_one_to_one(request, current_profile, liked_profile):
     # like the profile
     liked_profile.likes.add(current_profile)
@@ -111,11 +118,24 @@ def like_one_to_one(request, current_profile, liked_profile):
 
     return Response({"details": LIKE}, status=status.HTTP_200_OK)
 
+"""
+    Add a like for the current user to the liked group.
 
+    If the current user has already matched with the group, return a response indicating so.
+    Otherwise, get all members who have liked the current user and try to create a match with them.
+    If a match is successfully created, return a response indicating a new match has been created.
+    If no match is created, try to recycle a previous match with a member who has liked the current user.
+    If no match can be recycled, return a response indicating the user has liked the group.
+
+    @param request - the HTTP request object
+    @param current_profile - the user profile object representing the current user
+    @param liked_group - the group object that the user has liked
+    @return - an HTTP response object with a JSON payload indicating the status of the operation
+"""
 def like_one_to_group(request, current_profile, liked_group):
     liked_group.likes.add(current_profile)
 
-    # check if the current profile has already a match with the group
+    # check if the current profile has already matched with the group
     already_matched = check_profile_group_has_match(current_profile.id, liked_group)
     if already_matched:
         return Response({"details": ALREADY_MATCHED}, status=status.HTTP_200_OK)
@@ -134,6 +154,7 @@ def like_one_to_group(request, current_profile, liked_group):
                 current_profile.id, member.id
             )
             if not already_matched:
+                # create a match
                 match = models.Match.objects.create(
                     profile1=current_profile, profile2=member
                 )
@@ -173,6 +194,17 @@ def like_one_to_group(request, current_profile, liked_group):
     return Response({"details": LIKE}, status=status.HTTP_200_OK)
 
 
+"""
+    Add a like from a group to a profile and check if there is a match or a previous match 
+    with the group.
+
+    @param request - the request object
+    @param current_profile - the profile of the user making the like
+    @param current_group - the group from which the like is made
+    @param liked_profile - the profile to which the like is made
+
+    @return Response - a response object with the result of the like action
+"""
 def like_group_to_one(request, current_profile, current_group, liked_profile):
     # add the like
     liked_profile.likes.add(current_profile)
@@ -224,7 +256,16 @@ def like_group_to_one(request, current_profile, current_group, liked_profile):
 
     return Response({"details": LIKE}, status=status.HTTP_200_OK)
 
+"""
+    This function adds a like from the current profile to the liked group, checks if there are any matches between the current group
+    and the liked group, and attempts to create a match with a member from the liked group that has liked the current group.
 
+    @param request: The request object.
+    @param current_profile: The profile that is making the like.
+    @param current_group: The group that the current_profile belongs to.
+    @param liked_group: The group that the current_profile is liking.
+    @return: A Response object with details on the status of the like.
+"""
 def like_group_to_group(request, current_profile, current_group, liked_group):
     # add the like
     liked_group.likes.add(current_profile)
