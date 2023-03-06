@@ -8,4 +8,6 @@ from django.core.exceptions import ObjectDoesNotExist
 from api import models, serializers
 
 
-# *
+# * list
+# * create fake profiles
+# * 

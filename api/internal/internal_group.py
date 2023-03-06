@@ -8,3 +8,6 @@ from django.core.exceptions import ObjectDoesNotExist
 from api import models, serializers
 
 # * list all the groups
+# * add member
+# * create fake groups
+# * 

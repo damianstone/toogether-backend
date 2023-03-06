@@ -42,11 +42,12 @@ class ProfileViewSet(ModelViewSet):
 
     # admin actions for this model view set
     def get_permissions(self):
-        if self.action == "list":
-            return [IsAdminUser()]
         if self.action == "create":
             return [AllowAny()]
         return [permission() for permission in self.permission_classes]
+
+    def list(self, request):
+        return Response({"detail": "Not authorized"}, status=status.HTTP_401_UNAUTHORIZED)
 
     # * Register
     def create(self, request):

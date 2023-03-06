@@ -11,7 +11,7 @@ from api import models, serializers
 NO_GROUP = "NO_GROUP"
 
 # Internal actions
-internal_actions = ["list", "retrieve", "update", "add_member"]
+internal_actions = ["add_member"]
 
 
 class GroupViewSet(ModelViewSet):
@@ -25,9 +25,14 @@ class GroupViewSet(ModelViewSet):
             return [IsAdminUser()]
         return [permission() for permission in self.permission_classes]
 
+    def list(self, request):
+        return Response({"detail": "Not authorized"}, status=status.HTTP_401_UNAUTHORIZED)
+    
+    def retrieve(self, request, pk=None):
+        return Response({"detail": "Not authorized"}, status=status.HTTP_401_UNAUTHORIZED)
+    
     def create(self, request):
         profile = request.user
-        # TODO: we dont need the profile_has_group check, since we dont need to check if its the owner
         profile_has_group = models.Group.objects.filter(owner=profile.id).exists()
         profile_is_in_another_group = profile.member_group.all().exists()
 
@@ -53,6 +58,9 @@ class GroupViewSet(ModelViewSet):
         group.save()
         serializer = serializers.GroupSerializer(group, many=False)
         return Response(serializer.data)
+
+    def update(self, request, pk=None):
+        return Response({"detail": "Not authorized"}, status=status.HTTP_401_UNAUTHORIZED)
 
     def destroy(self, request, pk):
         profile = request.user
