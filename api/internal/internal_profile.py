@@ -124,7 +124,7 @@ def generated_profiles(request):
 # * Delete all the profiles except you (the admin)
 @api_view(["DELETE"])
 @permission_classes([IsAdminUser])
-def delete_all(request, pk=None):
+def delete_all_profiles(request, pk=None):
     current_user = request.user
     profiles = models.Profile.objects.exclude(id=current_user.id)
 

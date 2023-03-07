@@ -1,7 +1,7 @@
 from django.urls import path, include
 from rest_framework import routers
 from api.views import profile_views, group_views, swipe_views
-from api.internal import internal_profile
+from api.internal import internal_profile, internal_group, internal_swipe
 from rest_framework_simplejwt.views import TokenRefreshView
 
 
@@ -51,9 +51,35 @@ urlpatterns = [
         name="generate_profiles",
     ),
     path(
-        "internal/delete-all/",
-        internal_profile.delete_all,
-        name="delete_all",
+        "internal/delete-all-profiles/",
+        internal_profile.delete_all_profiles,
+        name="delete_all_profiles",
+    ),
+    path("internal/groups/", internal_group.list_groups, name="list_groups"),
+    path(
+        "internal/groups/<pk>/",
+        internal_group.get_group,
+        name="get_group",
+    ),
+    path(
+        "internal/groups/<pk>/",
+        internal_group.add_member,
+        name="add_member",
+    ),
+    path(
+        "internal/generate-groups/",
+        internal_group.generate_groups,
+        name="generate_groups",
+    ),
+    path(
+        "internal/delete-all-groups/",
+        internal_group.delete_all_groups,
+        name="delete_all_groups",
+    ),
+        path(
+        "internal/check-groups/",
+        internal_group.check_groups,
+        name="check_groups",
     ),
     # Public endpoints - authentication
     path("token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
