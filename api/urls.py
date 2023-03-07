@@ -41,9 +41,19 @@ urlpatterns = [
     # Internal endpoints
     path("internal/profiles/", internal_profile.list_profiles, name="list_profiles"),
     path(
+        "internal/profiles/<pk>/",
+        internal_profile.delete_profile,
+        name="delete_profile",
+    ),
+    path(
         "internal/generate-profiles/",
         internal_profile.generated_profiles,
-        name="generate-profiles",
+        name="generate_profiles",
+    ),
+    path(
+        "internal/delete-all/",
+        internal_profile.delete_all,
+        name="delete_all",
     ),
     # Public endpoints - authentication
     path("token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),

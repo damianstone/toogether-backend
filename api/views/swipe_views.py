@@ -23,8 +23,8 @@ class SwipeModelViewSet(ModelViewSet):
         profiles = models.Profile.objects.all().filter(has_account=True)
         groups = models.Group.objects.all()
 
-        # Check if the user has an account and age
-        if not current_profile.has_account or not current_profile.age:
+        # Check if the profile has an age
+        if not current_profile.age:
             return Response(
                 {"details": "You need an account to perform this action"},
                 status=status.HTTP_401_UNAUTHORIZED,
