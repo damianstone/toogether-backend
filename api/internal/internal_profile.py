@@ -53,7 +53,10 @@ def generated_profiles(request):
             status=status.HTTP_401_UNAUTHORIZED,
         )
     
-    # TODO: check if there are more than 100 profiles 
+    # check if there are more than 100 profiles 
+    profiles = models.Profile.objects.all()
+    if profiles.count() >= 100:
+        return Response({"detail": "Already more than 100 profiles created"}, status=status.HTTP_200_OK)
 
     # initialize Faker generator
     fake = Faker("en_GB")

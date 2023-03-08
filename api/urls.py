@@ -62,7 +62,7 @@ urlpatterns = [
         name="get_group",
     ),
     path(
-        "internal/groups/<pk>/",
+        "internal/groups/<pk>/actions/add-member/",
         internal_group.add_member,
         name="add_member",
     ),
