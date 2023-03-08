@@ -52,6 +52,8 @@ def generated_profiles(request):
             {"error": "This action cannot be performed in production"},
             status=status.HTTP_401_UNAUTHORIZED,
         )
+    
+    # TODO: check if there are more than 100 profiles 
 
     # initialize Faker generator
     fake = Faker("en_GB")
@@ -66,7 +68,7 @@ def generated_profiles(request):
         name = f"{first_name} {last_name}"
 
         # generate Instagram username from name and last name
-        username = f"{first_name.lower()}.{last_name.lower()}"
+        instagram = f"{first_name.lower()}.{last_name.lower()}"
 
         # generate email
         email = f"{first_name.lower()}{last_name.lower()}@gmail.com"
@@ -107,7 +109,7 @@ def generated_profiles(request):
             show_me="X",
             city=city,
             nationality="British",
-            instagram=username,
+            instagram=instagram,
             description=description,
             university=f"University of {city}",
         )

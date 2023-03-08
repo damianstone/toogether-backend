@@ -84,17 +84,19 @@ def filter_groups(current_profile, groups):
     if profile_age == 18 or profile_age == 19:
         # filter age >= number and age <= number
         show_groups = show_groups.filter(
-            age__gte=profile_age - 1, age__lte=profile_age + 6
+            age__gte=profile_age, age__lte=profile_age + 6
         )
     else:
         show_groups = show_groups.filter(
             age__gte=profile_age - 5, age__lte=profile_age + 5
         )
 
+    # the group needs a minimum of two members to be displayed
     show_groups = show_groups.filter(total_members__gte=2)
-
+    
     # filter all the groups that has a like from the current profile
     groups_liked_by_current_profile = show_groups.filter(likes=current_profile.id)
+    
     # exclude liked groups
     show_groups = show_groups.exclude(id__in=groups_liked_by_current_profile)
 

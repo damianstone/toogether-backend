@@ -132,7 +132,6 @@ class SwipeProfileSerializer(serializers.ModelSerializer):
 
 
 class SwipeGroupSerializer(serializers.ModelSerializer):
-    total_members = serializers.SerializerMethodField()
     owner = SwipeProfileSerializer(read_only=True, many=False)
     members = SwipeProfileSerializer(read_only=True, many=True)
     gender = serializers.CharField(
@@ -143,13 +142,10 @@ class SwipeGroupSerializer(serializers.ModelSerializer):
         model = models.Group
         fields = ["id", "gender", "total_members", "created_at", "owner", "members"]
 
-    def get_total_members(self, group):
-        return group.members.count()
 
 
 # -------------------------- GROUP SERIALIZERS --------------------------------
 class GroupSerializer(serializers.ModelSerializer):
-    total_members = serializers.SerializerMethodField()
     members = serializers.SerializerMethodField()
     owner = SwipeProfileSerializer(read_only=True, many=False)
     gender = ChoicesField(
@@ -171,9 +167,6 @@ class GroupSerializer(serializers.ModelSerializer):
         # serialize the members
         serializer = SwipeProfileSerializer(instance=members_without_owner, many=True)
         return serializer.data
-
-    def get_total_members(self, group):
-        return group.members.count()
 
 
 class GroupSerializerWithLink(GroupSerializer):

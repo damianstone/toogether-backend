@@ -43,8 +43,10 @@ class SwipeModelViewSet(ModelViewSet):
         profiles_by_distance = profiles.filter(
             location__distance_lt=(current_profile.location, D(km=8))
         )
-        groups_by_distance = groups.filter(members__in=profiles_by_distance)
-
+        
+        # All the groups that have at least one member within the distance
+        groups_by_distance = groups.filter(members__in=profiles_by_distance).distinct()
+        
         # Apply swipe filters
         show_profiles = swipefilters.filter_profiles(
             current_profile, profiles_by_distance

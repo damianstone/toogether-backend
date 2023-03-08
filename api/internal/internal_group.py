@@ -3,6 +3,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import IsAdminUser
 from django.core.exceptions import ObjectDoesNotExist
+from django.contrib.gis.measure import D
 from django.conf import settings
 
 from api import models, serializers
@@ -17,7 +18,7 @@ def list_groups(request):
     groups = models.Group.objects.all()
     serializer = serializers.GroupSerializer(groups, many=True)
     return Response(
-        {"count": len(serializer.data), "results": serializer.data},
+        {"count": groups.count(), "results": serializer.data},
         status=status.HTTP_200_OK,
     )
 
@@ -31,6 +32,8 @@ def get_group(request, pk=None):
         return Response(
             {"detail": "Object does not exist"}, status=status.HTTP_400_BAD_REQUEST
         )
+    
+    print(group.total_members)
     serializer = serializers.GroupSerializer(group, many=False)
     return Response(
         serializer.data,
@@ -51,6 +54,7 @@ def add_member(request, pk=None):
             {"detail": "Object does not exist"}, status=status.HTTP_400_BAD_REQUEST
         )
     group.members.add(member)
+    group.update_total_members()
     serializer = serializers.GroupSerializer(group, many=False)
     return Response(serializer.data)
 
@@ -59,7 +63,7 @@ def add_member(request, pk=None):
 @api_view(["POST"])
 @permission_classes([IsAdminUser])
 def generate_groups(request):
-
+    current_user = request.user
     # check not making this request in production
     if not settings.DEBUG:
         return Response(
@@ -67,8 +71,8 @@ def generate_groups(request):
             status=status.HTTP_401_UNAUTHORIZED,
         )
 
-    # get all profiles
-    profiles = models.Profile.objects.all()
+    # get all profiles and exclude the owner
+    profiles = models.Profile.objects.exclude(id=current_user.id)
 
     # calculate number of groups to generate (5% of total profiles)
     num_groups = int(len(profiles) * 0.05)
@@ -94,16 +98,18 @@ def generate_groups(request):
             if profile_to_add not in members_to_add:
                 members_to_add.append(profile_to_add)
 
+        # first of members to add will be the owner
+        owner = members_to_add[0]
+        
         # create the group
-        group = models.Group.objects.create(owner=members_to_add[0])
-
-        # remove the profile used to create the group (owner)
-        members_to_add.pop(0)
+        group = models.Group.objects.create(owner=owner)
 
         # add all the members (profiles) that does not belong to any group yet
         for member in members_to_add:
             group.members.add(member)
 
+        group.save()
+        group.update_total_members()
         group_list.append(group)
 
     serializer = serializers.GroupSerializer(group_list, many=True)
