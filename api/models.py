@@ -157,11 +157,10 @@ class Group(models.Model):
             self.age = self.owner.age
         
         # get the gender of the group
-        if not self.gender:
-            self.gender = self.owner.gender
+        self.gender = self.owner.gender
+            
+        # count the members
+        self.total_members = self.members.count()
             
         super().save(*args, **kwargs)
         
-    def update_total_members(self):
-        self.total_members = self.members.count()
-        self.save()

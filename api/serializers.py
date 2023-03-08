@@ -148,10 +148,8 @@ class SwipeGroupSerializer(serializers.ModelSerializer):
 class GroupSerializer(serializers.ModelSerializer):
     members = serializers.SerializerMethodField()
     owner = SwipeProfileSerializer(read_only=True, many=False)
-    gender = ChoicesField(
-        choices=models.Group.GENDER_CHOICES,
-        required=False,
-        allow_null=False,
+    gender = serializers.CharField(
+        source="get_gender_display", required=True, allow_null=False
     )
 
     class Meta:

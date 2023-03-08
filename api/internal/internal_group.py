@@ -109,7 +109,6 @@ def generate_groups(request):
             group.members.add(member)
 
         group.save()
-        group.update_total_members()
         group_list.append(group)
 
     serializer = serializers.GroupSerializer(group_list, many=True)
