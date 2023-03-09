@@ -38,7 +38,7 @@ router.register(
 )
 
 urlpatterns = [
-    # Internal endpoints
+    # Internal endpoints - profiles
     path("internal/profiles/", internal_profile.list_profiles, name="list_profiles"),
     path(
         "internal/profiles/<pk>/",
@@ -55,6 +55,7 @@ urlpatterns = [
         internal_profile.delete_all_profiles,
         name="delete_all_profiles",
     ),
+    # Internal endpoints - groups
     path("internal/groups/", internal_group.list_groups, name="list_groups"),
     path(
         "internal/groups/<pk>/",
@@ -81,6 +82,28 @@ urlpatterns = [
         internal_group.check_groups,
         name="check_groups",
     ),
+    # Internal endpoints - swipe
+    path("internal/matches/", internal_swipe.list_matches, name="list_matches"),
+    path(
+        "internal/matches/<pk>/",
+        internal_swipe.get_match,
+        name="get_match",
+    ),
+    path(
+        "internal/generate-likes/",
+        internal_swipe.generate_likes,
+        name="generate_likes",
+    ),
+    path(
+        "internal/remove-all-likes/",
+        internal_swipe.remove_all_likes,
+        name="remove_all_likes",
+    ),
+    path(
+        "internal/unlike-all/",
+        internal_swipe.unlike_all,
+        name="unlike_all",
+    ),
     # Public endpoints - authentication
     path("token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
     path(
@@ -88,6 +111,6 @@ urlpatterns = [
         profile_views.MyTokenObtainPairView.as_view(),
         name="login",
     ),
-    # Public endpoints
+    # Public endpoints -  ModelViewSets
     path("", include(router.urls)),
 ]

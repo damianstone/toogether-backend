@@ -10,6 +10,8 @@ from api import models, serializers
 # Response constants
 NO_GROUP = "NO_GROUP"
 
+# TODO: fix is in group
+
 class GroupViewSet(ModelViewSet):
     queryset = models.Group.objects.all()
     serializer_class = serializers.GroupSerializer

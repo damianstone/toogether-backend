@@ -4,10 +4,8 @@ from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 from django.core.exceptions import ObjectDoesNotExist
-from django.contrib.gis.geos import GEOSGeometry
 from django.contrib.gis.measure import D
 from django.db.models import Q
-from django.conf import settings
 from api import models, serializers
 
 import api.handlers.matchmaking as matchmaking
@@ -193,94 +191,39 @@ class SwipeModelViewSet(ModelViewSet):
     def list_likes(self, request):
         current_profile = request.user
         likes = current_profile.likes.all()
+        
+        print(likes.count())
 
         # list of tuples with the two matched profiles ids
         current_matches_ids = models.Match.objects.filter(
             Q(profile1=current_profile.id) | Q(profile2=current_profile.id)
         ).values_list("profile1", "profile2")
 
-        # going two the list and tuples to exclude the likes
+        # exclude the matches
         if len(current_matches_ids) > 0:
             for i in range(len(current_matches_ids)):
-                likes = likes.exclude(id__in=current_matches_ids[i])
+                likes = likes.exclude(id=current_matches_ids[i].id)
 
-        profiles = []
-        groups = []
+        profile_likes = []
+        group_likes = []
 
         for like_profile in likes:
             if like_profile.member_group.all().exists():
-                group_like = like_profile.member_group.all()[0]
+                group = like_profile.member_group.all()[0]
                 has_match = matchmaking.check_profile_group_has_match(
-                    current_profile.id, group_like
+                    current_profile.id, group
                 )
-                if group_like not in groups and not has_match:
-                    groups.append(group_like)
+                if group not in group_likes and not has_match:
+                    group_likes.append(group)
             else:
-                profiles.append(like_profile)
+                profile_likes.append(like_profile)
 
-        groups_serializer = serializers.SwipeGroupSerializer(groups, many=True)
-        profiles_serializer = serializers.SwipeProfileSerializer(profiles, many=True)
+        print("GROUP LIKES -> ", len(group_likes))
+        groups_serializer = serializers.SwipeGroupSerializer(group_likes, many=True)
+        profiles_serializer = serializers.SwipeProfileSerializer(profile_likes, many=True)
         data = groups_serializer.data + profiles_serializer.data
 
-        return Response({"count": likes.count(), "results": data})
-
-    @action(detail=False, methods=["post"], url_path=r"internal/actions/add-likes")
-    def internal_add_likes(self, request, pk=None):
-        # make all the (fake) profiles in the dev database like the admin user
-        current_profile = request.user
-        # check if the current profile is an admin profile
-        if not current_profile.is_superuser:
-            return Response(
-                {"error": "You do not have permission to perform this action"},
-                status=status.HTTP_401_UNAUTHORIZED,
-            )
-
-        # check to which database I’m connected (prevent execute this action using the real db)
-        if not settings.DEBUG:
-            return Response(
-                {"error": "This action cannot be performed in production"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        profiles = models.Profile.objects.all().filter(has_account=True)
-        count_profiles = profiles.count()
-
-        for profile in profiles:
-            current_profile.likes.add(profile)
-            if current_profile.member_group.all().exists():
-                current_profile_group = current_profile.member_group.all()[0]
-                current_profile_group.likes.add(profile)
-
-        return Response({"success": f"{count_profiles} profiles added to likes"})
-
-    @action(detail=False, methods=["post"], url_path=r"internal/actions/remove-likes")
-    def internal_remove_likes(self, request, pk=None):
-        # revert add likes action
-        current_profile = request.user
-        # check if the current profile is an admin profile
-        if not current_profile.is_superuser:
-            return Response(
-                {"error": "You do not have permission to perform this action"},
-                status=status.HTTP_401_UNAUTHORIZED,
-            )
-
-        # check to which database I’m connected (prevent execute this action using the real db)
-        if not settings.DEBUG:
-            return Response(
-                {"error": "This action cannot be performed in production"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        profiles = models.Profile.objects.all().filter(has_account=True)
-        count_profiles = profiles.count()
-
-        for profile in profiles:
-            current_profile.likes.remove(profile)
-            if current_profile.member_group.all().exists():
-                current_profile_group = current_profile.member_group.all()[0]
-                current_profile_group.likes.remove(profile)
-
-        return Response({"success": f"{count_profiles} profiles removed from likes"})
+        return Response({"count": len(data), "results": data}, status=status.HTTP_200_OK)
 
 
 class MatchModelViewSet(ModelViewSet):

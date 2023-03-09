@@ -3,11 +3,8 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import IsAdminUser
 from django.core.exceptions import ObjectDoesNotExist
-from django.contrib.gis.measure import D
 from django.conf import settings
-
 from api import models, serializers
-
 import random
 
 
@@ -33,7 +30,6 @@ def get_group(request, pk=None):
             {"detail": "Object does not exist"}, status=status.HTTP_400_BAD_REQUEST
         )
     
-    print(group.total_members)
     serializer = serializers.GroupSerializer(group, many=False)
     return Response(
         serializer.data,
@@ -75,14 +71,14 @@ def generate_groups(request):
     profiles = models.Profile.objects.exclude(id=current_user.id)
 
     # calculate number of groups to generate (5% of total profiles)
-    num_groups = int(len(profiles) * 0.05)
+    num_groups = int(len(profiles) * 0.2)
 
     # create empty list to hold generated groups
     group_list = []
 
     while len(group_list) < num_groups:
         # random number of members for the next group
-        num_members = random.randint(3, 8)
+        num_members = random.randint(2, 6)
 
         members_to_add = []
 
@@ -107,6 +103,8 @@ def generate_groups(request):
         # add all the members (profiles) that does not belong to any group yet
         for member in members_to_add:
             group.members.add(member)
+            member.is_in_group = True
+            member.save()
 
         group.save()
         group_list.append(group)
