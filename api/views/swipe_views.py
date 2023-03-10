@@ -41,10 +41,10 @@ class SwipeModelViewSet(ModelViewSet):
         profiles_by_distance = profiles.filter(
             location__distance_lt=(current_profile.location, D(km=8))
         )
-        
+
         # All the groups that have at least one member within the distance
         groups_by_distance = groups.filter(members__in=profiles_by_distance).distinct()
-        
+
         # Apply swipe filters
         show_profiles = swipefilters.filter_profiles(
             current_profile, profiles_by_distance
@@ -191,8 +191,6 @@ class SwipeModelViewSet(ModelViewSet):
     def list_likes(self, request):
         current_profile = request.user
         likes = current_profile.likes.all()
-        
-        print(likes.count())
 
         # list of tuples with the two matched profiles ids
         current_matches_ids = models.Match.objects.filter(
@@ -218,12 +216,15 @@ class SwipeModelViewSet(ModelViewSet):
             else:
                 profile_likes.append(like_profile)
 
-        print("GROUP LIKES -> ", len(group_likes))
         groups_serializer = serializers.SwipeGroupSerializer(group_likes, many=True)
-        profiles_serializer = serializers.SwipeProfileSerializer(profile_likes, many=True)
+        profiles_serializer = serializers.SwipeProfileSerializer(
+            profile_likes, many=True
+        )
         data = groups_serializer.data + profiles_serializer.data
 
-        return Response({"count": len(data), "results": data}, status=status.HTTP_200_OK)
+        return Response(
+            {"count": len(data), "results": data}, status=status.HTTP_200_OK
+        )
 
 
 class MatchModelViewSet(ModelViewSet):

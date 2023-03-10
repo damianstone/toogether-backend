@@ -10,7 +10,6 @@ from api import models, serializers
 # Response constants
 NO_GROUP = "NO_GROUP"
 
-# TODO: fix is in group
 
 class GroupViewSet(ModelViewSet):
     queryset = models.Group.objects.all()
@@ -39,7 +38,7 @@ class GroupViewSet(ModelViewSet):
         group = models.Group.objects.create(owner=current_profile)
         group.members.add(current_profile)
         current_profile.is_in_group = True
-        
+
         group.save()
         current_profile.save()
         serializer = serializers.GroupSerializer(group, many=False)
@@ -65,12 +64,12 @@ class GroupViewSet(ModelViewSet):
                 {"detail": "You do not have permissions to perform this action"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        
-        # change the property before delete the group 
+
+        # change the property before delete the group
         for member in group.members:
             member.is_in_group = False
             member.save()
-                
+
         group.delete()
         return Response(
             {"detail": "Group deleted"},
@@ -80,7 +79,7 @@ class GroupViewSet(ModelViewSet):
     @action(detail=False, methods=["get"], url_path=r"actions/get-group")
     def get_group(self, request):
         current_profile = request.user
-        
+
         if current_profile.member_group.all().exists():
             group = current_profile.member_group.all()[0]
             serializer = serializers.GroupSerializer(group, many=False)
@@ -112,7 +111,7 @@ class GroupViewSet(ModelViewSet):
 
         group.members.add(current_profile)
         current_profile.is_in_group = True
-        
+
         current_profile.save()
         group.save()
         serializer = serializers.GroupSerializer(group, many=False)
@@ -133,15 +132,13 @@ class GroupViewSet(ModelViewSet):
         if current_profile.id == group.owner.id:
             group.delete()
             return Response(
-                {
-                    "detail": "Group deleted"
-                },
+                {"detail": "Group deleted"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
         group.members.remove(current_profile)
         current_profile.is_in_group = False
-        
+
         group.save()
         current_profile.save()
         return Response(
@@ -174,7 +171,7 @@ class GroupViewSet(ModelViewSet):
 
         group.members.remove(profile_to_remove)
         profile_to_remove.is_in_group = False
-        
+
         profile_to_remove.save()
         group.save()
         serializer = serializers.GroupSerializer(group, many=False)

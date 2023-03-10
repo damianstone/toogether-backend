@@ -143,7 +143,6 @@ class SwipeGroupSerializer(serializers.ModelSerializer):
         fields = ["id", "gender", "total_members", "created_at", "owner", "members"]
 
 
-
 # -------------------------- GROUP SERIALIZERS --------------------------------
 class GroupSerializer(serializers.ModelSerializer):
     members = serializers.SerializerMethodField()

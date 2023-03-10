@@ -75,8 +75,6 @@ def check_profile_group_has_match(profile_id, group):
     # it is a many to many
     group_matches = group.matches.all()
 
-    print(current_profile_matches.filter(id__in=group_matches).exists())
-    
     if current_profile_matches.filter(id__in=group_matches).exists():
         return True
 

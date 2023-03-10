@@ -8,9 +8,16 @@
 
 ### Create a virtual environment
 
+For IOS / Linux
 ``` python
 python3 -m venv venv-people
 source venv-people/bin/activate 
+```
+
+For Windows
+``` python
+python -m venv venv-people
+venv-people\Scripts\activate.bat
 ```
 
 ### Install requirements.txt
@@ -35,6 +42,18 @@ LOCAL_DB_PORT=post-you-want-to-use
 python manage.py makemigrations
 python manage.py migrate
 ````
+
+### Create a super user account
+Creating a superuser will give you administrative privileges, and most important, access to our local internal endpoints
+for development purposes
+
+When running the command, choose a memorable email and password
+
+To create a superuser account, use the following command:
+
+```python
+python manage.py createsuperuser
+```
 
 ### Run 
 

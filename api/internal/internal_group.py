@@ -19,6 +19,7 @@ def list_groups(request):
         status=status.HTTP_200_OK,
     )
 
+
 # * Retrieve a group
 @api_view(["GET"])
 @permission_classes([IsAdminUser])
@@ -29,12 +30,13 @@ def get_group(request, pk=None):
         return Response(
             {"detail": "Object does not exist"}, status=status.HTTP_400_BAD_REQUEST
         )
-    
+
     serializer = serializers.GroupSerializer(group, many=False)
     return Response(
         serializer.data,
         status=status.HTTP_200_OK,
     )
+
 
 # * Add any member to any group
 @api_view(["POST"])
@@ -96,14 +98,13 @@ def generate_groups(request):
 
         # first of members to add will be the owner
         owner = members_to_add[0]
-        
+
         # create the group
         group = models.Group.objects.create(owner=owner)
 
         # add all the members (profiles) that does not belong to any group yet
         for member in members_to_add:
             group.members.add(member)
-            print("IS IN GROUP -> ", member.is_in_group)
             member.is_in_group = True
             member.save()
 

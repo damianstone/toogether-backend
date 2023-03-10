@@ -42,6 +42,8 @@ def get_match(request, pk=None):
 """
 generate likes of profiles that does not already like the current user and the current user dont like them
 """
+
+
 @api_view(["POST"])
 @permission_classes([IsAdminUser])
 def generate_likes(request):
@@ -69,9 +71,7 @@ def generate_likes(request):
     profiles_excluded = models.Profile.objects.all().exclude(id__in=ids_to_exclude)
     profiles = profiles_excluded.exclude(id=current_user.id)
     profiles_no_in_group = profiles.exclude(is_in_group=True)
-    print(profiles_no_in_group.count())
     groups = models.Group.objects.all()
-    print(groups.count())
 
     profiles_likes = []
     for i in range(20):

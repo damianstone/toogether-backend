@@ -151,16 +151,15 @@ class Group(models.Model):
         # set the link when the group is created
         if not self.share_link:
             self.share_link = f"start.the.night/{shortuuid.uuid()}"
-        
-        # get the age of the group    
+
+        # get the age of the group
         if not self.age:
             self.age = self.owner.age
-        
+
         # get the gender of the group
         self.gender = self.owner.gender
-            
+
         # count the members
         self.total_members = self.members.count()
-            
+
         super().save(*args, **kwargs)
-        

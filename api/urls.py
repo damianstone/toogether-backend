@@ -77,7 +77,7 @@ urlpatterns = [
         internal_group.delete_all_groups,
         name="delete_all_groups",
     ),
-        path(
+    path(
         "internal/check-groups/",
         internal_group.check_groups,
         name="check_groups",
