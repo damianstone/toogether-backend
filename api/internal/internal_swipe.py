@@ -38,12 +38,7 @@ def get_match(request, pk=None):
     )
 
 
-# * Add fake likes
-"""
-generate likes of profiles that does not already like the current user and the current user dont like them
-"""
-
-
+# * Add fake likes to my profile
 @api_view(["POST"])
 @permission_classes([IsAdminUser])
 def generate_likes(request):
@@ -99,7 +94,7 @@ def generate_likes(request):
     )
 
 
-# * Remove all likes
+# * Remove all likes from my profile
 @api_view(["POST"])
 @permission_classes([IsAdminUser])
 def remove_all_likes(request):
