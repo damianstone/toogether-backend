@@ -200,7 +200,7 @@ class SwipeModelViewSet(ModelViewSet):
         # exclude the matches
         if len(current_matches_ids) > 0:
             for i in range(len(current_matches_ids)):
-                likes = likes.exclude(id=current_matches_ids[i].id)
+                likes = likes.exclude(id__in=current_matches_ids[i])
 
         profile_likes = []
         group_likes = []
