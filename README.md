@@ -93,10 +93,10 @@ Basic PR structure:
 `your-branch` -> `feature-branch` -> `develop` -> `rocket`
 
 ### Steps for a Pull Request
-1- Push your branch to the remote repository: git push
-2- Navigate to the GitHub website
-3- Create the pull request (PR) manually by selecting the correct `feature-branch` you are working on and clicking on the "New pull request" button
-4- Notify the team about your PR through our communication channel: Discord
+1. Push your branch to the remote repository: git push
+2.  Navigate to the GitHub website
+3.  Create the pull request (PR) manually by selecting the correct `feature-branch` you are working on and clicking on the "New pull request" button
+4.  Notify the team about your PR through our communication channel: Discord
 
 ## Deployment with Heroku
 
