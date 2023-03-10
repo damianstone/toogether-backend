@@ -64,3 +64,4 @@ urllib3==1.26.12
 wcwidth==0.1.9
 websocket-client==0.59.0
 whitenoise==6.0.0
+Faker==17.6.0
