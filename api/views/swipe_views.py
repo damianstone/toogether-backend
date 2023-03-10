@@ -248,7 +248,10 @@ class MatchModelViewSet(ModelViewSet):
         serializer = serializers.MatchSerializer(
             matches, many=True, context={"request": request}
         )
-        return Response({"count": matches.count(), "data": serializer.data})
+        return Response(
+            {"count": matches.count(), "results": serializer.data},
+            status=status.HTTP_200_OK,
+        )
 
     def retrieve(self, request, pk=None):
         current_profile = request.user
