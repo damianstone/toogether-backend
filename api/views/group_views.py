@@ -39,6 +39,7 @@ class GroupViewSet(ModelViewSet):
         group = models.Group.objects.create(owner=current_profile)
         group.members.add(current_profile)
         group.save()
+        
         serializer = serializers.GroupSerializer(group, many=False)
         return Response(serializer.data)
 

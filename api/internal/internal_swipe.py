@@ -42,8 +42,6 @@ def get_match(request, pk=None):
 """
 generate likes of profiles that does not already like the current user and the current user dont like them
 """
-
-
 @api_view(["POST"])
 @permission_classes([IsAdminUser])
 def generate_likes(request):
@@ -70,9 +68,10 @@ def generate_likes(request):
     # exclude here
     profiles_excluded = models.Profile.objects.all().exclude(id__in=ids_to_exclude)
     profiles = profiles_excluded.exclude(id=current_user.id)
-    # TODO: fix this as we don't update this field during the endpoints
-    profiles_no_in_group = profiles.exclude(member_group__isnull=True)
+    profiles_no_in_group = profiles.exclude(is_in_group=True)
+    print(profiles_no_in_group.count())
     groups = models.Group.objects.all()
+    print(groups.count())
 
     profiles_likes = []
     for i in range(20):
@@ -106,6 +105,8 @@ def generate_likes(request):
 def remove_all_likes(request):
     current_user = request.user
     likes = current_user.likes.all()
+    # if the last endpoint adds 30 likes why the following print shows just 29??
+    print(likes.count())
 
     for like in likes:
         current_user.likes.remove(like)

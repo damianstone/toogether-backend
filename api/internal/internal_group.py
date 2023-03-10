@@ -103,6 +103,7 @@ def generate_groups(request):
         # add all the members (profiles) that does not belong to any group yet
         for member in members_to_add:
             group.members.add(member)
+            print("IS IN GROUP -> ", member.is_in_group)
             member.is_in_group = True
             member.save()
 

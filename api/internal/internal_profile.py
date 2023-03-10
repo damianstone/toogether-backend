@@ -103,6 +103,7 @@ def generated_profiles(request):
         # create profile with generated data
         profile = models.Profile.objects.create(
             has_account=True,
+            is_in_group=False,
             name=name,
             email=email,
             location=location,
