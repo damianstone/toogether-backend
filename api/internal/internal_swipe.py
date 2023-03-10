@@ -105,8 +105,6 @@ def generate_likes(request):
 def remove_all_likes(request):
     current_user = request.user
     likes = current_user.likes.all()
-    # if the last endpoint adds 30 likes why the following print shows just 29??
-    print(likes.count())
 
     for like in likes:
         current_user.likes.remove(like)
