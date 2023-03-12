@@ -49,7 +49,7 @@ class GroupViewSet(ModelViewSet):
             {"detail": "Not authorized"}, status=status.HTTP_401_UNAUTHORIZED
         )
 
-    def destroy(self, request, pk):
+    def destroy(self, request, pk=None):
         current_profile = request.user
         try:
             group = models.Group.objects.get(pk=pk)
@@ -66,7 +66,7 @@ class GroupViewSet(ModelViewSet):
             )
 
         # change the property before delete the group
-        for member in group.members:
+        for member in group.members.all():
             member.is_in_group = False
             member.save()
 

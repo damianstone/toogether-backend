@@ -33,6 +33,7 @@ venv-people
 .coverage
 
 #Images
+static/images**
 
 # Elastic Beanstalk Files
 .elasticbeanstalk/*
