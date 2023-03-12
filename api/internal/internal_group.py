@@ -52,7 +52,8 @@ def add_member(request, pk=None):
             {"detail": "Object does not exist"}, status=status.HTTP_400_BAD_REQUEST
         )
     group.members.add(member)
-    group.update_total_members()
+    group.save()
+    
     serializer = serializers.GroupSerializer(group, many=False)
     return Response(serializer.data)
 
