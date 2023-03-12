@@ -24,7 +24,7 @@ __pycache__/
 # Python env
 venv*
 .venv*
-venv-backend
+venv-people
 
 # sqlite
 *.db
@@ -33,6 +33,7 @@ venv-backend
 .coverage
 
 #Images
+static/images**
 
 # Elastic Beanstalk Files
 .elasticbeanstalk/*

@@ -29,19 +29,26 @@ SECURE_CROSS_ORIGIN_OPENER_POLICY = None
 
 # os environ come from the env variables of aws
 if "PRODUCTION" in os.environ:
+
     DEBUG = False
 
     SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]
 
-    ALLOWED_HOSTS = ["mobile-api.toogether.app"]
+    ALLOWED_HOSTS = [
+        "mobile-api.toogether.app",
+        "toogether.eu-west-1.elasticbeanstalk.com",
+    ]
 
     CORS_ORIGIN_ALLOW_ALL = False
-    CORS_ORIGIN_WHITELIST = ["https://mobile-api.toogether.app"]
+    CORS_ORIGIN_WHITELIST = [
+        "https://mobile-api.toogether.app",
+        "http://toogether.eu-west-1.elasticbeanstalk.com",
+    ]
     CORS_ALLOWED_ORIGINS = [
         "toogether.app" "https://mobile-api.toogether.app",
     ]
-    
-    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
     SECURE_SSL_REDIRECT = True
 
 else:
@@ -50,7 +57,7 @@ else:
     ALLOWED_HOSTS = ["*", "127.0.0.1"]
 
     CORS_ORIGIN_ALLOW_ALL = True
-    SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY')
+    SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY")
 
 
 AUTH_USER_MODEL = "api.Profile"
@@ -212,26 +219,19 @@ USE_TZ = True
 STATIC_URL = "/static/"
 MEDIA_URL = "/images/"
 
-if not "PRODUCTION" in os.environ:
-    STATICFILES_DIRS = [os.path.join(BASE_DIR, "static")]
-else:
-    STATIC_ROOT = os.path.join(BASE_DIR, "static")
-
-MEDIA_ROOT = "static/images"
-
-DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
-STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 if "PRODUCTION" in os.environ:
+    STATIC_ROOT = os.path.join(BASE_DIR, "static")
+    DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
+    STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
     AWS_ACCESS_KEY_ID = os.environ["AWS_ACCESS_KEY_ID"]
     AWS_SECRET_ACCESS_KEY = os.environ["AWS_SECRET_ACCESS_KEY"]
+    AWS_STORAGE_BUCKET_NAME = "toogether-images"
+    AWS_QUERYSTRING_AUTH = False
+    AWS_S3_FILE_OVERWRITE = True
 else:
-    AWS_ACCESS_KEY_ID = os.environ.get("AWS_ACCESS_KEY_ID")
-    AWS_SECRET_ACCESS_KEY = os.environ.get("AWS_SECRET_ACCESS_KEY")
-
-AWS_STORAGE_BUCKET_NAME = "toogether-images"
-AWS_QUERYSTRING_AUTH = False
-AWS_S3_FILE_OVERWRITE = True
+    STATICFILES_DIRS = [os.path.join(BASE_DIR, "static")]
+    MEDIA_ROOT = "static/images"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.0/ref/settings/#default-auto-field

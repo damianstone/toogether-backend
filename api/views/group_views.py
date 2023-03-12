@@ -7,50 +7,50 @@ from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from django.core.exceptions import ObjectDoesNotExist
 from api import models, serializers
 
+# Response constants
+NO_GROUP = "NO_GROUP"
+
 
 class GroupViewSet(ModelViewSet):
     queryset = models.Group.objects.all()
     serializer_class = serializers.GroupSerializer
     permission_classes = [IsAuthenticated]
 
-    def get_permissions(self):
-        if self.action == "list" or self.action == "update":
-            return [IsAdminUser()]
-        return [permission() for permission in self.permission_classes]
+    def list(self, request):
+        return Response(
+            {"detail": "Not authorized"}, status=status.HTTP_401_UNAUTHORIZED
+        )
+
+    def retrieve(self, request, pk=None):
+        return Response(
+            {"detail": "Not authorized"}, status=status.HTTP_401_UNAUTHORIZED
+        )
 
     def create(self, request):
-        profile = request.user
-        profile_has_group = models.Group.objects.filter(owner=profile.id).exists()
-        profile_is_in_another_group = profile.member_group.all().exists()
+        current_profile = request.user
 
-        fields_serializer = serializers.GroupSerializer(data={"gender": profile.gender})
-        fields_serializer.is_valid(raise_exception=True)
-
-        if profile_has_group:
+        if current_profile.member_group.all().exists():
             return Response(
-                {"detail": "You already have a group created"},
+                {"detail": "You are already a member of a group"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        if profile_is_in_another_group:
-            return Response(
-                {"detail": "you are already in a group"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        group = models.Group.objects.create(owner=profile)
-        group.members.add(profile)
-        profile.is_in_group = True
-        group.total_members = 1
-        group.gender = fields_serializer._validated_data["gender"]
+        group = models.Group.objects.create(owner=current_profile)
+        group.members.add(current_profile)
+        current_profile.is_in_group = True
 
         group.save()
-        profile.save()
+        current_profile.save()
         serializer = serializers.GroupSerializer(group, many=False)
         return Response(serializer.data)
 
-    def destroy(self, request, pk):
-        profile = request.user
+    def update(self, request, pk=None):
+        return Response(
+            {"detail": "Not authorized"}, status=status.HTTP_401_UNAUTHORIZED
+        )
+
+    def destroy(self, request, pk=None):
+        current_profile = request.user
         try:
             group = models.Group.objects.get(pk=pk)
         except ObjectDoesNotExist:
@@ -59,36 +59,43 @@ class GroupViewSet(ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        if profile != group.owner:
+        if current_profile != group.owner:
             return Response(
                 {"detail": "You do not have permissions to perform this action"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+
+        # change the property before delete the group
+        for member in group.members.all():
+            member.is_in_group = False
+            member.save()
+
         group.delete()
-        profile.is_in_group = False
-        profile.save()
         return Response(
             {"detail": "Group deleted"},
             status=status.HTTP_200_OK,
         )
 
+    @action(detail=False, methods=["get"], url_path=r"actions/get-group")
+    def get_group(self, request):
+        current_profile = request.user
+
+        if current_profile.member_group.all().exists():
+            group = current_profile.member_group.all()[0]
+            serializer = serializers.GroupSerializer(group, many=False)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        return Response({"detail": NO_GROUP}, status=status.HTTP_200_OK)
+
     @action(detail=False, methods=["post"], url_path=r"actions/join")
     def join(self, request):
-        profile = request.user
-        profile_has_group = models.Group.objects.filter(owner=profile.id).exists()
-        profile_is_in_another_group = profile.member_group.all().exists()
+        current_profile = request.user
         fields_serializer = serializers.GroupSerializerWithLink(data=request.data)
         fields_serializer.is_valid(raise_exception=True)
 
-        if profile_has_group:
+        if current_profile.member_group.all().exists():
             return Response(
-                {"detail": "You already have a group created"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        if profile_is_in_another_group:
-            return Response(
-                {"detail": "you are already in a group"},
+                {"detail": "You are already a member of a group"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -102,17 +109,17 @@ class GroupViewSet(ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        group.members.add(profile)
-        group.total_members += 1
-        profile.is_in_group = True
+        group.members.add(current_profile)
+        current_profile.is_in_group = True
+
+        current_profile.save()
         group.save()
-        profile.save()
         serializer = serializers.GroupSerializer(group, many=False)
-        return Response(serializer.data)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=["post"], url_path=r"actions/leave")
     def leave(self, request, pk=None):
-        profile = request.user
+        current_profile = request.user
 
         try:
             group = models.Group.objects.get(pk=pk)
@@ -122,19 +129,18 @@ class GroupViewSet(ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        if profile == group.owner:
+        if current_profile.id == group.owner.id:
+            group.delete()
             return Response(
-                {
-                    "detail": "This group is created by you, if you leave it will be deleted"
-                },
+                {"detail": "Group deleted"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        group.members.remove(profile)
-        group.total_members -= 1
-        profile.is_in_group = False
+        group.members.remove(current_profile)
+        current_profile.is_in_group = False
+
         group.save()
-        profile.save()
+        current_profile.save()
         return Response(
             {"detail": "You left the group"},
             status=status.HTTP_200_OK,
@@ -142,7 +148,7 @@ class GroupViewSet(ModelViewSet):
 
     @action(detail=True, methods=["post"], url_path=r"actions/remove-member")
     def remove_member(self, request, pk=None):
-        profile = request.user
+        current_profile = request.user
         fields_serializer = serializers.GroupSerializerWithMember(data=request.data)
         fields_serializer.is_valid(raise_exception=True)
 
@@ -157,16 +163,16 @@ class GroupViewSet(ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        if profile != group.owner:
+        if current_profile.id != group.owner.id:
             return Response(
                 {"detail": "You do not have permissions to perform this action"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
         group.members.remove(profile_to_remove)
-        group.total_members -= 1
         profile_to_remove.is_in_group = False
+
+        profile_to_remove.save()
         group.save()
-        profile.save()
         serializer = serializers.GroupSerializer(group, many=False)
-        return Response(serializer.data)
+        return Response(serializer.data, status=status.HTTP_200_OK)
