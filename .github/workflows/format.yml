@@ -24,6 +24,11 @@ jobs:
       - name: Format code
         run: black .
 
+      - name: Check for changes
+        run: |
+          git diff-index --quiet HEAD || exit 0
+          echo "Code has been formatted"
+
       - name: Commit changes
         run: |
           git config --global user.email "damianstonedev@gmail.com"
