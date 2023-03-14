@@ -26,5 +26,5 @@ jobs:
           git config --global user.email "damianstonedev@gmail.com"
           git config --global user.name "damianstone"
           git add .
-          git commit -m "Format code"
+          git commit -m "Format from workflow"
           git push
