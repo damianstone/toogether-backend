@@ -2,6 +2,9 @@ name: Code Formatting
 
 on:
   push:
+    branches: [ rocket, develop ]
+  pull_request:
+    branches: [ rocket, develop ]
 
 jobs:
   format-code:
