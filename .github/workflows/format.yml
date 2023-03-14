@@ -24,7 +24,15 @@ jobs:
       - name: Format code
         run: black .
 
+      - name: Check for changes
+        id: check-changes
+        run: |
+          git status
+          git diff-index --quiet HEAD || echo "::set-output name=changes::yes"
+          echo "Code has been formatted"
+
       - name: Commit changes
+        if: steps.check-changes.outputs.changes == 'yes'
         run: |
           git config --global user.email "damianstonedev@gmail.com"
           git config --global user.name "damianstone"
