@@ -53,7 +53,7 @@ def add_member(request, pk=None):
         )
     group.members.add(member)
     group.save()
-    
+
     serializer = serializers.GroupSerializer(group, many=False)
     return Response(serializer.data)
 
