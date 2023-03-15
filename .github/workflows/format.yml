@@ -1,10 +1,8 @@
 name: Code Formatting
 
 on:
-  push:
-    branches: [ rocket, develop ]
-  pull_request:
-    branches: [ rocket, develop ]
+  pull_request: 
+    branches: [rocket, develop]
 
 jobs:
   format-code:
@@ -12,6 +10,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v2
@@ -38,4 +38,4 @@ jobs:
           git config --global user.name "damianstone"
           git add .
           git commit -m "Format from workflow"
-          git push
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}

@@ -6,8 +6,9 @@ from rest_framework.viewsets import ModelViewSet
 from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.gis.measure import D
 from django.db.models import Q
-from api import models, serializers
+from itertools import chain
 
+from api import models, serializers
 import api.handlers.matchmaking as matchmaking
 import api.handlers.swipe_filters as swipefilters
 
@@ -101,14 +102,13 @@ class SwipeModelViewSet(ModelViewSet):
 
     @action(detail=True, methods=["post"], url_path=r"actions/like")
     def like(self, request, pk=None):
-        # give a profile to a profile or group, this means that my id will be added to
-        # the many-to-many property of that profile
         current_profile = request.user
+
         # profile to give like
         liked_profile = models.Profile.objects.get(pk=pk)
 
-        current_is_in_group = current_profile.member_group.all().exists()
-        liked_is_in_group = liked_profile.member_group.all().exists()
+        current_is_in_group = current_profile.is_in_group
+        liked_is_in_group = liked_profile.is_in_group
 
         # check for one to one
         if not current_is_in_group and not liked_is_in_group:
@@ -190,22 +190,34 @@ class SwipeModelViewSet(ModelViewSet):
     @action(detail=False, methods=["get"], url_path=r"actions/get-likes")
     def list_likes(self, request):
         current_profile = request.user
-        likes = current_profile.likes.all()
 
-        # list of tuples with the two matched profiles ids
+        #  tuple of the profiles ids
         current_matches_ids = models.Match.objects.filter(
             Q(profile1=current_profile.id) | Q(profile2=current_profile.id)
         ).values_list("profile1", "profile2")
 
-        # exclude the matches
-        if len(current_matches_ids) > 0:
-            for i in range(len(current_matches_ids)):
-                likes = likes.exclude(id__in=current_matches_ids[i])
+        # transform to a list of ids
+        current_matches_ids = list(chain.from_iterable(current_matches_ids))
 
+        # all the current profile likes excluding the ones in which has a match
+        likes = current_profile.likes.exclude(id__in=current_matches_ids).distinct()
+
+        # get all the likes in the current user group
+        if current_profile.is_in_group:
+            current_group = current_profile.member_group.all()[0]
+            current_group_likes = current_group.likes.exclude(
+                id__in=current_matches_ids
+            ).distinct()
+            likes = likes.union(current_group_likes)
+
+        # single profile likes
         profile_likes = []
+
+        # profiles in group likes
         group_likes = []
 
         for like_profile in likes:
+            # check wheter the like profile in is group or not
             if like_profile.member_group.all().exists():
                 group = like_profile.member_group.all()[0]
                 has_match = matchmaking.check_profile_group_has_match(
@@ -216,10 +228,13 @@ class SwipeModelViewSet(ModelViewSet):
             else:
                 profile_likes.append(like_profile)
 
+        # serialize groups and profiles
         groups_serializer = serializers.SwipeGroupSerializer(group_likes, many=True)
         profiles_serializer = serializers.SwipeProfileSerializer(
             profile_likes, many=True
         )
+
+        # combine serializers to return group and profile models
         data = groups_serializer.data + profiles_serializer.data
 
         return Response(
