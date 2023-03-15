@@ -1,8 +1,6 @@
 name: Code Formatting
 
 on:
-  push:
-    branches: [ rocket, develop ]
   pull_request:
     branches: [ rocket, develop ]
 
@@ -32,10 +30,12 @@ jobs:
           echo "Code has been formatted"
 
       - name: Commit changes
+        env:
+          BRANCH_NAME: ${{ github.head_ref || github.ref_name }} 
         if: steps.check-changes.outputs.changes == 'yes'
         run: |
           git config --global user.email "damianstonedev@gmail.com"
           git config --global user.name "damianstone"
           git add .
           git commit -m "Format from workflow"
-          git push origin ${{ github.ref }}
+          git push origin ${{ env.BRANCH_NAME }}
