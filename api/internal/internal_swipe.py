@@ -50,6 +50,17 @@ def generate_likes(request):
             status=status.HTTP_401_UNAUTHORIZED,
         )
 
+    # groups in the db
+    groups = models.Group.objects.all()
+
+    if groups.count() < 15:
+        return Response(
+            {
+                "error": "Generate groups first. You can do this using the internal development endpoints"
+            },
+            status=status.HTTP_406_NOT_ACCEPTABLE,
+        )
+
     # current user likes
     likes = current_user.likes.all()
 
@@ -66,7 +77,6 @@ def generate_likes(request):
     profiles_excluded = models.Profile.objects.all().exclude(id__in=ids_to_exclude)
     profiles = profiles_excluded.exclude(id=current_user.id)
     profiles_no_in_group = profiles.exclude(is_in_group=True)
-    groups = models.Group.objects.all()
 
     profiles_likes = []
     for i in range(20):

@@ -14,6 +14,18 @@ from faker import Faker
 
 from api.data.cities import cities
 
+
+
+
+
+
+
+
+
+
+
+
+
 # * List profiles
 @api_view(["GET"])
 @permission_classes([IsAdminUser])
@@ -76,8 +88,11 @@ def generated_profiles(request):
         # generate Instagram username from name and last name
         instagram = f"{first_name.lower()}.{last_name.lower()}"
 
+        # random number for emails
+        random_number = random.randint(100, 999)
+
         # generate email
-        email = f"{first_name.lower()}{last_name.lower()}@gmail.com"
+        email = f"{first_name.lower()}{last_name.lower()}{random_number}@gmail.com"
 
         # generate age between 5 years less and more than the age of the current user
         current_age = current_user.age
