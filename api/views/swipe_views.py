@@ -103,7 +103,7 @@ class SwipeModelViewSet(ModelViewSet):
     @action(detail=True, methods=["post"], url_path=r"actions/like")
     def like(self, request, pk=None):
         current_profile = request.user
-        
+
         # profile to give like
         liked_profile = models.Profile.objects.get(pk=pk)
 
@@ -190,27 +190,29 @@ class SwipeModelViewSet(ModelViewSet):
     @action(detail=False, methods=["get"], url_path=r"actions/get-likes")
     def list_likes(self, request):
         current_profile = request.user
-        
+
         #  tuple of the profiles ids
         current_matches_ids = models.Match.objects.filter(
             Q(profile1=current_profile.id) | Q(profile2=current_profile.id)
         ).values_list("profile1", "profile2")
-        
+
         # transform to a list of ids
         current_matches_ids = list(chain.from_iterable(current_matches_ids))
-        
+
         # all the current profile likes excluding the ones in which has a match
         likes = current_profile.likes.exclude(id__in=current_matches_ids).distinct()
-        
+
         # get all the likes in the current user group
         if current_profile.is_in_group:
-              current_group = current_profile.member_group.all()[0]
-              current_group_likes = current_group.likes.exclude(id__in=current_matches_ids).distinct()
-              likes = likes.union(current_group_likes)
-        
+            current_group = current_profile.member_group.all()[0]
+            current_group_likes = current_group.likes.exclude(
+                id__in=current_matches_ids
+            ).distinct()
+            likes = likes.union(current_group_likes)
+
         # single profile likes
         profile_likes = []
-        
+
         # profiles in group likes
         group_likes = []
 
@@ -231,7 +233,7 @@ class SwipeModelViewSet(ModelViewSet):
         profiles_serializer = serializers.SwipeProfileSerializer(
             profile_likes, many=True
         )
-        
+
         # combine serializers to return group and profile models
         data = groups_serializer.data + profiles_serializer.data
 

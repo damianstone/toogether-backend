@@ -185,7 +185,7 @@ def like_one_to_one(request, current_profile, liked_profile):
 
 
 def like_one_to_group(request, current_profile, liked_group):
-    
+
     # add the like (current profile) to the general likes of the group
     liked_group.likes.add(current_profile)
 
@@ -275,12 +275,12 @@ def like_group_to_one(request, current_profile, current_group, liked_profile):
     already_matched = check_profile_group_has_match(liked_profile.id, current_group)
     if already_matched:
         return Response({"details": ALREADY_MATCHED}, status=status.HTTP_200_OK)
-    
+
     # the user may have liked the current user's group
     like_in_group = current_group.likes.filter(id=liked_profile.id).exists()
-    
+
     # the user could have liked the current user before the current user belonged to a group
-    like_in_profile =  current_profile.likes.filter(id=liked_profile.id).exists()
+    like_in_profile = current_profile.likes.filter(id=liked_profile.id).exists()
 
     if like_in_group or like_in_profile:
         # check if the current user has already a match with the liked profile
@@ -305,14 +305,14 @@ def like_group_to_one(request, current_profile, current_group, liked_profile):
             profile1=current_profile, profile2=liked_profile
         )
         match.save()
-        
+
         current_group.matches.add(match)
         current_group.save()
-        
+
         match_serializer = serializers.MatchSerializer(
             match, many=False, context={"request": request}
         )
-        
+
         return Response(
             {
                 "details": NEW_MATCH,
@@ -338,7 +338,7 @@ def like_group_to_one(request, current_profile, current_group, liked_profile):
 
 
 def like_group_to_group(request, current_profile, current_group, liked_group):
-    
+
     # add the like the group many to many
     liked_group.likes.add(current_profile)
 
@@ -352,9 +352,9 @@ def like_group_to_group(request, current_profile, current_group, liked_group):
     for member in liked_group.members.all():
         if current_group.likes.filter(id=member.id).exists():
             members.append(member)
-            
+
         if current_profile.likes.filter(id=member.id).exists():
-              members.append(member)
+            members.append(member)
 
     if len(members) > 0:
         for member in members:

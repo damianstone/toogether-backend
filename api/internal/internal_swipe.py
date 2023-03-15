@@ -52,13 +52,15 @@ def generate_likes(request):
 
     # groups in the db
     groups = models.Group.objects.all()
-    
+
     if groups.count() < 15:
         return Response(
-            {"error": "Generate groups first. You can do this using the internal development endpoints"},
-            status=status.HTTP_406_NOT_ACCEPTABLE
+            {
+                "error": "Generate groups first. You can do this using the internal development endpoints"
+            },
+            status=status.HTTP_406_NOT_ACCEPTABLE,
         )
-        
+
     # current user likes
     likes = current_user.likes.all()
 
