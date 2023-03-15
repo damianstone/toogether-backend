@@ -133,6 +133,10 @@ def delete_all_groups(request):
     groups = models.Group.objects.all()
 
     for group in groups:
+        for member in group.members.all():
+            member.is_in_group = False
+            member.save()
+            
         group.delete()
 
     return Response({"detail": f"{len(groups)} groups deleted"})
