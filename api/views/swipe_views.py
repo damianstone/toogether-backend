@@ -6,9 +6,9 @@ from rest_framework.viewsets import ModelViewSet
 from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.gis.measure import D
 from django.db.models import Q
-from api import models, serializers
 from itertools import chain
 
+from api import models, serializers
 import api.handlers.matchmaking as matchmaking
 import api.handlers.swipe_filters as swipefilters
 
