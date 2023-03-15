@@ -1,7 +1,7 @@
 name: Code Formatting
 
 on:
-  push:
+  pull_request: [rocket, develop]
 
 jobs:
   format-code:
@@ -35,4 +35,4 @@ jobs:
           git config --global user.name "damianstone"
           git add .
           git commit -m "Format from workflow"
-          git push origin ${{ github.ref_name }}
+          git push origin ${{ github.event.pull_request.head.ref }}
