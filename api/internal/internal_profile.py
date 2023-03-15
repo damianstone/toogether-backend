@@ -15,17 +15,6 @@ from faker import Faker
 from api.data.cities import cities
 
 
-
-
-
-
-
-
-
-
-
-
-
 # * List profiles
 @api_view(["GET"])
 @permission_classes([IsAdminUser])
