@@ -106,6 +106,12 @@ class SwipeModelViewSet(ModelViewSet):
 
         # profile to give like
         liked_profile = models.Profile.objects.get(pk=pk)
+        
+        if (current_profile == liked_profile):
+            return Response(
+                {"details": "You cannot like your own profile"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         current_is_in_group = current_profile.is_in_group
         liked_is_in_group = liked_profile.is_in_group
