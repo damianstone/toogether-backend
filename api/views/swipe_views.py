@@ -106,8 +106,8 @@ class SwipeModelViewSet(ModelViewSet):
 
         # profile to give like
         liked_profile = models.Profile.objects.get(pk=pk)
-        
-        if (current_profile == liked_profile):
+
+        if current_profile == liked_profile:
             return Response(
                 {"details": "You cannot like your own profile"},
                 status=status.HTTP_400_BAD_REQUEST,
