@@ -34,6 +34,10 @@ class MyTokenObtainPairView(TokenObtainPairView):
 
 
 # ----------------------- PROFILES VIEWS --------------------------------
+
+ALLOW_ANY = ["create", "recovery_code"]
+
+
 class ProfileViewSet(ModelViewSet):
     queryset = models.Profile.objects.all()
     serializer_class = serializers.ProfileSerializer
@@ -42,7 +46,7 @@ class ProfileViewSet(ModelViewSet):
 
     # admin actions for this model view set
     def get_permissions(self):
-        if self.action == "create":
+        if self.action in ALLOW_ANY:
             return [AllowAny()]
         return [permission() for permission in self.permission_classes]
 
@@ -239,6 +243,40 @@ class ProfileViewSet(ModelViewSet):
         blocked_profiles = current_profile.blocked_profiles.all()
         serializer = serializers.SwipeProfileSerializer(blocked_profiles, many=True)
         return Response({"count": blocked_profiles.count(), "results": serializer.data})
+
+    @action(detail=False, methods=["post"], url_path=r"actions/recovery-code")
+    def recovery_code(self, request):
+        data = request.data
+        print(data)
+        
+        # * 1 - comprobar que el mail existe en la base de datos usando el email
+        # * 2 - si no existe devolver una respuesta con un error 
+        # * 3 - si el mail existe enviar un codigo por mail para restablecer la contraseña 
+        # * 4 - el codigo debe expirar despues de 5 minutos 
+        
+        return Response({"data from body": data["email"]}, status=status.HTTP_200_OK)
+    
+    @action(detail=False, methods=["post"], url_path=r"actions/validate-code")
+    def recovery_code(self, request):
+        
+        # * 1 - input -> code and user_email
+        # * 2 - comprobar que el codigo sea valido y que no este expirado
+        # * 3 - si esta expirado o no es valido enviar diferentes respuestas (expirado / no valido)
+        # * 5 - si el codigo no esta expirado y esta validado, traer el usuario usando el email
+        # * 6 - autentificar al usario (devolver el auth token) y la propiedad VERIFIED: boolean
+
+        pass
+    
+    @action(detail=False, methods=["post"], url_path=r"actions/reset-password")
+    def reset_password(self, request):
+        # este endpoint necesita authentification (token)
+        current_profile = request.user 
+        
+        # * 1 - input user_mail, new_passord y repeated_new_password
+        # * 2 - cambiar la contraseña del usuario y encriptarla 
+        # * 3 - return OPERATION_SUCCESS: boolean
+        
+        pass
 
 
 # ----------------------- PHOTOS VIEWS --------------------------------
