@@ -105,12 +105,10 @@ class SwipeModelViewSet(ModelViewSet):
         current_profile = request.user
 
         # profile to give like
-        try :
+        try:
             liked_profile = models.Profile.objects.get(pk=pk)
         except ObjectDoesNotExist:
-            return Response(
-                {"details": "Profile you tried to like does not exist!"}
-            )
+            return Response({"details": "Profile you tried to like does not exist!"})
 
         if current_profile == liked_profile:
             return Response(
