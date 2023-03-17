@@ -108,7 +108,10 @@ class SwipeModelViewSet(ModelViewSet):
         try:
             liked_profile = models.Profile.objects.get(pk=pk)
         except ObjectDoesNotExist:
-            return Response({"details": "Profile you tried to like does not exist!"})
+            return Response(
+                {"details": "Profile you tried to like does not exist!"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         if current_profile == liked_profile:
             return Response(
