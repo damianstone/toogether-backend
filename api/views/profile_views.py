@@ -11,7 +11,13 @@ from django.contrib.auth.hashers import make_password
 from datetime import date
 from django.contrib.gis.geos import GEOSGeometry
 from decimal import *
+from django.core.mail import send_mail
+import string
+import random
+from datetime import timedelta
+from django.utils import timezone
 import json
+
 
 # simple json token
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
@@ -34,6 +40,10 @@ class MyTokenObtainPairView(TokenObtainPairView):
 
 
 # ----------------------- PROFILES VIEWS --------------------------------
+
+ALLOW_ANY = ["create", "recovery_code", "validate_code"]
+
+
 class ProfileViewSet(ModelViewSet):
     queryset = models.Profile.objects.all()
     serializer_class = serializers.ProfileSerializer
@@ -42,7 +52,7 @@ class ProfileViewSet(ModelViewSet):
 
     # admin actions for this model view set
     def get_permissions(self):
-        if self.action == "create":
+        if self.action in ALLOW_ANY:
             return [AllowAny()]
         return [permission() for permission in self.permission_classes]
 
@@ -239,6 +249,87 @@ class ProfileViewSet(ModelViewSet):
         blocked_profiles = current_profile.blocked_profiles.all()
         serializer = serializers.SwipeProfileSerializer(blocked_profiles, many=True)
         return Response({"count": blocked_profiles.count(), "results": serializer.data})
+
+    @action(detail=False, methods=["post"], url_path=r"actions/recovery-code")
+    def recovery_code(self, request):
+        data = request.data
+        # * 1 - comprobar que el mail existe en la base de datos usando el email
+        # * 2 - si no existe devolver una respuesta con un error 
+        # * 3 - si el mail existe enviar un codigo por mail para restablecer la contraseña 
+        # * 4 - el codigo debe expirar despues de 5 minutos 
+        Profile_email =  models.Profile.objects.filter(email=data["email"])
+        VerificationCode_email = models.VerificationCode.objects.filter(email=data["email"])
+        
+        if Profile_email.exists():
+            letters_and_digits = string.ascii_letters + string.digits
+            codeGenerator = ''.join(random.choice(letters_and_digits.upper()) for i in range(6))
+            
+            if VerificationCode_email.exists():
+                current_user = models.VerificationCode.objects.get(email=data["email"])
+                current_user.code = codeGenerator
+                current_user.expires_at = timezone.now() + timedelta(minutes=5)
+                current_user.save()
+            else:
+                new_user = models.VerificationCode.objects.create(
+                    email=data["email"],
+                    code=codeGenerator,
+                    expires_at=timezone.now() + timedelta(minutes=5))
+                new_user.save()
+
+            send_mail(
+            'Reset your password',
+            f'Here is your access code {codeGenerator}',
+            'toogethersite@gmail.com',
+            [data["email"]],
+            fail_silently=False,
+            )
+            return Response({"message": "Your recovery email was sent succesfully"}, status=status.HTTP_200_OK)
+        else: 
+            return Response({"message": "email doesn't exist"}, status=status.HTTP_400_BAD_REQUEST)
+    
+    @action(detail=False, methods=["post"], url_path=r"actions/validate-code")
+    def validate_code(self, request):
+        
+        data = request.data
+
+        VerificationCode_code =models.VerificationCode.objects.filter(code=data["code"])
+
+        if VerificationCode_code.exists():
+            expiration = models.VerificationCode.objects.get(email=data["email"])
+            user = models.Profile.objects.get(email=data["email"])
+
+            if(timezone.now() < expiration.expires_at):
+                serializer = serializers.ProfileSerializer(user, many=False)
+                return Response({"user": f'{user}', "VERIFIED": True, "AccessToken": serializer.data["token"]}, status=status.HTTP_200_OK)
+            else:
+                    return Response({"message": "Expirated code"}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response({"message": "Invalid Code"}, status=status.HTTP_400_BAD_REQUEST) 
+        # * 1 - input -> code and user_email
+        # * 2 - comprobar que el codigo sea valido y que no este expirado
+        # * 3 - si esta expirado o no es valido enviar diferentes respuestas (expirado / no valido)
+        # * 5 - si el codigo no esta expirado y esta validado, traer el usuario usando el email
+        # * 6 - autentificar al usario (devolver el auth token) y la propiedad VERIFIED: boolean
+    
+    @action(detail=False, methods=["post"], url_path=r"actions/reset-password")
+    def reset_password(self, request):
+        # este endpoint necesita authentification (token)
+        current_profile = request.data 
+        profile_to_change = models.Profile.objects.get(email=current_profile["email"])
+
+        if current_profile["new_pasword"] == current_profile["repeated_new_pasword"]:
+            profile_to_change.password = make_password(current_profile["new_pasword"])
+            profile_to_change.save()
+            return Response({"OPERATION_SUCCESS": True}, status=status.HTTP_200_OK)
+        
+        else:
+            return Response({"OPERATION_SUCCESS": False, "message": "passwords are not equals"}, status=status.HTTP_200_OK)
+        
+        # * 1 - input user_mail, new_passord y repeated_new_password
+        # * 2 - cambiar la contraseña del usuario y encriptarla 
+        # * 3 - return OPERATION_SUCCESS: boolean
+        
+        pass
 
 
 # ----------------------- PHOTOS VIEWS --------------------------------

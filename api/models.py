@@ -45,6 +45,7 @@ class Profile(AbstractBaseUser, PermissionsMixin):
 
     instagram = models.TextField(max_length=15, null=True)
 
+
     gender = models.CharField(
         choices=GENDER_CHOICES,
         default=GENDER_CHOICES.M,
@@ -163,3 +164,8 @@ class Group(models.Model):
         self.total_members = self.members.count()
 
         super().save(*args, **kwargs)
+
+class VerificationCode(models.Model):
+    email = models.EmailField()
+    code = models.CharField(max_length=6)
+    expires_at = models.DateTimeField()
