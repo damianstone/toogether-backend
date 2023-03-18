@@ -148,7 +148,7 @@ class GroupSerializer(serializers.ModelSerializer):
     members = serializers.SerializerMethodField()
     owner = SwipeProfileSerializer(read_only=True, many=False)
     gender = serializers.CharField(
-        source="get_gender_display", required=True, allow_null=False
+        source="get_gender_display", required=False, allow_null=False
     )
 
     class Meta:
