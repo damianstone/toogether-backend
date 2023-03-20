@@ -89,6 +89,15 @@ REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "service.core.pagination.CustomPagination",
 }
 
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("127.0.0.1", 6379)],
+        },
+    },
+}
+
 # SIMPLE JWT TO CREATE JSON ACCESS TOKENS
 SIMPLE_JWT = {
     # change the expiration of the token
@@ -151,6 +160,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = "service.wsgi.application"
+ASGI_APPLICATION = 'service.asgi.application'
 
 
 # Database

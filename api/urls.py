@@ -1,6 +1,6 @@
 from django.urls import path, include
 from rest_framework import routers
-from api.views import profile_views, group_views, swipe_views
+from api.views import profile_views, group_views, swipe_views, chat_views
 from api.internal import internal_profile, internal_group, internal_swipe
 from rest_framework_simplejwt.views import TokenRefreshView
 
@@ -35,6 +35,18 @@ router.register(
     r"matches",
     swipe_views.MatchModelViewSet,
     basename="match",
+)
+
+router.register(
+    r"chats",
+    chat_views.ChatModelViewSet,
+    basename="chat",
+)
+
+router.register(
+    r"messages",
+    chat_views.MessageModelViewSet,
+    basename="message",
 )
 
 urlpatterns = [

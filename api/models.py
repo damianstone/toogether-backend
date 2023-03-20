@@ -163,3 +163,15 @@ class Group(models.Model):
         self.total_members = self.members.count()
 
         super().save(*args, **kwargs)
+
+
+class Chat(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    match = models.ForeignKey(Match, default=None, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(default=timezone.now)
+
+class Message(models.Model):
+    chat = models.ForeignKey(Chat, default=None, on_delete=models.CASCADE)
+    sender = models.ForeignKey(Profile, default=None, on_delete=models.CASCADE)
+    message = models.TextField(null=True, blank=True)
+    sent_at = models.DateTimeField(default=timezone.now)
