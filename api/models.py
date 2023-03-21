@@ -163,3 +163,9 @@ class Group(models.Model):
         self.total_members = self.members.count()
 
         super().save(*args, **kwargs)
+
+
+class VerificationCode(models.Model):
+    email = models.EmailField()
+    code = models.CharField(max_length=6)
+    expires_at = models.DateTimeField()
