@@ -10,8 +10,10 @@ class ChatConsumer(AsyncWebsocketConsumer):
         # Set the sender and receiver based on the currently authenticated user and the recipient specified in the URL route
         self.sender = self.scope["profile"]
         
-        print ("user -> ", self.sender)
-        
+        # Check if the user is authenticated, and if not, close the WebSocket connection
+        if not self.sender.is_authenticated:
+            await self.close()
+            
         self.chat_room = self.scope["url_route"]["kwargs"]["match_id"]
         
         print ("group name -> ", self.chat_room)
@@ -19,6 +21,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         await self.channel_layer.group_add(self.chat_room, self.channel_name)
         
         self.chat = None
+        
         # Accept the WebSocket connection
         await self.accept()
         

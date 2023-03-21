@@ -28,9 +28,6 @@ def get_user(profile_id):
         return AnonymousUser()
 
 class QueryAuthMiddleware:
-    """
-    Custom middleware (insecure) that takes user IDs from the query string.
-    """
     
     def __init__(self, app):
         # Store the ASGI application we were passed
@@ -45,8 +42,7 @@ class QueryAuthMiddleware:
         query_string = urllib.parse.parse_qs(scope["query_string"].decode("utf-8"))
         profile_id = query_string.get("profile_id", [None])[0]
         
-        print("profile_id", profile_id)
-        
+        # create the scope profile and assing it the current profile 
         scope['profile'] = await get_user(profile_id)
 
         return await self.app(scope, receive, send)
