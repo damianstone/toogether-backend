@@ -253,78 +253,115 @@ class ProfileViewSet(ModelViewSet):
     @action(detail=False, methods=["post"], url_path=r"actions/recovery-code")
     def recovery_code(self, request):
         data = request.data
-        
+
         try:
-            current_profile =  models.Profile.objects.get(email=data["email"])
+            current_profile = models.Profile.objects.get(email=data["email"])
             letters_and_digits = string.ascii_letters + string.digits
-            code_generator = ''.join(random.choice(letters_and_digits.upper()) for i in range(6))
-            #code is generated on code_generator     
-            
+            code_generator = "".join(
+                random.choice(letters_and_digits.upper()) for i in range(6)
+            )
+            # code is generated on code_generator
+
             try:
-                verificationModel_ = models.VerificationCode.objects.get(email=data["email"])
+                verificationModel_ = models.VerificationCode.objects.get(
+                    email=data["email"]
+                )
                 verificationModel_.code = code_generator
                 verificationModel_.expires_at = timezone.now() + timedelta(minutes=5)
                 verificationModel_.save()
-            #verificate if this user already try to change the password, else, create a new register on Verificationcode model
+            # verificate if this user already try to change the password, else, create a new register on Verificationcode model
             except ObjectDoesNotExist:
                 new_user = models.VerificationCode.objects.create(
                     email=data["email"],
                     code=code_generator,
-                    expires_at=timezone.now() + timedelta(minutes=5))
+                    expires_at=timezone.now() + timedelta(minutes=5),
+                )
                 new_user.save()
 
             send_mail(
-            'Reset your password',
-            f'Here is your access code {code_generator}',
-            'toogethersite@gmail.com',
-            [data["email"]],
-            fail_silently=False,
+                "Reset your password",
+                f"Here is your access code {code_generator}",
+                "toogethersite@gmail.com",
+                [data["email"]],
+                fail_silently=False,
             )
-            #send email to user
-            return Response({"message": "Your recovery email was sent succesfully"}, status=status.HTTP_200_OK)
-        except ObjectDoesNotExist: 
-            return Response({"message": "email doesn't exist"}, status=status.HTTP_400_BAD_REQUEST)
-    
+            # send email to user
+            return Response(
+                {"message": "Your recovery email was sent succesfully"},
+                status=status.HTTP_200_OK,
+            )
+        except ObjectDoesNotExist:
+            return Response(
+                {"message": "email doesn't exist"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
     @action(detail=False, methods=["post"], url_path=r"actions/validate-code")
     def validate_code(self, request):
         data = request.data
 
         try:
-            verificationCode_code =models.VerificationCode.objects.get(code=data["code"])
+            verificationCode_code = models.VerificationCode.objects.get(
+                code=data["code"]
+            )
 
-            if(timezone.now() < verificationCode_code.expires_at):
+            if timezone.now() < verificationCode_code.expires_at:
                 try:
                     user = models.Profile.objects.get(email=data["email"])
                     serializer = serializers.ProfileSerializer(user, many=False)
-                    return Response({"user": f'{user}', "VERIFIED": True, "AccessToken": serializer.data["token"]}, status=status.HTTP_200_OK)
-                    #verify if code is expired or invalid, in true case response the user email, verified true and access token 
+                    return Response(
+                        {
+                            "user": f"{user}",
+                            "VERIFIED": True,
+                            "AccessToken": serializer.data["token"],
+                        },
+                        status=status.HTTP_200_OK,
+                    )
+                    # verify if code is expired or invalid, in true case response the user email, verified true and access token
                 except ObjectDoesNotExist:
-                    return Response({"message": "Error email"}, status=status.HTTP_400_BAD_REQUEST)
+                    return Response(
+                        {"message": "Error email"}, status=status.HTTP_400_BAD_REQUEST
+                    )
             else:
-                    return Response({"message": "Expirated code"}, status=status.HTTP_400_BAD_REQUEST)
+                return Response(
+                    {"message": "Expirated code"}, status=status.HTTP_400_BAD_REQUEST
+                )
         except ObjectDoesNotExist:
-            return Response({"message": "Invalid Code"}, status=status.HTTP_400_BAD_REQUEST) 
-                    #exceptions and else sentences will handle de wrong cases
+            return Response(
+                {"message": "Invalid Code"}, status=status.HTTP_400_BAD_REQUEST
+            )
+            # exceptions and else sentences will handle de wrong cases
 
     @action(detail=False, methods=["post"], url_path=r"actions/reset-password")
     def reset_password(self, request):
 
-        current_profile = request.data 
+        current_profile = request.data
         try:
-            profile_to_change = models.Profile.objects.get(email=current_profile["email"])
+            profile_to_change = models.Profile.objects.get(
+                email=current_profile["email"]
+            )
 
-            if current_profile["new_pasword"] == current_profile["repeated_new_pasword"]:
-                profile_to_change.password = make_password(current_profile["new_pasword"])
+            if (
+                current_profile["new_pasword"]
+                == current_profile["repeated_new_pasword"]
+            ):
+                profile_to_change.password = make_password(
+                    current_profile["new_pasword"]
+                )
                 profile_to_change.save()
-                #verify if the new password and it repeated are equals,true case, encrypt the password and save it on db
+                # verify if the new password and it repeated are equals,true case, encrypt the password and save it on db
                 return Response({"OPERATION_SUCCESS": True}, status=status.HTTP_200_OK)
-            
+
             else:
-                return Response({"OPERATION_SUCCESS": False, "message": "passwords are not equals"}, status=status.HTTP_200_OK)
-                #exceptions and else sentences will handle de wrong cases
+                return Response(
+                    {"OPERATION_SUCCESS": False, "message": "passwords are not equals"},
+                    status=status.HTTP_200_OK,
+                )
+                # exceptions and else sentences will handle de wrong cases
         except ObjectDoesNotExist:
-            return Response({"message": "email doesn't exist"}, status=status.HTTP_400_BAD_REQUEST) 
-            
+            return Response(
+                {"message": "email doesn't exist"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
 
 # ----------------------- PHOTOS VIEWS --------------------------------
 class PhotoViewSet(ModelViewSet):
