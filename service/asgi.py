@@ -14,7 +14,7 @@ from channels.security.websocket import AllowedHostsOriginValidator, OriginValid
 from django.core.asgi import get_asgi_application
 from django.urls import path, include
 
-from api.websocket import ChatConsumer
+from api.websockets import ChatConsumer
 from service.core.middleware import QueryAuthMiddleware
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "service.settings")

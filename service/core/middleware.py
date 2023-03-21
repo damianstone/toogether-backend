@@ -1,7 +1,8 @@
 from channels.db import database_sync_to_async
 from django.contrib.auth.models import AnonymousUser
-from  django.core.exceptions import ValidationError
-from api.models import Profile
+from django.core.exceptions import ValidationError, ObjectDoesNotExist
+from api.models import Profile, Match
+from pathlib import Path
 
 import urllib.parse
 
@@ -20,12 +21,36 @@ class DisableCSRFMiddleware(object):
 # ----------------- WebSocket auth middleware --------------------------
 
 @database_sync_to_async
-def get_user(profile_id):
+def get_profile(profile_id):
     # if its not a valid UUID then return an AnonymousUser
     try:
         return Profile.objects.get(pk=profile_id)
     except (ValidationError, Profile.DoesNotExist):
         return AnonymousUser()
+
+
+@database_sync_to_async
+def get_match(match_id):
+    try:
+        return Match.objects.get(pk=match_id)
+    except ObjectDoesNotExist:
+        return False
+
+
+@database_sync_to_async
+def check_match(match_id, profile_id):
+    try:
+        match = Match.objects.get(pk=match_id)
+    except ObjectDoesNotExist:
+        return False
+    
+    if str(match.profile1.id) == profile_id:
+        return True
+
+    if str(match.profile2.id) == profile_id:
+        return True
+    
+    return False
 
 class QueryAuthMiddleware:
     
@@ -38,11 +63,23 @@ class QueryAuthMiddleware:
         # checking if it is a valid user ID, or if scope["user"] is already
         # populated).
         
-        # get the profile ID from the query params
-        query_string = urllib.parse.parse_qs(scope["query_string"].decode("utf-8"))
-        profile_id = query_string.get("profile_id", [None])[0]
+
+        path = Path(scope["path"])
+        match_id = path.parts[-1]
         
-        # create the scope profile and assing it the current profile 
-        scope['profile'] = await get_user(profile_id)
+        # check if the scope["profile"] is already populated
+        if "profile" not in scope:
+            # get the profile ID from the query params
+            query_string = urllib.parse.parse_qs(scope["query_string"].decode("utf-8"))
+            profile_id = query_string.get("profile_id", [None])[0]
+        
+            # create the scope
+            scope['profile'] = await get_profile(profile_id)
+            
+            scope["match"] = await get_match(match_id)
+            
+            scope["profile_in_match"] = await check_match(match_id, profile_id)
+    
+        
 
         return await self.app(scope, receive, send)
