@@ -63,7 +63,7 @@ class QueryAuthMiddleware:
         # checking if it is a valid user ID, or if scope["user"] is already
         # populated).
         
-
+        # get the match id from the url
         path = Path(scope["path"])
         match_id = path.parts[-1]
         

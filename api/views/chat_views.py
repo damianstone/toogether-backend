@@ -17,3 +17,10 @@ class MessageModelViewSet(ModelViewSet):
     queryset = models.Message.objects.all()
     serializer_class = serializers.MessageSerializer
     permission_classes = [IsAuthenticated]
+    
+    @action(detail=False, methods=["post"], url_path=r"actions/delete-all")
+    def delete_all(self, request):
+        messages = models.Message.objects.all()
+        for msg in messages:
+            msg.delete()
+        return Response({"detail": "success"}, status=status.HTTP_200_OK)
