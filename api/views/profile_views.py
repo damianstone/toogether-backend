@@ -8,6 +8,7 @@ from django.views.decorators.csrf import csrf_exempt
 from api import models, serializers
 from service.core.pagination import CustomPagination
 from django.contrib.auth.hashers import make_password
+from django.db.models import Q
 from datetime import date
 from datetime import timedelta
 from django.utils import timezone
@@ -220,7 +221,7 @@ class ProfileViewSet(ModelViewSet):
 
     @action(detail=True, methods=["post"], url_path=r"actions/block-profile")
     def block_profile(self, request, pk=None):
-        profile = request.user
+        current_profile = request.user
         try:
             blocked_profile = models.Profile.objects.get(pk=pk)
         except ObjectDoesNotExist:
@@ -228,7 +229,19 @@ class ProfileViewSet(ModelViewSet):
                 {"Error": "Profile does not exist"}, status=status.HTTP_400_BAD_REQUEST
             )
 
-        profile.blocked_profiles.add(blocked_profile)
+        # Remove likes between
+        current_profile.likes.remove(blocked_profile)
+        blocked_profile.likes.remove(current_profile)
+
+        # Check for existing match between profiles and delete it
+        match_qs = models.Match.objects.filter(
+            Q(profile1=current_profile, profile2=blocked_profile)
+            | Q(profile1=blocked_profile, profile2=current_profile)
+        )
+        if match_qs.exists():
+            match_qs.delete()
+
+        current_profile.blocked_profiles.add(blocked_profile)
         serializer = serializers.SwipeProfileSerializer(blocked_profile, many=False)
         return Response(serializer.data)
 
