@@ -232,7 +232,7 @@ class ProfileViewSet(ModelViewSet):
         # Remove likes between
         current_profile.likes.remove(blocked_profile)
         blocked_profile.likes.remove(current_profile)
-        
+
         # Check for existing match between profiles and delete it
         match_qs = models.Match.objects.filter(
             Q(profile1=current_profile, profile2=blocked_profile)

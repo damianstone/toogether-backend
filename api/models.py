@@ -90,9 +90,12 @@ class Photo(models.Model):
 class VerificationCode(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     profile = models.OneToOneField(Profile, on_delete=models.CASCADE)
-    email = models.EmailField(null =False, blank=False)
+    email = models.EmailField(null=False, blank=False)
     code = models.CharField(max_length=6)
-    expires_at = models.DateTimeField(default=timezone.now() + timezone.timedelta(minutes=15))
+    expires_at = models.DateTimeField(
+        default=timezone.now() + timezone.timedelta(minutes=15)
+    )
+
 
 class Match(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -164,5 +167,3 @@ class Group(models.Model):
         self.total_members = self.members.count()
 
         super().save(*args, **kwargs)
-
-
