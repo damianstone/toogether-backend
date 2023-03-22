@@ -87,7 +87,7 @@ class ProfileViewSet(ModelViewSet):
             profile = models.Profile.objects.get(pk=pk)
         except ObjectDoesNotExist:
             return Response(
-                {"Error": "Profile does not exist"}, status=status.HTTP_400_BAD_REQUEST
+                {"detail": "Profile does not exist"}, status=status.HTTP_400_BAD_REQUEST
             )
 
         # only the current user and an admin can execute this function
@@ -252,48 +252,48 @@ class ProfileViewSet(ModelViewSet):
 
     @action(detail=False, methods=["post"], url_path=r"actions/recovery-code")
     def recovery_code(self, request):
+        # data from the frontend
         data = request.data
+        email = data["email"]
 
+        # check if there is an user with that email
         try:
-            current_profile = models.Profile.objects.get(email=data["email"])
-            letters_and_digits = string.ascii_letters + string.digits
-            code_generator = "".join(
-                random.choice(letters_and_digits.upper()) for i in range(6)
-            )
-            # code is generated on code_generator
-
-            try:
-                verificationModel_ = models.VerificationCode.objects.get(
-                    email=data["email"]
-                )
-                verificationModel_.code = code_generator
-                verificationModel_.expires_at = timezone.now() + timedelta(minutes=5)
-                verificationModel_.save()
-            # verificate if this user already try to change the password, else, create a new register on Verificationcode model
-            except ObjectDoesNotExist:
-                new_user = models.VerificationCode.objects.create(
-                    email=data["email"],
-                    code=code_generator,
-                    expires_at=timezone.now() + timedelta(minutes=5),
-                )
-                new_user.save()
-
-            send_mail(
-                "Reset your password",
-                f"Here is your access code {code_generator}",
-                "toogethersite@gmail.com",
-                [data["email"]],
-                fail_silently=False,
-            )
-            # send email to user
-            return Response(
-                {"message": "Your recovery email was sent succesfully"},
-                status=status.HTTP_200_OK,
-            )
+            current_profile = models.Profile.objects.get(email=email)
         except ObjectDoesNotExist:
             return Response(
-                {"message": "email doesn't exist"}, status=status.HTTP_400_BAD_REQUEST
+                {"detail": "Profile does not exist"}, status=status.HTTP_400_BAD_REQUEST
             )
+
+        # TODO: change the code format
+        # generate 6 digits code (606060)
+        letters_and_digits = string.ascii_letters + string.digits
+        code_generator = "".join(
+            random.choice(letters_and_digits.upper()) for i in range(6)
+        )
+
+        # TODO: check if the user already has a code using the one-to-one relation
+        # current_user.verificationcode...
+        has_verification = False
+
+        # if the user already has a verification code, delete it
+        if has_verification:
+            pass
+            # TODO: delete old verification code
+
+        verification_code = models.VerificationCode.objects.create(
+            profile=current_profile, email=email, code=code_generator
+        )
+        verification_code.save()
+
+        send_mail(
+            "Reset your password",
+            f"Here is your access code {verification_code.code}",
+            "toogethersite@gmail.com",
+            [email],
+            fail_silently=False,
+        )
+
+        return Response({"detail": "SUCCESS"}, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=["post"], url_path=r"actions/validate-code")
     def validate_code(self, request):
@@ -414,7 +414,6 @@ class PhotoViewSet(ModelViewSet):
         photo = models.Photo.objects.get(pk=pk)
         photo.delete()
         return Response({"detail": "Photo deleted"}, status=status.HTTP_200_OK)
-
 
 
 # TODO: create APIView here
