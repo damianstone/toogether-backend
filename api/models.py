@@ -89,6 +89,10 @@ class Photo(models.Model):
         self.image.delete(save=False)
         super().delete()
 
+class VerificationCode(models.Model):
+    email = models.EmailField()
+    code = models.CharField(max_length=6)
+    expires_at = models.DateTimeField()
 
 class Match(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
