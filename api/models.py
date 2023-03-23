@@ -87,10 +87,10 @@ class Photo(models.Model):
         super().delete()
 
 
-class VerificationCode(models.Model):
+class verification_code(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    profile = models.OneToOneField(Profile, on_delete=models.CASCADE)
-    email = models.EmailField(null =False, black=False)
+    profile = models.OneToOneField(Profile, null=True, on_delete=models.CASCADE)
+    email = models.EmailField(null =False, blank=False)
     code = models.CharField(max_length=6)
     expires_at = models.DateTimeField(default=timezone.now() + timezone.timedelta(minutes=15))
 
