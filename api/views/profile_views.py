@@ -121,7 +121,6 @@ def validate_code(request):
     return Response({"detail": "Expirated code"}, status=status.HTTP_400_BAD_REQUEST)
 
 
-
 class ProfileViewSet(ModelViewSet):
     queryset = models.Profile.objects.all()
     serializer_class = serializers.ProfileSerializer
