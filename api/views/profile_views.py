@@ -1,10 +1,10 @@
 from rest_framework import status
-from rest_framework.decorators import api_view, permission_classes, action
-from rest_framework.permissions import IsAuthenticated, IsAdminUser, AllowAny
+from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
+from rest_framework.views import APIView
 from django.core.exceptions import ObjectDoesNotExist
-from django.views.decorators.csrf import csrf_exempt
 from api import models, serializers
 from service.core.pagination import CustomPagination
 from django.contrib.auth.hashers import make_password
@@ -15,7 +15,6 @@ from django.utils import timezone
 from django.contrib.gis.geos import GEOSGeometry
 from decimal import *
 from django.core.mail import send_mail
-import string
 import random
 import json
 
@@ -271,33 +270,34 @@ class ProfileViewSet(ModelViewSet):
         try:
             current_profile = models.Profile.objects.get(email=email)
         except ObjectDoesNotExist:
-            return Response({"detail": "Profile does not exist"}, status=status.HTTP_400_BAD_REQUEST)
-        code_generator = ''.join(str(random.randrange(10)) for i in range(6))
+            return Response(
+                {"detail": "Profile does not exist"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # way to check in a one to one if there is already a relation
         try:
-            code_update = models.verification_code.objects.get(email=email)
+            old_code = current_profile.verification_code
         except ObjectDoesNotExist:
-            pass
-        try:    
-            current_code = current_profile.verification_code.code
-        except ObjectDoesNotExist:
-            current_code = None
+            print("There is not an old code created")
 
-        if current_code:
-            code_update.delete()
+        if old_code:
+            old_code.delete()
 
-        verification_code = models.verification_code.objects.create(profile=current_profile,
-        email=email,
-        code=code_generator)
+        code_generator = "".join(str(random.randrange(10)) for i in range(6))
+        verification_code = models.VerificationCode.objects.create(
+            profile=current_profile, email=email, code=code_generator
+        )
         verification_code.save()
 
         send_mail(
-        "Reset your password",
-        f"Here is your access code {verification_code.code}",
-        "toogethersite@gmail.com",
-        [email],
-        fail_silently=False,
+            "Reset your password",
+            f"Here is your recovery password code {verification_code.code}. Please don't share it with anyone",
+            "toogethersite@gmail.com",
+            [email],
+            fail_silently=False,
         )
-        return Response({"detail": "SUCCESS"}, status=status.HTTP_200_OK)
+        
+        return Response({"detail": "We sent you an email with you recovery password code"}, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=["post"], url_path=r"actions/validate-code")
     def validate_code(self, request):
@@ -306,44 +306,55 @@ class ProfileViewSet(ModelViewSet):
         email = data["email"]
 
         try:
-            verificationCode_code = models.verification_code.objects.get(code=code)
+            verification_code = models.VerificationCode.objects.get(code=code)
         except ObjectDoesNotExist:
-            return Response({"detail": "Invalid Code"}, status=status.HTTP_400_BAD_REQUEST)
-        try:
-            user = models.Profile.objects.get(email=email)
-        except ObjectDoesNotExist:
-                return Response({"detail": "Error email"}, status=status.HTTP_400_BAD_REQUEST)
-        if timezone.now() < verificationCode_code.expires_at:
-            serializer = serializers.ProfileSerializer(user, many=False)
             return Response(
-                {"user": f"{user}",
-                "VERIFIED": True,
-                "AccessToken": serializer.data["token"],}, 
-                status=status.HTTP_200_OK,)
-        # verify if code is expired or invalid, in true case response the user email, verified true and access token
-        return Response({"detail": "Expirated code"}, status=status.HTTP_400_BAD_REQUEST)
-        # exceptions and else sentences will handle de wrong cases
+                {"detail": "Code does not exists"}, status=status.HTTP_400_BAD_REQUEST
+            )
+            
+            
+        try:
+            current_profile = models.Profile.objects.get(email=email)
+            current_code = current_profile.verification_code
+        except ObjectDoesNotExist:
+            return Response(
+                {"detail": "Something went wrong"}, status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        code_is_valid = timezone.now() < verification_code.expires_at
+        
+        # check that the code belongs to the user
+        if verification_code == current_code and code_is_valid:
+            serializer = serializers.ProfileSerializer(current_profile, many=False)
+            return Response(
+                {
+                    "detail": "Recovery code success",
+                    "AccessToken": serializer.data["token"],
+                },
+                status=status.HTTP_200_OK,
+            )
+
+
+        return Response(
+            {"detail": "Expirated code"}, status=status.HTTP_400_BAD_REQUEST
+        )
 
     @action(detail=False, methods=["post"], url_path=r"actions/reset-password")
     def reset_password(self, request):
+        current_profile = request.user
         data = request.data
-        email = data["email"]
-        password = data["new_pasword"]
-        rep_password = data["repeated_new_pasword"]
+        password = data["password"]
+        repeated_password = data["repeated_password"]
 
-        try:
-            profile_to_change = models.Profile.objects.get(email=email)
-        except ObjectDoesNotExist:
-            return Response({"detail": "email doesn't exist"}, status=status.HTTP_400_BAD_REQUEST)
+        if password == repeated_password:
+            current_profile.password = make_password(password)
+            current_profile.save()
+            return Response({"detail": "You password has been reseted"}, status=status.HTTP_200_OK)
 
-        if password == rep_password:
-            profile_to_change.password = make_password(password)
-            profile_to_change.save()
-               # verify if the new password and it repeated are equals,true case, encrypt the password and save it on db
-            return Response({"OPERATION_SUCCESS": True}, status=status.HTTP_200_OK)
-
-        return Response({"OPERATION_SUCCESS": False, "message": "passwords are not equals"},status=status.HTTP_200_OK,)
-                # exceptions and else sentences will handle de wrong cases
+        return Response(
+            {"detail":  "Your passwords does not match"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
 
 
 # ----------------------- PHOTOS VIEWS --------------------------------
