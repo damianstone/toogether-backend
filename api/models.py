@@ -75,9 +75,6 @@ class Profile(AbstractBaseUser, PermissionsMixin):
 
     objects = CustomUserManager()
 
-    def get_full_name(self):
-        return self.firstname + self.lastname
-
 
 class Photo(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -90,6 +87,16 @@ class Photo(models.Model):
         super().delete()
 
 
+class VerificationCode(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    profile = models.OneToOneField(Profile, on_delete=models.CASCADE)
+    email = models.EmailField(null=False, blank=False)
+    code = models.CharField(max_length=6)
+    expires_at = models.DateTimeField(
+        default=timezone.now() + timezone.timedelta(minutes=15)
+    )
+
+
 class Match(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     profile1 = models.ForeignKey(
@@ -99,9 +106,6 @@ class Match(models.Model):
         Profile, related_name="profile2_matches", default=None, on_delete=models.CASCADE
     )
     created_at = models.DateTimeField(default=timezone.now)
-
-    def __str__(self):
-        return self.profile1.firstname + " " + self.profile2.firstname
 
     # @background(schedule=60*60-24)
     # def delete_old_matches(self):
