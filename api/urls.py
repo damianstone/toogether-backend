@@ -114,7 +114,10 @@ urlpatterns = [
     path("users/recovery-code/", profile_views.recovery_code, name="recovery_code"),
     path("users/validate-code/", profile_views.validate_code, name="validate_code"),
     # Chat
-    path("conversations/", chat_views.ConversationAPIView.as_view(), name="something"),
+    path("conversations/", chat_views.ConversationAPIView.as_view(), name="list-conversations"),
+    path("conversations/<pk>/", chat_views.ConversationAPIView.as_view(), name="create-conversation"),
+    path("conversations/<pk>/", chat_views.ConversationAPIView.as_view(), name="delete-conversation"),
+    path("conversations/<pk>/messages/", chat_views.MessageModelViewSet.as_view(), name="delete-conversation"),
     # Public endpoints -  ModelViewSets
     path("", include(router.urls)),
 ]
