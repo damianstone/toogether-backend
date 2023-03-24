@@ -9,18 +9,13 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Q
 from api import models, serializers
 
-
-def get_conversation_between_users(p1, p2):
-    conversation = models.Conversation.objects.filter(participants=p1).filter(participants=p2)
-    if conversation.exists():
-        return conversation.first()
-    else:
-        return None
+import api.utils.gets as g
 
 class ConversationAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get(self, request, pk=None):
+    # * List all the conversations with at least one message
+    def get(self, request):
         current_profile = request.user
         conversations = current_profile.conversations.all()
         serializer = serializers.ConversationSerializer(conversations, many=True)
@@ -35,63 +30,57 @@ class ConversationAPIView(APIView):
             return Response(
                 {"detail": "Match does not exist"}, status=status.HTTP_400_BAD_REQUEST
             )
-            
+
         profile1 = match.profile1
         profile2 = match.profile2
-        
+
         if current_profile != profile1 and current_profile != profile2:
             print(current_profile)
-            return Response({"detail": "Not authorized"}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response(
+                {"detail": "Not authorized"}, status=status.HTTP_401_UNAUTHORIZED
+            )
 
         # check if the two profiles of the match already have a conversation
-        conversation = get_conversation_between_users(profile1, profile2)
-        
-        print("CONVERSATION -> ", conversation)
-        
+        conversation = g.get_conversation_between(profile1, profile2)
+
         if conversation:
             serializer = serializers.ConversationSerializer(conversation, many=False)
             return Response(serializer.data, status=status.HTTP_200_OK)
-        
+
         new_conversation = models.Conversation.objects.create(type="private")
         new_conversation.participants.add(profile1)
         new_conversation.participants.add(profile2)
         new_conversation.save()
-        
+
         serializer = serializers.ConversationSerializer(new_conversation, many=False)
         return Response(serializer.data)
-    
+
     def delete(self, request, pk=None):
         current_profile = request.user
-        conversations = models.Conversation.objects.all()
-        
-        for c in conversations:
-            c.delete()
-
-        # try:
-        #     conversation = models.Conversation.objects.get(pk=pk)
-        # except ObjectDoesNotExist:
-        #     return Response(
-        #         {"detail": "Conversation does not exist"}, status=status.HTTP_400_BAD_REQUEST
-        #     )
-        # conversation.delete()
-        return Response({"detail": "deleted"})
-        
+        try:
+            conversation = models.Conversation.objects.get(pk=pk)
+        except ObjectDoesNotExist:
+            return Response(
+                {"detail": "Conversation does not exist"}, status=status.HTTP_400_BAD_REQUEST
+            )
+        conversation.delete()
+        return Response({"detail": "deleted"}, status=status.HTTP_200_OK)
 
 
 class MessageModelViewSet(APIView):
     permission_classes = [IsAuthenticated]
-    
-    def get(self, request, pk=None):        
-        try: 
+
+    def get(self, request, pk=None):
+        try:
             conversation = models.Conversation.objects.get(pk=pk)
         except ObjectDoesNotExist:
             return Response({"detail": "Conversation does not exist"})
-        
+
         messages = models.Message.objects.filter(conversation=conversation)
         serializer = serializers.MessageSerializer(messages, many=True)
         return Response(serializer.data)
 
-    def delete(self, request):
+    def delete(self, request, pk=None):
         messages = models.Message.objects.all()
         for msg in messages:
             msg.delete()

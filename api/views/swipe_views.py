@@ -12,6 +12,9 @@ from api import models, serializers
 import api.handlers.matchmaking as matchmaking
 import api.handlers.swipe_filters as swipefilters
 
+import api.utils.gets as g
+import api.utils.checks as c
+
 
 class SwipeModelViewSet(ModelViewSet):
     permission_classes = [IsAuthenticated]
@@ -267,16 +270,27 @@ class MatchModelViewSet(ModelViewSet):
     # list the current profile matches
     def list(self, request):
         current_profile = request.user
+        
         matches = models.Match.objects.filter(
             Q(profile1=current_profile.id) | Q(profile2=current_profile.id)
         )
-
+        
+        # exclude the matches 
+        matches = []
+        for match in matches:
+            print(match)
+            # check if there is a conversation between the profiles and if there are messsages
+            conversation = c.check_profiles_with_messages(match.profile1, match.profile2)
+            print(conversation)
+            if not conversation:
+                matches.append(match)
+                
         # Context enable the access of the current user (the user that make the request) in the serializers
         serializer = serializers.MatchSerializer(
             matches, many=True, context={"request": request}
         )
         return Response(
-            {"count": matches.count(), "results": serializer.data},
+            {"count": len(matches), "results": serializer.data},
             status=status.HTTP_200_OK,
         )
 

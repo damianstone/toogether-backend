@@ -86,6 +86,7 @@ class Photo(models.Model):
         self.image.delete(save=False)
         super().delete()
 
+
 class VerificationCode(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     profile = models.OneToOneField(
@@ -96,8 +97,6 @@ class VerificationCode(models.Model):
     expires_at = models.DateTimeField(
         default=timezone.now() + timezone.timedelta(minutes=15)
     )
-    
-
 
 
 class Match(models.Model):
@@ -172,7 +171,6 @@ class Group(models.Model):
         super().save(*args, **kwargs)
 
 
-
 # The group model itself works as a "Conversation" or chat_room
 class GroupMessage(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -180,7 +178,7 @@ class GroupMessage(models.Model):
     sender = models.ForeignKey(Profile, default=None, on_delete=models.CASCADE)
     message = models.TextField(null=True, blank=True)
     sent_at = models.DateTimeField(default=timezone.now)
-    
+
     def get_sent_time(self):
         return self.sent_at.strftime("%I:%M %p")
 
@@ -190,9 +188,9 @@ class Conversation(models.Model):
         ("PRIVATE", "private"),
         ("GROUP", "Group"),
     )
-    
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    participants = models.ManyToManyField(Profile, related_name='conversations')
+    participants = models.ManyToManyField(Profile, related_name="conversations")
     created_at = models.DateTimeField(default=timezone.now)
     type = models.CharField(
         choices=TYPES,
@@ -201,14 +199,16 @@ class Conversation(models.Model):
         null=True,
         blank=True,
     )
-    
+
 
 class Message(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    conversation = models.ForeignKey(Conversation, default=None, on_delete=models.CASCADE)
+    conversation = models.ForeignKey(
+        Conversation, default=None, on_delete=models.CASCADE
+    )
     sender = models.ForeignKey(Profile, default=None, on_delete=models.CASCADE)
     message = models.TextField(null=True, blank=True)
     sent_at = models.DateTimeField(default=timezone.now)
-    
+
     def get_sent_time(self):
         return self.sent_at.strftime("%I:%M %p")

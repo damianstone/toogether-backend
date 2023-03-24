@@ -7,20 +7,20 @@ import json
 class ChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         # get scope from middleware
-        self.sender_in_match = self.scope["profile_in_match"]
+        self.sender_in_conversation = self.scope["profile_in_conversation"]
 
         # prevents someone from sending a message to any profile having a match id
-        if not self.sender_in_match:
+        if not self.sender_in_conversation:
             await self.close()
 
         # get scope from middleware
         self.sender = self.scope["profile"]
 
         # get the scope from middleware
-        self.match = self.scope["match"]
+        self.conversation = self.scope["conversation"]
 
-        # chat_room: this can be a match_id or chat_id
-        self.chat_room = self.scope["url_route"]["kwargs"]["match_id"]
+        # chat_room: the conversation id
+        self.chat_room = self.scope["url_route"]["kwargs"]["conversation_id"]
 
         # check if the user is authenticated, and if not, close the WebSocket connection
         if not self.sender.is_authenticated:
@@ -35,8 +35,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
         message = text_data
 
         # create a message object
-        model =  await sync_to_async(Message.objects.create)(
-            match=self.match,
+        model = await sync_to_async(Message.objects.create)(
+            conversation=self.conversation,
             sender=self.sender,
             message=message,
         )
@@ -49,14 +49,13 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 "id": str(model.id),
                 "sender": model.sender.name,
                 "message": model.message,
-                "sent_at": model.get_sent_time()
+                "sent_at": model.get_sent_time(),
             },
         )
 
     async def disconnect(self, close_code):
         # Remove the consumer from the chat room group
         await self.channel_layer.group_discard(self.chat_room, self.channel_name)
-
 
     async def chat_message(self, event):
         # send a message to the WebSocket connection that triggered the receive() method

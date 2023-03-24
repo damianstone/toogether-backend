@@ -217,7 +217,8 @@ class MatchSerializer(serializers.ModelSerializer):
 class ConversationSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Conversation
-        fields ="__all__"
+        fields = "__all__"
+
 
 class MessageSerializer(serializers.ModelSerializer):
     class Meta:
