@@ -3,14 +3,27 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
+from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from django.core.exceptions import ObjectDoesNotExist
 from api import models, serializers
 
-class ChatModelViewSet(ModelViewSet):
-    queryset = models.Chat.objects.all()
-    serializer_class = serializers.ChatSerializer
+class ConversationModelViewSet(APIView):
     permission_classes = [IsAuthenticated]
+    
+    def get(self, request, pk=None):
+        pass
+    
+    def post(self, request, pk=None):
+        current_profile = request.user
+        
+        try: 
+            match = models.Match.objects.get(pk=pk)
+        except ObjectDoesNotExist:
+            return Response({"detail": "Match does not exist"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # check if the two profiles of the match already have a conversation
+        
     
     
 class MessageModelViewSet(ModelViewSet):

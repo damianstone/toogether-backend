@@ -213,15 +213,16 @@ class MatchSerializer(serializers.ModelSerializer):
             "is_group_match": False,
         }
 
+
+class ConversationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.Conversation
+        fields ="__all__"
+
 class MessageSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Message
         fields = "__all__"
-
-class ChatSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = models.Chat
-        fields ="__all__"
 
 
 # -------------------------- DATA ACTIONS SERIALIZERS -----------------------------
