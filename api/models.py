@@ -75,9 +75,6 @@ class Profile(AbstractBaseUser, PermissionsMixin):
 
     objects = CustomUserManager()
 
-    def get_full_name(self):
-        return self.firstname + self.lastname
-
 
 class Photo(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -90,9 +87,16 @@ class Photo(models.Model):
         super().delete()
 
 class VerificationCode(models.Model):
-    email = models.EmailField()
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    profile = models.OneToOneField(
+        Profile, related_name="verification_code", on_delete=models.CASCADE
+    )
+    email = models.EmailField(null=False, blank=False)
     code = models.CharField(max_length=6)
-    expires_at = models.DateTimeField()
+    expires_at = models.DateTimeField(
+        default=timezone.now() + timezone.timedelta(minutes=15)
+    )
+
 
 class Match(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)

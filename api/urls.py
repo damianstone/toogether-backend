@@ -123,6 +123,8 @@ urlpatterns = [
         profile_views.MyTokenObtainPairView.as_view(),
         name="login",
     ),
+    path("users/recovery-code/", profile_views.recovery_code, name="recovery_code"),
+    path("users/validate-code/", profile_views.validate_code, name="validate_code"),
     # Public endpoints -  ModelViewSets
     path("", include(router.urls)),
 ]
