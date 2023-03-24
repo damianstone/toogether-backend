@@ -275,22 +275,20 @@ class MatchModelViewSet(ModelViewSet):
             Q(profile1=current_profile.id) | Q(profile2=current_profile.id)
         )
         
-        # exclude the matches 
-        matches = []
+        matches_without_conversation = []
         for match in matches:
-            print(match)
             # check if there is a conversation between the profiles and if there are messsages
             conversation = c.check_profiles_with_messages(match.profile1, match.profile2)
             print(conversation)
             if not conversation:
-                matches.append(match)
+                matches_without_conversation.append(match)
                 
         # Context enable the access of the current user (the user that make the request) in the serializers
         serializer = serializers.MatchSerializer(
-            matches, many=True, context={"request": request}
+            matches_without_conversation, many=True, context={"request": request}
         )
         return Response(
-            {"count": len(matches), "results": serializer.data},
+            {"count": len(matches_without_conversation), "results": serializer.data},
             status=status.HTTP_200_OK,
         )
 

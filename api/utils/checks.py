@@ -17,7 +17,6 @@ def check_conversation_between(p1, p2):
 
 def check_conversation_with_messages(conversation):
     messages = models.Message.objects.filter(conversation=conversation)
-    print(messages.count())
     return messages.count() >= 1
 
 
