@@ -173,8 +173,8 @@ class Group(models.Model):
 
 
 
-# Group chat related to the created group
-class GroupChat(models.Model):
+# The group model itself works as a "Conversation" or chat_room
+class GroupMessage(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     group = models.ForeignKey(Group, default=None, on_delete=models.CASCADE)
     sender = models.ForeignKey(Profile, default=None, on_delete=models.CASCADE)
@@ -183,7 +183,6 @@ class GroupChat(models.Model):
     
     def get_sent_time(self):
         return self.sent_at.strftime("%I:%M %p")
-
 
 
 class Conversation(models.Model):

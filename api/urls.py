@@ -37,18 +37,6 @@ router.register(
     basename="match",
 )
 
-router.register(
-    r"chats",
-    chat_views.ChatModelViewSet,
-    basename="chat",
-)
-
-router.register(
-    r"messages",
-    chat_views.MessageModelViewSet,
-    basename="message",
-)
-
 urlpatterns = [
     # Internal endpoints - profiles
     path("internal/profiles/", internal_profile.list_profiles, name="list_profiles"),
@@ -125,6 +113,8 @@ urlpatterns = [
     ),
     path("users/recovery-code/", profile_views.recovery_code, name="recovery_code"),
     path("users/validate-code/", profile_views.validate_code, name="validate_code"),
+    # Chat
+    path("conversations/", chat_views.ConversationAPIView.as_view(), name="something"),
     # Public endpoints -  ModelViewSets
     path("", include(router.urls)),
 ]

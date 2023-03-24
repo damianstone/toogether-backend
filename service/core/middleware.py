@@ -79,15 +79,10 @@ class QueryAuthMiddleware:
             # create the scope
             scope['profile'] = await get_profile(profile_id)
             
-            # TODO: if my_group_chat is false then get the match id and create the other scopes
-            
             scope["match"] = await get_match(match_id)
             
             scope["profile_in_match"] = await check_match(match_id, profile_id)
             
-            # TODO: if my_group_chat is true do all the checks for the group
     
-        
-        
 
         return await self.app(scope, receive, send)
