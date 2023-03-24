@@ -6,21 +6,6 @@ from pathlib import Path
 
 import urllib.parse
 
-
-# ----------------- CSRF middleware --------------------------
-class DisableCSRFMiddleware(object):
-    def __init__(self, get_response):
-        self.get_response = get_response
-
-    def __call__(self, request):
-        setattr(request, "_dont_enforce_csrf_checks", True)
-        response = self.get_response(request)
-        return response
-
-
-# ----------------- WebSocket auth middleware --------------------------
-
-
 @database_sync_to_async
 def get_profile(profile_id):
     # if its not a valid UUID then return an AnonymousUser
@@ -52,15 +37,12 @@ def check_conversation(conversation_id, profile_id):
     return False
 
 
-class QueryAuthMiddleware:
+class SocketAuthMiddleware:
     def __init__(self, app):
         # Store the ASGI application we were passed
         self.app = app
 
     async def __call__(self, scope, receive, send):
-        # Look up user from query string (you should also do things like
-        # checking if it is a valid user ID, or if scope["user"] is already
-        # populated).
 
         # get the match id from the url
         path = Path(scope["path"])

@@ -15,7 +15,7 @@ from django.core.asgi import get_asgi_application
 from django.urls import path, include
 
 from api.websockets import ChatConsumer
-from service.core.middleware import QueryAuthMiddleware
+from service.core.SocketMiddleware import SocketAuthMiddleware
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "service.settings")
 
@@ -24,7 +24,7 @@ django_asgi_app = get_asgi_application()
 application = ProtocolTypeRouter(
     {
         "http": django_asgi_app,
-        "websocket": QueryAuthMiddleware(
+        "websocket": SocketAuthMiddleware(
             URLRouter([path("ws/chat/<conversation_id>/", ChatConsumer.as_asgi())])
         ),
     }

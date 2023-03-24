@@ -14,4 +14,3 @@ def get_conversation_between(p1, p2):
         return conversation.first()
     else:
         return None
-    

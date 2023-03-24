@@ -87,7 +87,7 @@ REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ],
-    "DEFAULT_PAGINATION_CLASS": "service.core.pagination.CustomPagination",
+    "DEFAULT_PAGINATION_CLASS": "service.core.CustomPagination.ListPagination",
 }
 
 CHANNEL_LAYERS = {
@@ -135,7 +135,7 @@ MIDDLEWARE = [
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     # "django.middleware.csrf.CsrfViewMiddleware",
-    "service.core.middleware.DisableCSRFMiddleware",
+    "service.core.CSRFMiddleware.DisableCSRFMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",

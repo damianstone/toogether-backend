@@ -11,6 +11,7 @@ from api import models, serializers
 
 import api.utils.gets as g
 
+
 class ConversationAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -61,7 +62,8 @@ class ConversationAPIView(APIView):
             conversation = models.Conversation.objects.get(pk=pk)
         except ObjectDoesNotExist:
             return Response(
-                {"detail": "Conversation does not exist"}, status=status.HTTP_400_BAD_REQUEST
+                {"detail": "Conversation does not exist"},
+                status=status.HTTP_400_BAD_REQUEST,
             )
         conversation.delete()
         return Response({"detail": "deleted"}, status=status.HTTP_200_OK)

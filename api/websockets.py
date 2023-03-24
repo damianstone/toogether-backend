@@ -40,7 +40,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             sender=self.sender,
             message=message,
         )
-        
+
         # Broadcast the message to all WebSocket connections in the chat room group
         await self.channel_layer.group_send(
             self.chat_room,

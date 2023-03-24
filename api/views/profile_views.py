@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 from django.core.exceptions import ObjectDoesNotExist
 from api import models, serializers
-from service.core.pagination import CustomPagination
+from service.core.CustomPagination import ListPagination
 from django.contrib.auth.hashers import make_password
 from django.db.models import Q
 from datetime import date
@@ -125,7 +125,7 @@ class ProfileViewSet(ModelViewSet):
     queryset = models.Profile.objects.all()
     serializer_class = serializers.ProfileSerializer
     permission_classes = [IsAuthenticated]
-    pagination_class = CustomPagination
+    pagination_class = ListPagination
 
     # admin actions for this model view set
     def get_permissions(self):
