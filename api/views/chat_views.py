@@ -16,8 +16,9 @@ class ConversationViewSet(ViewSet):
     permission_classes = [IsAuthenticated]
 
     def list(self, request):
+        # TODO: order the conversations based on the newest messages
         current_profile = request.user
-        conversations = current_profile.conversations.all()
+        conversations = current_profile.conversations.all().order_by("-created_at")
 
         # list all the conversation with at least one message
         conversations_w_messsages = []
@@ -28,11 +29,11 @@ class ConversationViewSet(ViewSet):
                 conversations_w_messsages.append(conv)
 
         serializer = serializers.ConversationSerializer(
-            conversations_w_messsages, many=True
+            conversations_w_messsages, many=True, context={"request": request}
         )
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    @action(detail=True, methods=["post"], url_path=r"messages")
+    @action(detail=True, methods=["get"], url_path=r"messages")
     def list_messages(self, request, pk=None):
         current_profile = request.user
 
@@ -49,7 +50,9 @@ class ConversationViewSet(ViewSet):
             )
 
         messages = models.Message.objects.filter(conversation=conversation)
-        serializer = serializers.MessageSerializer(messages, many=True)
+        serializer = serializers.MessageSerializer(
+            messages, many=True, context={"request": request}
+        )
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=["post"], url_path=r"start")

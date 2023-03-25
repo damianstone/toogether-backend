@@ -6,6 +6,8 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from django.db.models import Q
 from api import models
 
+import api.utils.gets as g
+
 
 class ChoicesField(serializers.Field):
     def __init__(self, choices, **kwargs):
@@ -23,7 +25,7 @@ class ChoicesField(serializers.Field):
         raise serializers.ValidationError(["choice not valid"])
 
 
-# -------------------------- MODELS SERIALIZERS ----------------------------
+# -------------------------- PROFILE SERIALIZER ----------------------------
 class PhotoSerializer(serializers.ModelSerializer):
     image = serializers.ImageField(
         required=True, allow_null=False, max_length=None, use_url=True
@@ -125,12 +127,6 @@ class SwipeProfileSerializer(serializers.ModelSerializer):
         return profile.member_group.all().exists()
 
 
-""" 
-    Swipe group serializer show a owner property and show 
-    all the members (including the owner) in the members property 
-"""
-
-
 class SwipeGroupSerializer(serializers.ModelSerializer):
     owner = SwipeProfileSerializer(read_only=True, many=False)
     members = SwipeProfileSerializer(read_only=True, many=True)
@@ -214,16 +210,77 @@ class MatchSerializer(serializers.ModelSerializer):
         }
 
 
-class ConversationSerializer(serializers.ModelSerializer):
+# -------------------------- CONVERSATION SERIALIZERS --------------------------------
+
+
+class ReceiverSerializer(serializers.ModelSerializer):
+    is_in_group = serializers.SerializerMethodField()
+    photo = serializers.SerializerMethodField()
+
     class Meta:
-        model = models.Conversation
-        fields = "__all__"
+        model = models.Profile
+        fields = [
+            "id",
+            "name",
+            "email",
+            "photo",
+            "is_in_group",
+        ]
+
+    def get_is_in_group(self, profile):
+        return profile.member_group.all().exists()
+
+    def get_photo(self, profile):
+        profile_photos = models.Photo.objects.filter(profile=profile).order_by(
+            "-created_at"
+        )
+        if profile_photos.exists():
+            first_photo = profile_photos.first()
+            serializer = PhotoSerializer(first_photo, many=False)
+            return serializer.data
+        else:
+            return None
 
 
 class MessageSerializer(serializers.ModelSerializer):
+    sent_by_current = serializers.SerializerMethodField()
+    sent_at = serializers.SerializerMethodField()
+
     class Meta:
         model = models.Message
-        fields = "__all__"
+        fields = ["id", "message", "sent_at", "sent_by_current", "sender"]
+
+    def get_sent_at(self, message):
+        return message.get_sent_time()
+
+    def get_sent_by_current(self, message):
+        request = self.context.get("request")
+        current_profile = request.user
+        return message.sender == current_profile
+
+
+class ConversationSerializer(serializers.ModelSerializer):
+    receiver = serializers.SerializerMethodField()
+    last_message = serializers.SerializerMethodField()
+
+    class Meta:
+        model = models.Conversation
+        fields = ["id", "type", "participants", "receiver", "last_message"]
+
+    def get_receiver(self, conversation):
+        request = self.context.get("request")
+        current_profile = request.user
+        receiver = g.get_receiver(current_profile, conversation)
+        serializer = ReceiverSerializer(receiver, many=False)
+        return serializer.data
+
+    def get_last_message(self, conversation):
+        request = self.context.get("request")
+        last_message = g.get_last_message(conversation)
+        serializer = MessageSerializer(
+            last_message, many=False, context={"request": request}
+        )
+        return serializer.data
 
 
 # -------------------------- DATA ACTIONS SERIALIZERS -----------------------------
