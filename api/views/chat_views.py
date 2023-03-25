@@ -6,6 +6,7 @@ from rest_framework.viewsets import ModelViewSet, ViewSet
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from django.core.exceptions import ObjectDoesNotExist
+from django.db.models import Max
 from api import models, serializers
 
 import api.utils.gets as g
@@ -16,9 +17,10 @@ class ConversationViewSet(ViewSet):
     permission_classes = [IsAuthenticated]
 
     def list(self, request):
-        # TODO: order the conversations based on the newest messages
         current_profile = request.user
-        conversations = current_profile.conversations.all().order_by("-created_at")
+        conversations = current_profile.conversations.annotate(
+            latest_message=Max("message__sent_at")
+        ).order_by("-latest_message")
 
         # list all the conversation with at least one message
         conversations_w_messsages = []
