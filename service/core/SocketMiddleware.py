@@ -6,11 +6,12 @@ from pathlib import Path
 
 import urllib.parse
 
+
 @database_sync_to_async
-def get_profile(profile_id):
+def get_sender(sender_id):
     # if its not a valid UUID then return an AnonymousUser
     try:
-        return Profile.objects.get(pk=profile_id)
+        return Profile.objects.get(pk=sender_id)
     except (ValidationError, Profile.DoesNotExist):
         return AnonymousUser()
 
@@ -24,14 +25,14 @@ def get_conversation(id):
 
 
 @database_sync_to_async
-def check_conversation(conversation_id, profile_id):
+def check_conversation(conversation_id, sender_id):
     try:
         conversation = Conversation.objects.get(pk=conversation_id)
     except ObjectDoesNotExist:
         return False
 
     # check if the profile_id is in the participants many to many field
-    if conversation.participants.filter(pk=profile_id).exists():
+    if conversation.participants.filter(pk=sender_id).exists():
         return True
 
     return False
@@ -49,19 +50,19 @@ class SocketAuthMiddleware:
         conversation_id = path.parts[-1]
 
         # check if the scope["profile"] is already populated
-        if "profile" not in scope:
+        if "sender" not in scope:
 
             # get query params
             query_string = urllib.parse.parse_qs(scope["query_string"].decode("utf-8"))
-            profile_id = query_string.get("profile_id", [None])[0]
+            sender_id = query_string.get("sender_id", [None])[0]
 
-            # create the scope
-            scope["profile"] = await get_profile(profile_id)
+            # create scope variables
+            scope["sender"] = await get_sender(sender_id)
 
             scope["conversation"] = await get_conversation(conversation_id)
 
-            scope["profile_in_conversation"] = await check_conversation(
-                conversation_id, profile_id
+            scope["sender_in_conversation"] = await check_conversation(
+                conversation_id, sender_id
             )
 
         return await self.app(scope, receive, send)

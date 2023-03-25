@@ -79,7 +79,9 @@ class ConversationViewSet(ViewSet):
         conversation = g.get_conversation_between(profile1, profile2)
 
         if conversation:
-            serializer = serializers.ConversationSerializer(conversation, many=False)
+            serializer = serializers.ConversationSerializer(
+                conversation, many=False, context={"request": request}
+            )
             return Response(serializer.data, status=status.HTTP_200_OK)
 
         new_conversation = models.Conversation.objects.create(type="private")
@@ -87,7 +89,9 @@ class ConversationViewSet(ViewSet):
         new_conversation.participants.add(profile2)
         new_conversation.save()
 
-        serializer = serializers.ConversationSerializer(new_conversation, many=False)
+        serializer = serializers.ConversationSerializer(
+            new_conversation, many=False, context={"request": request}
+        )
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def destroy(self, request, pk=None):
@@ -108,4 +112,4 @@ class ConversationViewSet(ViewSet):
             )
 
         conversation.delete()
-        return Response({"detail": "deleted"}, status=status.HTTP_200_OK)
+        return Response({"detail": "Conversation deleted"}, status=status.HTTP_200_OK)

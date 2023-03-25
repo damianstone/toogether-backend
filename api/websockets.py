@@ -1,20 +1,20 @@
 from channels.generic.websocket import AsyncWebsocketConsumer
 from asgiref.sync import sync_to_async
-from .models import Message
+from api import models, serializers
 import json
 
 
 class ChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         # get scope from middleware
-        self.sender_in_conversation = self.scope["profile_in_conversation"]
+        self.sender_in_conversation = self.scope["sender_in_conversation"]
 
         # prevents someone from sending a message to any profile having a match id
         if not self.sender_in_conversation:
             await self.close()
 
         # get scope from middleware
-        self.sender = self.scope["profile"]
+        self.sender = self.scope["sender"]
 
         # get the scope from middleware
         self.conversation = self.scope["conversation"]
@@ -35,7 +35,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         message = text_data
 
         # create a message object
-        model = await sync_to_async(Message.objects.create)(
+        model = await sync_to_async(models.Message.objects.create)(
             conversation=self.conversation,
             sender=self.sender,
             message=message,
@@ -46,10 +46,10 @@ class ChatConsumer(AsyncWebsocketConsumer):
             self.chat_room,
             {
                 "type": "chat_message",
-                "sender_id": str(model.sender.id),
-                "sender": model.sender.name,
+                "id": str(model.id),
                 "message": model.message,
                 "sent_at": model.get_sent_time(),
+                "sender_id": str(model.sender.id),
             },
         )
 

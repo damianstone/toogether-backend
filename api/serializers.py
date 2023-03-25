@@ -7,6 +7,7 @@ from django.db.models import Q
 from api import models
 
 import api.utils.gets as g
+import api.utils.checks as c
 
 
 class ChoicesField(serializers.Field):
@@ -265,7 +266,7 @@ class ConversationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Conversation
-        fields = ["id", "type", "participants", "receiver", "last_message"]
+        fields = ["id", "type", "receiver", "last_message"]
 
     def get_receiver(self, conversation):
         request = self.context.get("request")
@@ -276,11 +277,14 @@ class ConversationSerializer(serializers.ModelSerializer):
 
     def get_last_message(self, conversation):
         request = self.context.get("request")
-        last_message = g.get_last_message(conversation)
-        serializer = MessageSerializer(
-            last_message, many=False, context={"request": request}
-        )
-        return serializer.data
+        has_messages = c.check_conversation_with_messages(conversation)
+        if has_messages:
+            last_message = g.get_last_message(conversation)
+            serializer = MessageSerializer(
+                last_message, many=False, context={"request": request}
+            )
+            return serializer.data
+        return None
 
 
 # -------------------------- DATA ACTIONS SERIALIZERS -----------------------------
