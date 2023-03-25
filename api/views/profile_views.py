@@ -9,7 +9,6 @@ from service.core.CustomPagination import ListPagination
 from django.contrib.auth.hashers import make_password
 from django.db.models import Q
 from datetime import date
-from datetime import timedelta
 from django.utils import timezone
 from django.contrib.gis.geos import GEOSGeometry
 from decimal import *

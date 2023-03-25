@@ -281,7 +281,6 @@ class MatchModelViewSet(ModelViewSet):
             conversation = c.check_profiles_with_messages(
                 match.profile1, match.profile2
             )
-            print(conversation)
             if not conversation:
                 matches_without_conversation.append(match)
 

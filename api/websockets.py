@@ -46,7 +46,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             self.chat_room,
             {
                 "type": "chat_message",
-                "id": str(model.id),
+                "sender_id": str(model.sender.id),
                 "sender": model.sender.name,
                 "message": model.message,
                 "sent_at": model.get_sent_time(),

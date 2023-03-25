@@ -6,23 +6,54 @@ from rest_framework.viewsets import ModelViewSet, ViewSet
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from django.core.exceptions import ObjectDoesNotExist
-from django.db.models import Q
 from api import models, serializers
 
 import api.utils.gets as g
+import api.utils.checks as c
 
 
-class ConversationAPIView(APIView):
+class ConversationViewSet(ViewSet):
     permission_classes = [IsAuthenticated]
 
-    # * List all the conversations with at least one message
-    def get(self, request):
+    def list(self, request):
         current_profile = request.user
         conversations = current_profile.conversations.all()
-        serializer = serializers.ConversationSerializer(conversations, many=True)
-        return Response(serializer.data)
 
-    def post(self, request, pk=None):
+        # list all the conversation with at least one message
+        conversations_w_messsages = []
+
+        for conv in conversations:
+            converation = c.check_conversation_with_messages(conv)
+            if converation:
+                conversations_w_messsages.append(conv)
+
+        serializer = serializers.ConversationSerializer(
+            conversations_w_messsages, many=True
+        )
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=["post"], url_path=r"messages")
+    def list_messages(self, request, pk=None):
+        current_profile = request.user
+
+        try:
+            conversation = models.Conversation.objects.get(pk=pk)
+        except ObjectDoesNotExist:
+            return Response({"detail": "Conversation does not exist"})
+
+        participants = conversation.participants.all()
+
+        if current_profile not in participants:
+            return Response(
+                {"detail": "Not authorized"}, status=status.HTTP_401_UNAUTHORIZED
+            )
+
+        messages = models.Message.objects.filter(conversation=conversation)
+        serializer = serializers.MessageSerializer(messages, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=["post"], url_path=r"start")
+    def start_conversation(self, request, pk=None):
         current_profile = request.user
 
         try:
@@ -54,9 +85,9 @@ class ConversationAPIView(APIView):
         new_conversation.save()
 
         serializer = serializers.ConversationSerializer(new_conversation, many=False)
-        return Response(serializer.data)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
-    def delete(self, request, pk=None):
+    def destroy(self, request, pk=None):
         current_profile = request.user
         try:
             conversation = models.Conversation.objects.get(pk=pk)
@@ -65,25 +96,13 @@ class ConversationAPIView(APIView):
                 {"detail": "Conversation does not exist"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+
+        participants = conversation.participants.all()
+
+        if current_profile not in participants:
+            return Response(
+                {"detail": "Not authorized"}, status=status.HTTP_401_UNAUTHORIZED
+            )
+
         conversation.delete()
         return Response({"detail": "deleted"}, status=status.HTTP_200_OK)
-
-
-class MessageModelViewSet(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request, pk=None):
-        try:
-            conversation = models.Conversation.objects.get(pk=pk)
-        except ObjectDoesNotExist:
-            return Response({"detail": "Conversation does not exist"})
-
-        messages = models.Message.objects.filter(conversation=conversation)
-        serializer = serializers.MessageSerializer(messages, many=True)
-        return Response(serializer.data)
-
-    def delete(self, request, pk=None):
-        messages = models.Message.objects.all()
-        for msg in messages:
-            msg.delete()
-        return Response({"detail": "success"}, status=status.HTTP_200_OK)
