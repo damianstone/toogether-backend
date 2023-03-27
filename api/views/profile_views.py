@@ -377,7 +377,9 @@ class ProfileViewSet(ModelViewSet):
         # then block the reported profile
         current_profile.block_profile(reported_profile)
 
-        return Response({"detail": "Report sent successfully"}, status=status.HTTP_200_OK)
+        return Response(
+            {"detail": "Report sent successfully"}, status=status.HTTP_200_OK
+        )
 
 
 # ----------------------- PHOTOS VIEWS --------------------------------

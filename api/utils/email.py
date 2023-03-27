@@ -7,14 +7,18 @@ import os
 def send_report_email(reported_profile, reason):
     # get photos
     reported_profile_photos = models.Photo.objects.filter(
-        profile=reported_profile.id).order_by("created_at")
+        profile=reported_profile.id
+    ).order_by("created_at")
 
     # email headers
-    subject, from_email, to = 'Toogether Profile Report', EMAIL_HOST_USER, [
-        "damianstonedev@gmail.com"]
+    subject, from_email, to = (
+        "Toogether Profile Report",
+        EMAIL_HOST_USER,
+        ["damianstonedev@gmail.com"],
+    )
 
     # email content
-    html_content = f'''
+    html_content = f"""
             <h1>Profile Reported</h1>
             <h3>The following profile has been reported</h3>
             <h3>Reason: <strong>{reason}</strong></h3>
@@ -25,10 +29,9 @@ def send_report_email(reported_profile, reason):
                 <li>Profile name: <strong>{reported_profile.name}</strong></li>
                 <li>Profile description: <strong>{reported_profile.description}</strong></li>
             </ul>
-        '''
+        """
 
-    msg = EmailMessage(subject=subject, body=html_content,
-                       from_email=from_email, to=to)
+    msg = EmailMessage(subject=subject, body=html_content, from_email=from_email, to=to)
     msg.content_subtype = "html"
 
     # attach all profile photos to email
