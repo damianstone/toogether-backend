@@ -7,6 +7,7 @@ from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Max
+from service.core.CustomPagination import ListPagination
 from api import models, serializers
 
 import api.utils.gets as g
@@ -33,7 +34,10 @@ class ConversationViewSet(ViewSet):
         serializer = serializers.ConversationSerializer(
             conversations_w_messsages, many=True, context={"request": request}
         )
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(
+            {"count": len(serializer.data), "results": serializer.data},
+            status=status.HTTP_200_OK,
+        )
 
     @action(detail=True, methods=["get"], url_path=r"messages")
     def list_messages(self, request, pk=None):
@@ -55,7 +59,10 @@ class ConversationViewSet(ViewSet):
         serializer = serializers.MessageSerializer(
             messages, many=True, context={"request": request}
         )
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(
+            {"count": len(serializer.data), "results": serializer.data},
+            status=status.HTTP_200_OK,
+        )
 
     @action(detail=True, methods=["post"], url_path=r"start")
     def start_conversation(self, request, pk=None):
