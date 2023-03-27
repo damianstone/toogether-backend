@@ -11,7 +11,7 @@ def send_report_email(reported_profile, reason):
 
     # email headers
     subject, from_email, to = 'Toogether Profile Report', EMAIL_HOST_USER, [
-        "c3a.chris@gmail.com"]
+        "damianstonedev@gmail.com"]
 
     # email content
     html_content = f'''
