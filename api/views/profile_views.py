@@ -15,7 +15,7 @@ from django.contrib.gis.geos import GEOSGeometry
 from decimal import *
 from django.core.mail import send_mail, EmailMessage
 
-from api.utils.email import send_report_email
+from api.utils.emails import send_report_email
 
 import random
 import json
