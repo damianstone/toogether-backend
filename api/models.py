@@ -6,6 +6,7 @@ from django.contrib.gis.db import models
 from django.contrib.gis.geos import Point
 from model_utils import Choices
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
+from django.db.models import Q
 
 # from background_task import background
 from .managers import CustomUserManager
@@ -74,6 +75,23 @@ class Profile(AbstractBaseUser, PermissionsMixin):
     REQUIRED_FIELDS = []
 
     objects = CustomUserManager()
+
+    # profile methods
+
+    def block_profile(self, blocked_profile):
+        # Remove likes between
+        self.likes.remove(blocked_profile)
+        blocked_profile.likes.remove(self)
+
+        # Check for existing match between profiles and delete it
+        match_qs = Match.objects.filter(
+            Q(profile1=self, profile2=blocked_profile)
+            | Q(profile1=blocked_profile, profile2=self)
+        )
+        if match_qs.exists():
+            match_qs.delete()
+
+        self.blocked_profiles.add(blocked_profile)
 
 
 class Photo(models.Model):
