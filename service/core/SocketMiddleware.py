@@ -1,7 +1,7 @@
 from channels.db import database_sync_to_async
 from django.contrib.auth.models import AnonymousUser
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
-from api.models import Profile, Conversation
+from api.models import Profile, Conversation, Group
 from pathlib import Path
 
 import urllib.parse
@@ -37,6 +37,26 @@ def check_conversation(conversation_id, sender_id):
 
     return False
 
+@database_sync_to_async
+def get_group(id):
+    try:
+        return Group.objects.get(pk=id)
+    except ObjectDoesNotExist:
+        return False
+
+@database_sync_to_async    
+def check_member_in_group(group_id, sender_id):
+    try:
+        group = Group.objects.get(pk=group_id)
+    except ObjectDoesNotExist:
+        return False
+
+    # check if the profile_id is in the participants many to many field
+    if group.members.filter(pk=sender_id).exists():
+        return True
+
+    return False
+    
 
 class SocketAuthMiddleware:
     def __init__(self, app):
@@ -47,7 +67,9 @@ class SocketAuthMiddleware:
 
         # get the match id from the url
         path = Path(scope["path"])
-        conversation_id = path.parts[-1]
+        room_id = path.parts[-1]
+        is_group_chat = path.parts[-2] == "chat-group"
+        print(is_group_chat)
 
         # check if the scope["profile"] is already populated
         if "sender" not in scope:
@@ -58,11 +80,16 @@ class SocketAuthMiddleware:
 
             # create scope variables
             scope["sender"] = await get_sender(sender_id)
-
-            scope["conversation"] = await get_conversation(conversation_id)
-
-            scope["sender_in_conversation"] = await check_conversation(
-                conversation_id, sender_id
-            )
+            
+            if is_group_chat:
+                scope["is_group_chat"] = True
+                scope["group"] = await get_group(room_id)
+                scope["sender_in_group"] = await check_member_in_group(room_id, sender_id)
+            else:
+                scope["is_group_chat"] = False
+                scope["conversation"] = await get_conversation(room_id)
+                scope["sender_in_conversation"] = await check_conversation(
+                    room_id, sender_id
+                )
 
         return await self.app(scope, receive, send)

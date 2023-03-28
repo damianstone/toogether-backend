@@ -2,8 +2,7 @@ from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.viewsets import ModelViewSet, ViewSet
-from rest_framework.views import APIView
+from rest_framework.viewsets import ViewSet
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Max
@@ -122,3 +121,20 @@ class ConversationViewSet(ViewSet):
 
         conversation.delete()
         return Response({"detail": "Conversation deleted"}, status=status.HTTP_200_OK)
+
+
+
+class GroupChatViewSet(ViewSet):
+    permission_classes = [IsAuthenticated]
+
+    
+    def retrieve(self, request):
+        pass
+
+
+    def destroy(self, request):
+        pass
+    
+    @action(detail=True, methods=["get"], url_path=r"messages")
+    def list_messages(self, request, pk=None):
+        pass

@@ -188,11 +188,17 @@ class Group(models.Model):
 
         super().save(*args, **kwargs)
 
-
-# The group model itself works as a "Conversation" or chat_room
 class GroupMessage(models.Model):
+    """
+    The group itself works as a chat_room and this model as its message
+    The group does not require another separate model for the conversation, since our 
+    application only allows users to be in one group at a time
+    """
+    
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    group = models.ForeignKey(Group, default=None, on_delete=models.CASCADE)
+    group = models.ForeignKey(
+        Group, default=None, on_delete=models.CASCADE
+    )
     sender = models.ForeignKey(Profile, default=None, on_delete=models.CASCADE)
     message = models.TextField(null=True, blank=True)
     sent_at = models.DateTimeField(default=timezone.now)
@@ -202,9 +208,15 @@ class GroupMessage(models.Model):
 
 
 class Conversation(models.Model):
+    """
+        This model acts as the chat_room between the users belonging to a match
+        The model is separated from the match
+        For now the application only supports conversations type 1-1 (private)
+    """
+    
     TYPES = Choices(
         ("PRIVATE", "private"),
-        ("GROUP", "Group"),
+        ("GROUP", "group"),
     )
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
