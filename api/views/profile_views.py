@@ -12,7 +12,10 @@ from datetime import date
 from django.utils import timezone
 from django.contrib.gis.geos import GEOSGeometry
 from decimal import *
-from django.core.mail import send_mail
+from django.core.mail import send_mail, EmailMessage
+
+from api.utils.emails import send_report_email
+
 import random
 import json
 
@@ -22,6 +25,8 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
 
 # ----------------------- LOGIN --------------------------------
+
+
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
         data = super().validate(attrs)
@@ -298,6 +303,7 @@ class ProfileViewSet(ModelViewSet):
     @action(detail=True, methods=["post"], url_path=r"actions/block-profile")
     def block_profile(self, request, pk=None):
         current_profile = request.user
+
         try:
             blocked_profile = models.Profile.objects.get(pk=pk)
         except ObjectDoesNotExist:
@@ -305,19 +311,9 @@ class ProfileViewSet(ModelViewSet):
                 {"Error": "Profile does not exist"}, status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Remove likes between
-        current_profile.likes.remove(blocked_profile)
-        blocked_profile.likes.remove(current_profile)
+        # block profile
+        current_profile.block_profile(blocked_profile)
 
-        # Check for existing match between profiles and delete it
-        match_qs = models.Match.objects.filter(
-            Q(profile1=current_profile, profile2=blocked_profile)
-            | Q(profile1=blocked_profile, profile2=current_profile)
-        )
-        if match_qs.exists():
-            match_qs.delete()
-
-        current_profile.blocked_profiles.add(blocked_profile)
         serializer = serializers.SwipeProfileSerializer(blocked_profile, many=False)
         return Response(serializer.data)
 
@@ -356,6 +352,32 @@ class ProfileViewSet(ModelViewSet):
         return Response(
             {"detail": "Your passwords does not match"},
             status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    # report profile endpoint
+    @action(detail=True, methods=["post"], url_path=r"actions/report-profile")
+    def report_profile(self, request, pk=None):
+        current_profile = request.user
+        data = request.data
+
+        reason = data["reason"]  # reason for report
+
+        # get reported profile by id
+        try:
+            reported_profile = models.Profile.objects.get(pk=pk)
+        except ObjectDoesNotExist:
+            return Response(
+                {"Error": "Profile does not exist"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # send report by email to admins
+        send_report_email(reported_profile=reported_profile, reason=reason)
+
+        # then block the reported profile
+        current_profile.block_profile(reported_profile)
+
+        return Response(
+            {"detail": "Report sent successfully"}, status=status.HTTP_200_OK
         )
 
 
