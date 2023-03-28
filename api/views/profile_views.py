@@ -358,9 +358,6 @@ class ProfileViewSet(ModelViewSet):
     @action(detail=True, methods=["post"], url_path=r"actions/report-profile")
     def report_profile(self, request, pk=None):
         current_profile = request.user
-        data = request.data
-
-        reason = data["reason"]  # reason for report
 
         # get reported profile by id
         try:
@@ -371,7 +368,7 @@ class ProfileViewSet(ModelViewSet):
             )
 
         # send report by email to admins
-        send_report_email(reported_profile=reported_profile, reason=reason)
+        send_report_email(reported_profile=reported_profile)
 
         # then block the reported profile
         current_profile.block_profile(reported_profile)
