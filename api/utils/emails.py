@@ -4,7 +4,7 @@ from api import models
 import os
 
 
-def send_report_email(reported_profile, reason):
+def send_report_email(reported_profile):
     # get photos
     reported_profile_photos = models.Photo.objects.filter(
         profile=reported_profile.id
@@ -14,14 +14,13 @@ def send_report_email(reported_profile, reason):
     subject, from_email, to = (
         "Toogether Profile Report",
         EMAIL_HOST_USER,
-        ["damianstonedev@gmail.com"],
+        ["damianstonedev@gmail.com", "c3a.chris@gmail.com"],
     )
 
     # email content
     html_content = f"""
             <h1>Profile Reported</h1>
             <h3>The following profile has been reported</h3>
-            <h3>Reason: <strong>{reason}</strong></h3>
 
             <h3>Reported profile data:</h3>
             <ul>
