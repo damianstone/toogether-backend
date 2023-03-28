@@ -18,6 +18,7 @@ class ConversationViewSet(ViewSet):
 
     def list(self, request):
         current_profile = request.user
+
         conversations = current_profile.conversations.annotate(
             latest_message=Max("message__sent_at")
         ).order_by("-latest_message")
@@ -54,7 +55,10 @@ class ConversationViewSet(ViewSet):
                 {"detail": "Not authorized"}, status=status.HTTP_401_UNAUTHORIZED
             )
 
-        messages = models.Message.objects.filter(conversation=conversation)
+        messages = models.Message.objects.filter(conversation=conversation).order_by(
+            "-sent_at"
+        )
+
         serializer = serializers.MessageSerializer(
             messages, many=True, context={"request": request}
         )
@@ -123,18 +127,15 @@ class ConversationViewSet(ViewSet):
         return Response({"detail": "Conversation deleted"}, status=status.HTTP_200_OK)
 
 
-
 class GroupChatViewSet(ViewSet):
     permission_classes = [IsAuthenticated]
 
-    
     def retrieve(self, request):
         pass
 
-
     def destroy(self, request):
         pass
-    
+
     @action(detail=True, methods=["get"], url_path=r"messages")
     def list_messages(self, request, pk=None):
         pass

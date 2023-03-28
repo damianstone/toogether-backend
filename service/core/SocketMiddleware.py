@@ -37,6 +37,7 @@ def check_conversation(conversation_id, sender_id):
 
     return False
 
+
 @database_sync_to_async
 def get_group(id):
     try:
@@ -44,7 +45,8 @@ def get_group(id):
     except ObjectDoesNotExist:
         return False
 
-@database_sync_to_async    
+
+@database_sync_to_async
 def check_member_in_group(group_id, sender_id):
     try:
         group = Group.objects.get(pk=group_id)
@@ -56,7 +58,7 @@ def check_member_in_group(group_id, sender_id):
         return True
 
     return False
-    
+
 
 class SocketAuthMiddleware:
     def __init__(self, app):
@@ -80,11 +82,13 @@ class SocketAuthMiddleware:
 
             # create scope variables
             scope["sender"] = await get_sender(sender_id)
-            
+
             if is_group_chat:
                 scope["is_group_chat"] = True
                 scope["group"] = await get_group(room_id)
-                scope["sender_in_group"] = await check_member_in_group(room_id, sender_id)
+                scope["sender_in_group"] = await check_member_in_group(
+                    room_id, sender_id
+                )
             else:
                 scope["is_group_chat"] = False
                 scope["conversation"] = await get_conversation(room_id)
