@@ -58,7 +58,7 @@ def recovery_code(request):
     try:
         old_code = current_profile.verification_code
     except ObjectDoesNotExist:
-        print("There is not an old code created")
+        old_code = False
 
     if old_code:
         old_code.delete()
