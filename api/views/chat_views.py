@@ -127,15 +127,47 @@ class ConversationViewSet(ViewSet):
         return Response({"detail": "Conversation deleted"}, status=status.HTTP_200_OK)
 
 
-class GroupChatViewSet(ViewSet):
+class MyGroupViewSet(ViewSet):
     permission_classes = [IsAuthenticated]
 
-    def retrieve(self, request):
-        pass
+    def list(self, request):
+        # retrieve my group in the format of conversation for the matches screen
+        current_profile = request.user
+        if current_profile.member_group.all().exists():
+            group = current_profile.member_group.all()[0]
+            serializer = serializers.MyGroupConversation(group, many=False, context={"request": request})
+            return Response(serializer.data)
+        
+        return Response({"detail": "no group"})
+
 
     def destroy(self, request):
         pass
 
-    @action(detail=True, methods=["get"], url_path=r"messages")
-    def list_messages(self, request, pk=None):
-        pass
+    @action(detail=True, methods=["get"], url_path=r"group-messages")
+    def list_group_messages(self, request, pk=None):
+        current_profile = request.user
+
+        try:
+            group = models.Group.objects.get(pk=pk)
+        except ObjectDoesNotExist:
+            return Response({"detail": "Conversation does not exist"})
+
+        members = group.members.all()
+
+        if current_profile not in members:
+            return Response(
+                {"detail": "Not authorized"}, status=status.HTTP_401_UNAUTHORIZED
+            )
+
+        messages = models.MyGroupMessage.objects.filter(group=group).order_by(
+            "-sent_at"
+        )
+
+        serializer = serializers.MessageSerializer(
+            messages, many=True, context={"request": request}
+        )
+        return Response(
+            {"count": len(serializer.data), "results": serializer.data},
+            status=status.HTTP_200_OK,
+        )

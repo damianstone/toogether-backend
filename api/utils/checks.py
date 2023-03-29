@@ -20,6 +20,11 @@ def check_conversation_with_messages(conversation):
     return messages.count() >= 1
 
 
+def check_mygroup_messages(my_group):
+    mygroup_messages = models.MyGroupMessage.objects.filter(group=my_group)
+    return mygroup_messages.count() >= 1
+
+
 def check_profiles_with_messages(p1, p2):
     conversation = g.get_conversation_between(p1, p2)
     if conversation:

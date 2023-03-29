@@ -205,7 +205,7 @@ class Group(models.Model):
         super().save(*args, **kwargs)
 
 
-class GroupMessage(models.Model):
+class MyGroupMessage(models.Model):
     """
     The group itself works as a chat_room and this model as its message
     The group does not require another separate model for the conversation, since our

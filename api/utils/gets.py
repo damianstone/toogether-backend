@@ -37,4 +37,11 @@ def get_last_message(conversation):
     else:
         return None
 
-    
+def get_mygroup_last_message(group):
+    messages = models.MyGroupMessage.objects.filter(group=group).order_by(
+        "-sent_at"
+    )
+    if messages.exists():
+        return messages.first()
+    else:
+        return None

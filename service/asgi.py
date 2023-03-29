@@ -14,7 +14,7 @@ from channels.security.websocket import AllowedHostsOriginValidator, OriginValid
 from django.core.asgi import get_asgi_application
 from django.urls import path
 
-from api.websockets import ChatConsumer, GroupChatConsumer
+from api.websockets import ChatConsumer
 from service.core.SocketMiddleware import SocketAuthMiddleware
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "service.settings")
@@ -25,12 +25,7 @@ application = ProtocolTypeRouter(
     {
         "http": django_asgi_app,
         "websocket": SocketAuthMiddleware(
-            URLRouter(
-                [
-                    path("ws/chat/<conversation_id>/", ChatConsumer.as_asgi()),
-                    path("ws/group-chat/<group_id>/", GroupChatConsumer.as_asgi()),
-                ]
-            )
+            URLRouter([path("ws/chat/<room_id>/", ChatConsumer.as_asgi())])
         ),
     }
 )

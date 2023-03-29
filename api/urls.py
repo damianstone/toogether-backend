@@ -43,6 +43,12 @@ router.register(
     basename="conversation",
 )
 
+router.register(
+    r"group-chat",
+    chat_views.MyGroupViewSet,
+    basename="group-chat",
+)
+
 urlpatterns = [
     # Internal endpoints - profiles
     path("internal/profiles/", internal_profile.list_profiles, name="list_profiles"),
