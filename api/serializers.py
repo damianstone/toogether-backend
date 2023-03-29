@@ -215,8 +215,9 @@ class MatchSerializer(serializers.ModelSerializer):
 
 
 class ReceiverSerializer(serializers.ModelSerializer):
-    is_in_group = serializers.SerializerMethodField()
     photo = serializers.SerializerMethodField()
+    is_in_group = serializers.SerializerMethodField()
+    member_count = serializers.SerializerMethodField()
 
     class Meta:
         model = models.Profile
@@ -226,6 +227,7 @@ class ReceiverSerializer(serializers.ModelSerializer):
             "email",
             "photo",
             "is_in_group",
+            "member_count"
         ]
 
     def get_is_in_group(self, profile):
@@ -241,6 +243,13 @@ class ReceiverSerializer(serializers.ModelSerializer):
             return serializer.data
         else:
             return None
+        
+    def get_member_count(self, profile):
+        if profile.member_group.all().exists():
+            group = profile.member_group.all()[0]
+            count_members = group.members.count()
+            return count_members
+        return None
 
 
 class MessageSerializer(serializers.ModelSerializer):

@@ -3,7 +3,7 @@
 """
 
 from django.db.models import Q
-from api import models, serializers
+from api import models
 
 
 def get_receiver(current_profile, conversation):
@@ -21,6 +21,13 @@ def get_conversation_between(p1, p2):
         return None
 
 
+def get_group_between(p1,p2):
+    group = models.Group.objects.filter(members=p1).filter(members=p2)
+    if group.exists():
+          return group.first()
+    else:
+        return None
+
 def get_last_message(conversation):
     messages = models.Message.objects.filter(conversation=conversation).order_by(
         "-sent_at"
@@ -29,3 +36,5 @@ def get_last_message(conversation):
         return messages.first()
     else:
         return None
+
+    

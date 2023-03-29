@@ -343,6 +343,11 @@ class MatchModelViewSet(ModelViewSet):
                 current_profile.likes.remove(member)
         else:
             current_profile.likes.remove(matched_profile)
+        
+        # delete conversation
+        conversation = g.get_conversation_between(current_profile, matched_profile)
+        if conversation:
+            conversation.delete()
 
         matched_profile.likes.remove(current_profile)
         match.delete()

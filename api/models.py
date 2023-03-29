@@ -3,13 +3,14 @@ import uuid
 import shortuuid
 from django.utils import timezone
 from django.contrib.gis.db import models
-from django.contrib.gis.geos import Point
 from model_utils import Choices
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from django.db.models import Q
 
 # from background_task import background
 from .managers import CustomUserManager
+
+import api.utils.gets as g
 
 
 class Profile(AbstractBaseUser, PermissionsMixin):
@@ -91,10 +92,21 @@ class Profile(AbstractBaseUser, PermissionsMixin):
         if match_qs.exists():
             match_qs.delete()
 
-        # TODO: Check is there is any conversation between and delete it
+        # check is there is any conversation between and delete it
+        conversation = g.get_conversation_between(self, blocked_profile)
+        if conversation:
+            conversation.delete()
 
-        # TODO: check if the user is in a group with the block profile
-
+        #  check if the user is in a group with the block profile
+        group = g.get_group_between(self, blocked_profile)
+        
+        if group:
+            if group.owner == self:
+                group.members.remove(blocked_profile)
+            else:
+                group.members.remove(self)
+            group.save()
+                
         self.blocked_profiles.add(blocked_profile)
 
 
