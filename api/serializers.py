@@ -150,7 +150,7 @@ class GroupSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Group
-        fields = "__all__"
+        fields = ["id", "gender", "total_members", "share_link", "owner", "members"]
 
     # Exclude the owner from members
     def get_members(self, group):

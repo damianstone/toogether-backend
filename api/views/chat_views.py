@@ -130,21 +130,23 @@ class ConversationViewSet(ViewSet):
 class MyGroupViewSet(ViewSet):
     permission_classes = [IsAuthenticated]
 
-    def list(self, request):
+    def retrieve(self, request, pk=None):
         # retrieve my group in the format of conversation for the matches screen
         current_profile = request.user
-        if current_profile.member_group.all().exists():
-            group = current_profile.member_group.all()[0]
-            serializer = serializers.MyGroupConversation(group, many=False, context={"request": request})
-            return Response(serializer.data)
         
-        return Response({"detail": "no group"})
+        try:
+            group = models.Group.objects.get(pk=pk)
+        except ObjectDoesNotExist:
+            return Response({"detail":"Group does not exist"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        if current_profile not in group.members:
+            return Response({"detail":"You don't belong to this group"}, status=status.HTTP_401_UNAUTHORIZED)
+        
+        serializer = serializers.MyGroupConversation(group, many=False, context={"request": request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-    def destroy(self, request):
-        pass
-
-    @action(detail=True, methods=["get"], url_path=r"group-messages")
+    @action(detail=True, methods=["get"], url_path=r"messages")
     def list_group_messages(self, request, pk=None):
         current_profile = request.user
 
