@@ -127,15 +127,49 @@ class ConversationViewSet(ViewSet):
         return Response({"detail": "Conversation deleted"}, status=status.HTTP_200_OK)
 
 
-class GroupChatViewSet(ViewSet):
+class MyGroupViewSet(ViewSet):
     permission_classes = [IsAuthenticated]
 
-    def retrieve(self, request):
-        pass
+    def retrieve(self, request, pk=None):
+        # retrieve my group in the format of conversation for the matches screen
+        current_profile = request.user
+        
+        try:
+            group = models.Group.objects.get(pk=pk)
+        except ObjectDoesNotExist:
+            return Response({"detail":"Group does not exist"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        if current_profile not in group.members:
+            return Response({"detail":"You don't belong to this group"}, status=status.HTTP_401_UNAUTHORIZED)
+        
+        serializer = serializers.MyGroupConversation(group, many=False, context={"request": request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
-    def destroy(self, request):
-        pass
 
     @action(detail=True, methods=["get"], url_path=r"messages")
-    def list_messages(self, request, pk=None):
-        pass
+    def list_group_messages(self, request, pk=None):
+        current_profile = request.user
+
+        try:
+            group = models.Group.objects.get(pk=pk)
+        except ObjectDoesNotExist:
+            return Response({"detail": "Conversation does not exist"})
+
+        members = group.members.all()
+
+        if current_profile not in members:
+            return Response(
+                {"detail": "Not authorized"}, status=status.HTTP_401_UNAUTHORIZED
+            )
+
+        messages = models.MyGroupMessage.objects.filter(group=group).order_by(
+            "-sent_at"
+        )
+
+        serializer = serializers.MessageSerializer(
+            messages, many=True, context={"request": request}
+        )
+        return Response(
+            {"count": len(serializer.data), "results": serializer.data},
+            status=status.HTTP_200_OK,
+        )

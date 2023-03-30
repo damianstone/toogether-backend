@@ -70,8 +70,6 @@ class SocketAuthMiddleware:
         # get the match id from the url
         path = Path(scope["path"])
         room_id = path.parts[-1]
-        is_group_chat = path.parts[-2] == "chat-group"
-        print(is_group_chat)
 
         # check if the scope["profile"] is already populated
         if "sender" not in scope:
@@ -79,21 +77,25 @@ class SocketAuthMiddleware:
             # get query params
             query_string = urllib.parse.parse_qs(scope["query_string"].decode("utf-8"))
             sender_id = query_string.get("sender_id", [None])[0]
+            my_group_chat = query_string.get("my_group_chat", [None])[0]
 
             # create scope variables
             scope["sender"] = await get_sender(sender_id)
 
-            if is_group_chat:
-                scope["is_group_chat"] = True
-                scope["group"] = await get_group(room_id)
-                scope["sender_in_group"] = await check_member_in_group(
+            if my_group_chat == "true":
+                scope["my_group_chat"] = True
+                scope["model"] = await get_group(room_id)
+                scope["sender_in_model"] = await check_member_in_group(
                     room_id, sender_id
                 )
+                scope["room_id"] = room_id
+                
             else:
-                scope["is_group_chat"] = False
-                scope["conversation"] = await get_conversation(room_id)
-                scope["sender_in_conversation"] = await check_conversation(
+                scope["my_group_chat"] = False
+                scope["model"] = await get_conversation(room_id)
+                scope["sender_in_model"] = await check_conversation(
                     room_id, sender_id
                 )
+                scope["room_id"] = room_id
 
         return await self.app(scope, receive, send)

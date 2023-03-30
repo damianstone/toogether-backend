@@ -150,7 +150,7 @@ class GroupSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Group
-        fields = "__all__"
+        fields = ["id", "gender", "total_members", "share_link", "owner", "members"]
 
     # Exclude the owner from members
     def get_members(self, group):
@@ -213,7 +213,6 @@ class MatchSerializer(serializers.ModelSerializer):
 
 # -------------------------- CONVERSATION SERIALIZERS --------------------------------
 
-
 class ReceiverSerializer(serializers.ModelSerializer):
     photo = serializers.SerializerMethodField()
     is_in_group = serializers.SerializerMethodField()
@@ -253,13 +252,17 @@ class ReceiverSerializer(serializers.ModelSerializer):
 
 
 class MessageSerializer(serializers.ModelSerializer):
+    sender_name = serializers.SerializerMethodField()
     sent_by_current = serializers.SerializerMethodField()
     sent_at = serializers.SerializerMethodField()
 
     class Meta:
         model = models.Message
-        fields = ["id", "message", "sent_at", "sent_by_current", "sender"]
+        fields = ["id", "message", "sent_at", "sent_by_current", "sender", "sender_name"]
 
+    def get_sender_name(self, message):
+        return message.sender.name
+        
     def get_sent_at(self, message):
         return message.get_sent_time()
 
@@ -295,6 +298,23 @@ class ConversationSerializer(serializers.ModelSerializer):
             return serializer.data
         return None
 
+
+class MyGroupConversation(serializers.ModelSerializer):
+    last_message = serializers.SerializerMethodField()
+    class Meta:
+        model = models.Group
+        fields = ["id", "last_message"]
+    
+    def get_last_message(self, group):
+        request = self.context.get("request")
+        has_messages = c.check_mygroup_messages(group)
+        if has_messages:
+            last_message = g.get_mygroup_last_message(group)
+            serializer = MessageSerializer(
+                last_message, many=False, context={"request": request}
+            )
+            return serializer.data
+        return None
 
 # -------------------------- DATA ACTIONS SERIALIZERS -----------------------------
 class CreateProfileSerializer(serializers.Serializer):
