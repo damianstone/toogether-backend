@@ -6,7 +6,6 @@ from rest_framework.viewsets import ViewSet
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Max
-from service.core.CustomPagination import ListPagination
 from api import models, serializers
 
 import api.utils.gets as g
@@ -124,6 +123,7 @@ class ConversationViewSet(ViewSet):
             )
 
         conversation.delete()
+
         return Response({"detail": "Conversation deleted"}, status=status.HTTP_200_OK)
 
 
@@ -133,18 +133,24 @@ class MyGroupViewSet(ViewSet):
     def retrieve(self, request, pk=None):
         # retrieve my group in the format of conversation for the matches screen
         current_profile = request.user
-        
+
         try:
             group = models.Group.objects.get(pk=pk)
         except ObjectDoesNotExist:
-            return Response({"detail":"Group does not exist"}, status=status.HTTP_400_BAD_REQUEST)
-        
-        if current_profile not in group.members:
-            return Response({"detail":"You don't belong to this group"}, status=status.HTTP_401_UNAUTHORIZED)
-        
-        serializer = serializers.MyGroupConversation(group, many=False, context={"request": request})
-        return Response(serializer.data, status=status.HTTP_200_OK)
+            return Response(
+                {"detail": "Group does not exist"}, status=status.HTTP_400_BAD_REQUEST
+            )
 
+        if current_profile not in group.members.all():
+            return Response(
+                {"detail": "You don't belong to this group"},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        serializer = serializers.MyGroupConversationSerializer(
+            group, many=False, context={"request": request}
+        )
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=["get"], url_path=r"messages")
     def list_group_messages(self, request, pk=None):

@@ -213,6 +213,7 @@ class MatchSerializer(serializers.ModelSerializer):
 
 # -------------------------- CONVERSATION SERIALIZERS --------------------------------
 
+
 class ReceiverSerializer(serializers.ModelSerializer):
     photo = serializers.SerializerMethodField()
     is_in_group = serializers.SerializerMethodField()
@@ -220,14 +221,7 @@ class ReceiverSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Profile
-        fields = [
-            "id",
-            "name",
-            "email",
-            "photo",
-            "is_in_group",
-            "member_count"
-        ]
+        fields = ["id", "name", "email", "photo", "is_in_group", "member_count"]
 
     def get_is_in_group(self, profile):
         return profile.member_group.all().exists()
@@ -242,7 +236,7 @@ class ReceiverSerializer(serializers.ModelSerializer):
             return serializer.data
         else:
             return None
-        
+
     def get_member_count(self, profile):
         if profile.member_group.all().exists():
             group = profile.member_group.all()[0]
@@ -253,16 +247,37 @@ class ReceiverSerializer(serializers.ModelSerializer):
 
 class MessageSerializer(serializers.ModelSerializer):
     sender_name = serializers.SerializerMethodField()
+    sender_photo = serializers.SerializerMethodField()
     sent_by_current = serializers.SerializerMethodField()
     sent_at = serializers.SerializerMethodField()
 
     class Meta:
         model = models.Message
-        fields = ["id", "message", "sent_at", "sent_by_current", "sender", "sender_name"]
+        fields = [
+            "id",
+            "message",
+            "sent_at",
+            "sent_by_current",
+            "sender",
+            "sender_name",
+            "sender_photo"
+        ]
 
     def get_sender_name(self, message):
         return message.sender.name
-        
+    
+    def get_sender_photo(self, message):
+        sender = message.sender
+        sender_photos = models.Photo.objects.filter(profile=sender).order_by(
+            "-created_at"
+        )
+        if sender_photos.exists():
+            first_photo = sender_photos.first()
+            serializer = PhotoSerializer(first_photo, many=False)
+            return serializer.data
+        else:
+            return None
+
     def get_sent_at(self, message):
         return message.get_sent_time()
 
@@ -299,12 +314,13 @@ class ConversationSerializer(serializers.ModelSerializer):
         return None
 
 
-class MyGroupConversation(serializers.ModelSerializer):
+class MyGroupConversationSerializer(serializers.ModelSerializer):
     last_message = serializers.SerializerMethodField()
+
     class Meta:
         model = models.Group
         fields = ["id", "last_message"]
-    
+
     def get_last_message(self, group):
         request = self.context.get("request")
         has_messages = c.check_mygroup_messages(group)
@@ -315,6 +331,7 @@ class MyGroupConversation(serializers.ModelSerializer):
             )
             return serializer.data
         return None
+
 
 # -------------------------- DATA ACTIONS SERIALIZERS -----------------------------
 class CreateProfileSerializer(serializers.Serializer):
