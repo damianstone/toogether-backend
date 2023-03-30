@@ -3,12 +3,14 @@ import uuid
 import shortuuid
 from django.utils import timezone
 from django.contrib.gis.db import models
-from django.contrib.gis.geos import Point
 from model_utils import Choices
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
+from django.db.models import Q
 
 # from background_task import background
 from .managers import CustomUserManager
+
+import api.utils.gets as g
 
 
 class Profile(AbstractBaseUser, PermissionsMixin):
@@ -75,8 +77,37 @@ class Profile(AbstractBaseUser, PermissionsMixin):
 
     objects = CustomUserManager()
 
-    def get_full_name(self):
-        return self.firstname + self.lastname
+    # profile methods
+
+    def block_profile(self, blocked_profile):
+        # Remove likes between
+        self.likes.remove(blocked_profile)
+        blocked_profile.likes.remove(self)
+
+        # Check for existing match between profiles and delete it
+        match_qs = Match.objects.filter(
+            Q(profile1=self, profile2=blocked_profile)
+            | Q(profile1=blocked_profile, profile2=self)
+        )
+        if match_qs.exists():
+            match_qs.delete()
+
+        # check is there is any conversation between and delete it
+        conversation = g.get_conversation_between(self, blocked_profile)
+        if conversation:
+            conversation.delete()
+
+        #  check if the user is in a group with the block profile
+        group = g.get_group_between(self, blocked_profile)
+        
+        if group:
+            if group.owner == self:
+                group.members.remove(blocked_profile)
+            else:
+                group.members.remove(self)
+            group.save()
+                
+        self.blocked_profiles.add(blocked_profile)
 
 
 class Photo(models.Model):
@@ -90,6 +121,18 @@ class Photo(models.Model):
         super().delete()
 
 
+class VerificationCode(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    profile = models.OneToOneField(
+        Profile, related_name="verification_code", on_delete=models.CASCADE
+    )
+    email = models.EmailField(null=False, blank=False)
+    code = models.CharField(max_length=6)
+    expires_at = models.DateTimeField(
+        default=timezone.now() + timezone.timedelta(minutes=15)
+    )
+
+
 class Match(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     profile1 = models.ForeignKey(
@@ -99,9 +142,6 @@ class Match(models.Model):
         Profile, related_name="profile2_matches", default=None, on_delete=models.CASCADE
     )
     created_at = models.DateTimeField(default=timezone.now)
-
-    def __str__(self):
-        return self.profile1.firstname + " " + self.profile2.firstname
 
     # @background(schedule=60*60-24)
     # def delete_old_matches(self):
@@ -163,3 +203,57 @@ class Group(models.Model):
         self.total_members = self.members.count()
 
         super().save(*args, **kwargs)
+
+
+class MyGroupMessage(models.Model):
+    """
+    The group itself works as a chat_room and this model as its message
+    The group does not require another separate model for the conversation, since our
+    application only allows users to be in one group at a time
+    """
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    group = models.ForeignKey(Group, default=None, on_delete=models.CASCADE)
+    sender = models.ForeignKey(Profile, default=None, on_delete=models.CASCADE)
+    message = models.TextField(null=True, blank=True)
+    sent_at = models.DateTimeField(default=timezone.now)
+
+    def get_sent_time(self):
+        return self.sent_at.strftime("%I:%M %p")
+
+
+class Conversation(models.Model):
+    """
+    This model acts as the chat_room between the users belonging to a match
+    The model is separated from the match
+    For now the application only supports conversations type 1-1 (private)
+    """
+
+    TYPES = Choices(
+        ("PRIVATE", "private"),
+        ("GROUP", "group"),
+    )
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    participants = models.ManyToManyField(Profile, related_name="conversations")
+    created_at = models.DateTimeField(default=timezone.now)
+    type = models.CharField(
+        choices=TYPES,
+        default=TYPES.PRIVATE,
+        max_length=10,
+        null=True,
+        blank=True,
+    )
+
+
+class Message(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    conversation = models.ForeignKey(
+        Conversation, default=None, on_delete=models.CASCADE
+    )
+    sender = models.ForeignKey(Profile, default=None, on_delete=models.CASCADE)
+    message = models.TextField(null=True, blank=True)
+    sent_at = models.DateTimeField(default=timezone.now)
+
+    def get_sent_time(self):
+        return self.sent_at.strftime("%I:%M %p")

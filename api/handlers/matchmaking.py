@@ -185,6 +185,8 @@ def like_one_to_one(request, current_profile, liked_profile):
 
 
 def like_one_to_group(request, current_profile, liked_group):
+
+    # add the like (current profile) to the general likes of the group
     liked_group.likes.add(current_profile)
 
     # check if the current profile has already matched with the group
@@ -247,9 +249,15 @@ def like_one_to_group(request, current_profile, liked_group):
 
 
 """
-    Add a like from a group to a profile and check if there is a match or a previous match 
-    with the group.
-
+    When the current user is being a member of a group and give a like to
+    a single profile
+    
+    In this case if the single profile already has given a like to the group, 
+    this like should be stored in the many-to-many property of the group, then
+    the first member of the group on give a like to the single profile is who get the match with
+    
+    if many members have liked a single profile, check the like_one_to_group() function
+    
     @param request - the request object
     @param current_profile - the profile of the user making the like
     @param current_group - the group from which the like is made
@@ -268,10 +276,13 @@ def like_group_to_one(request, current_profile, current_group, liked_profile):
     if already_matched:
         return Response({"details": ALREADY_MATCHED}, status=status.HTTP_200_OK)
 
-    # check if liked profile already like the group (mutual like)
-    # if there is a mutal like and a match has not been found in the foor,
-    # so it is because it must be the first member to like the profile
-    if current_group.likes.filter(id=liked_profile.id).exists():
+    # the user may have liked the current user's group
+    like_in_group = current_group.likes.filter(id=liked_profile.id).exists()
+
+    # the user could have liked the current user before the current user belonged to a group
+    like_in_profile = current_profile.likes.filter(id=liked_profile.id).exists()
+
+    if like_in_group or like_in_profile:
         # check if the current user has already a match with the liked profile
         already_match = get_match(current_profile.id, liked_profile.id)
         # if there is already a match, recycle the previous match
@@ -294,11 +305,14 @@ def like_group_to_one(request, current_profile, current_group, liked_profile):
             profile1=current_profile, profile2=liked_profile
         )
         match.save()
+
         current_group.matches.add(match)
         current_group.save()
+
         match_serializer = serializers.MatchSerializer(
             match, many=False, context={"request": request}
         )
+
         return Response(
             {
                 "details": NEW_MATCH,
@@ -324,7 +338,8 @@ def like_group_to_one(request, current_profile, current_group, liked_profile):
 
 
 def like_group_to_group(request, current_profile, current_group, liked_group):
-    # add the like
+
+    # add the like the group many to many
     liked_group.likes.add(current_profile)
 
     # check if the groups have any matches in common
@@ -336,6 +351,9 @@ def like_group_to_group(request, current_profile, current_group, liked_group):
     members = []
     for member in liked_group.members.all():
         if current_group.likes.filter(id=member.id).exists():
+            members.append(member)
+
+        if current_profile.likes.filter(id=member.id).exists():
             members.append(member)
 
     if len(members) > 0:
