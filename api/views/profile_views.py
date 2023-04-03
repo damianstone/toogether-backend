@@ -239,7 +239,6 @@ class ProfileViewSet(ModelViewSet):
                 },
                 status=status.HTTP_401_UNAUTHORIZED,
             )
-
         profile.delete()
         return Response(
             {"detail": "User deleted successfully"}, status=status.HTTP_200_OK

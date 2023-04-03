@@ -121,7 +121,8 @@ class ConversationViewSet(ViewSet):
             return Response(
                 {"detail": "Not authorized"}, status=status.HTTP_401_UNAUTHORIZED
             )
-
+        
+        # delete conversation    
         conversation.delete()
 
         return Response({"detail": "Conversation deleted"}, status=status.HTTP_200_OK)

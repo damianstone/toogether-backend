@@ -108,7 +108,17 @@ class Profile(AbstractBaseUser, PermissionsMixin):
             group.save()
                 
         self.blocked_profiles.add(blocked_profile)
-
+        
+    def delete(self):
+        conversations = Conversation.objects.filter(participants=self)
+        
+        if conversations.count() >= 1:
+            for conv in conversations:
+                conv.delete()
+                
+        super().delete()
+        
+    
 
 class Photo(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -244,6 +254,15 @@ class Conversation(models.Model):
         null=True,
         blank=True,
     )
+    
+    def delete(self):
+        # delete match and remove like relationship
+        participants = self.participants.all()
+        match = g.get_match(participants[0], participants[1])
+        if match:
+            match.delete()
+            
+        super().delete()
 
 
 class Message(models.Model):

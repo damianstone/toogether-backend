@@ -5,6 +5,7 @@
 from django.db.models import Q
 from api import models
 
+# * -------------------------- CONVERSATIONS ----------------------------- 
 
 def get_receiver(current_profile, conversation):
     receiver = conversation.participants.exclude(id=current_profile.id)
@@ -45,3 +46,20 @@ def get_mygroup_last_message(group):
         return messages.first()
     else:
         return None
+    
+# * -------------------------- MATCH -----------------------------    
+    
+def get_match(p1, p2):
+    current_matches = models.Match.objects.filter(
+        Q(profile1=p1) | Q(profile2=p2)
+    )
+
+    liked_matches = models.Match.objects.filter(
+        Q(profile1=p2) | Q(profile2=p1)
+    )
+
+    if current_matches.filter(id__in=liked_matches).exists():
+        match = current_matches.filter(id__in=liked_matches)
+        return match[0]
+
+    return False
