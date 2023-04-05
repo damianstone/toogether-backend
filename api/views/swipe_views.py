@@ -8,6 +8,7 @@ from django.contrib.gis.measure import D
 from django.db.models import Q
 from itertools import chain
 
+from service.core.pagination import MatchPagination
 from api import models, serializers
 import api.handlers.matchmaking as matchmaking
 import api.handlers.swipe_filters as swipefilters
@@ -261,7 +262,9 @@ class MatchModelViewSet(ModelViewSet):
     queryset = models.Match.objects.all()
     serializer_class = serializers.MatchSerializer
     permission_classes = [IsAuthenticated]
-
+    pagination_class = MatchPagination
+    
+    
     def get_permissions(self):
         if self.action == "create" or self.action == "update":
             return [IsAdminUser()]
@@ -284,14 +287,14 @@ class MatchModelViewSet(ModelViewSet):
             if not conversation:
                 matches_without_conversation.append(match)
 
+        matches_without_conversation = self.paginate_queryset(matches_without_conversation)
+        
         # Context enable the access of the current user (the user that make the request) in the serializers
         serializer = serializers.MatchSerializer(
             matches_without_conversation, many=True, context={"request": request}
         )
-        return Response(
-            {"count": len(matches_without_conversation), "results": serializer.data},
-            status=status.HTTP_200_OK,
-        )
+        
+        return self.get_paginated_response(serializer.data)
 
     def retrieve(self, request, pk=None):
         current_profile = request.user

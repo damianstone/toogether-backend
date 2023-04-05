@@ -2,18 +2,20 @@ from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.viewsets import ViewSet
+from rest_framework.viewsets import ViewSet, ModelViewSet, GenericViewSet
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Max
+from service.core.pagination import ChatPagination
 from api import models, serializers
 
 import api.utils.gets as g
 import api.utils.checks as c
 
 
-class ConversationViewSet(ViewSet):
+class ConversationViewSet(GenericViewSet):
     permission_classes = [IsAuthenticated]
+    pagination_class = ChatPagination
 
     def list(self, request):
         current_profile = request.user
@@ -30,13 +32,13 @@ class ConversationViewSet(ViewSet):
             if converation:
                 conversations_w_messsages.append(conv)
 
+        messages = self.paginate_queryset(conversations_w_messsages)
+        
         serializer = serializers.ConversationSerializer(
             conversations_w_messsages, many=True, context={"request": request}
         )
-        return Response(
-            {"count": len(serializer.data), "results": serializer.data},
-            status=status.HTTP_200_OK,
-        )
+        
+        return self.get_paginated_response(serializer.data)
 
     @action(detail=True, methods=["get"], url_path=r"messages")
     def list_messages(self, request, pk=None):
@@ -57,14 +59,13 @@ class ConversationViewSet(ViewSet):
         messages = models.Message.objects.filter(conversation=conversation).order_by(
             "-sent_at"
         )
+        
+        messages = self.paginate_queryset(messages)
 
         serializer = serializers.MessageSerializer(
             messages, many=True, context={"request": request}
         )
-        return Response(
-            {"count": len(serializer.data), "results": serializer.data},
-            status=status.HTTP_200_OK,
-        )
+        return self.get_paginated_response(serializer.data)
 
     @action(detail=True, methods=["post"], url_path=r"start")
     def start_conversation(self, request, pk=None):
@@ -121,8 +122,8 @@ class ConversationViewSet(ViewSet):
             return Response(
                 {"detail": "Not authorized"}, status=status.HTTP_401_UNAUTHORIZED
             )
-        
-        # delete conversation    
+
+        # delete conversation
         conversation.delete()
 
         return Response({"detail": "Conversation deleted"}, status=status.HTTP_200_OK)
@@ -172,11 +173,11 @@ class MyGroupViewSet(ViewSet):
         messages = models.MyGroupMessage.objects.filter(group=group).order_by(
             "-sent_at"
         )
-
+        
+        messages = self.paginate_queryset(messages)
+                
         serializer = serializers.MessageSerializer(
             messages, many=True, context={"request": request}
         )
-        return Response(
-            {"count": len(serializer.data), "results": serializer.data},
-            status=status.HTTP_200_OK,
-        )
+        
+        return self.get_paginated_response(serializer.data)
