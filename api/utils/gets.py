@@ -50,16 +50,11 @@ def get_mygroup_last_message(group):
 # * -------------------------- MATCH -----------------------------    
     
 def get_match(p1, p2):
-    current_matches = models.Match.objects.filter(
-        Q(profile1=p1) | Q(profile2=p2)
+    match = models.Match.objects.filter(
+        Q(profile1=p1, profile2=p2) | Q(profile1=p2, profile2=p1)
     )
-
-    liked_matches = models.Match.objects.filter(
-        Q(profile1=p2) | Q(profile2=p1)
-    )
-
-    if current_matches.filter(id__in=liked_matches).exists():
-        match = current_matches.filter(id__in=liked_matches)
-        return match[0]
-
-    return False
+    
+    if match.exists():
+        return match.first()
+    
+    return None
