@@ -27,6 +27,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 
 # ----------------------- LOGIN --------------------------------
 
+
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
         data = super().validate(attrs)

@@ -1,4 +1,3 @@
-
 from rest_framework import serializers
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.db.models import Q
@@ -60,14 +59,14 @@ class ProfileSerializer(serializers.ModelSerializer):
             "is_staff",
             "is_active",
             "likes",
-            "blocked_profiles"
+            "blocked_profiles",
         ]
 
     # refresh the token everytime the user is called
     def get_token(self, profile):
         token = RefreshToken.for_user(profile)
         return str(token.access_token)
-    
+
     def get_refresh_token(self, profile):
         token = RefreshToken.for_user(profile)
         return str(token)
