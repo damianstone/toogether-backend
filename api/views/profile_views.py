@@ -280,7 +280,7 @@ class ProfileViewSet(ModelViewSet):
             profile.has_account = True
 
         profile.save()
-        profile_serializer = serializers.ProfileSerializer(profile, many=False)
+        profile_serializer = serializers.ProfileSerializer(profile)
         return Response(profile_serializer.data)
 
     @action(detail=False, methods=["post"], url_path=r"actions/location")
