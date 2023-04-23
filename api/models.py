@@ -1,4 +1,3 @@
-import datetime
 import uuid
 import shortuuid
 from django.utils import timezone
@@ -7,6 +6,7 @@ from django.contrib.gis.geos import Point
 from model_utils import Choices
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from django.db.models import Q
+from api.utils.generate import generate_group_code
 
 # from background_task import background
 from .managers import CustomUserManager
@@ -174,7 +174,7 @@ class Group(models.Model):
     def save(self, *args, **kwargs):
         # set the link when the group is created
         if not self.share_link:
-            self.share_link = f"start.the.night/{shortuuid.uuid()}"
+            self.share_link = f"join.my.group/{generate_group_code()}"
 
         # get the age of the group
         if not self.age:
