@@ -194,10 +194,10 @@ class MatchSerializer(serializers.ModelSerializer):
         request = self.context.get("request")
         current_profile = request.user
 
-        if match.profile1 != current_profile:
+        if match.profile1 == current_profile:
             matched_profile = match.profile2
         else:
-            matched_profile = match.profile2
+            matched_profile = match.profile1
 
         #  check if the matched profile is in a group
         if matched_profile.member_group.all().exists():
