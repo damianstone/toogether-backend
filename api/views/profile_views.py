@@ -7,13 +7,11 @@ from django.core.exceptions import ObjectDoesNotExist
 from api import models, serializers
 from service.core.pagination import CustomPagination
 from django.contrib.auth.hashers import make_password
-from django.db.models import Q
 from datetime import date
-from datetime import timedelta
 from django.utils import timezone
 from django.contrib.gis.geos import GEOSGeometry
 from decimal import *
-from django.core.mail import send_mail, EmailMessage
+from django.core.mail import send_mail
 
 from api.utils.emails import send_report_email
 
@@ -112,6 +110,7 @@ def validate_code(request):
         )
 
     code_is_valid = timezone.now() <= verification_code.expires_at
+    print(code_is_valid, verification_code.expires_at)
 
     # check that the code belongs to the user
     if verification_code == current_code and code_is_valid:
