@@ -1,6 +1,7 @@
 import uuid
 import shortuuid
 from django.utils import timezone
+from datetime import timedelta
 from django.contrib.gis.db import models
 from django.contrib.gis.geos import Point
 from model_utils import Choices
@@ -113,7 +114,7 @@ class VerificationCode(models.Model):
     email = models.EmailField(null=False, blank=False)
     code = models.CharField(max_length=6)
     expires_at = models.DateTimeField(
-        default=timezone.now() + timezone.timedelta(minutes=15)
+        default=timezone.now() + timedelta(minutes=15)
     )
 
 
