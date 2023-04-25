@@ -113,9 +113,7 @@ class VerificationCode(models.Model):
     )
     email = models.EmailField(null=False, blank=False)
     code = models.CharField(max_length=6)
-    expires_at = models.DateTimeField(
-        default=timezone.now() + timedelta(minutes=15)
-    )
+    expires_at = models.DateTimeField(default=timezone.now() + timedelta(minutes=15))
 
 
 class Match(models.Model):
