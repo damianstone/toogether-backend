@@ -221,9 +221,6 @@ class SwipeModelViewSet(ModelViewSet):
                 id__in=current_matches_ids
             ).distinct()
             likes = likes.union(current_group_likes)
-            likes = current_profile.likes.exclude(
-                id__in=current_profile.member_group.all()[0].id
-            )
 
         # single profile likes
         profile_likes = []
@@ -235,6 +232,8 @@ class SwipeModelViewSet(ModelViewSet):
             # check wheter the like profile in is group or not
             if like_profile.member_group.all().exists():
                 group = like_profile.member_group.all()[0]
+                if (current_profile.is_in_group and current_profile.member_group.all()[0] == group):
+                    continue
                 has_match = matchmaking.check_profile_group_has_match(
                     current_profile.id, group
                 )
