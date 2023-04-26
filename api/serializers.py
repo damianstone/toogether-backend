@@ -1,7 +1,4 @@
-from cProfile import Profile
-from dataclasses import fields
 from rest_framework import serializers
-from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.db.models import Q
 from api import models
@@ -36,6 +33,7 @@ class PhotoSerializer(serializers.ModelSerializer):
 
 class ProfileSerializer(serializers.ModelSerializer):
     token = serializers.SerializerMethodField(read_only=True)
+    refresh_token = serializers.SerializerMethodField(read_only=True)
 
     # transform the gender and show me into text "Male"
     gender = serializers.CharField(
@@ -60,12 +58,18 @@ class ProfileSerializer(serializers.ModelSerializer):
             "last_login",
             "is_staff",
             "is_active",
+            "likes",
+            "blocked_profiles",
         ]
 
     # refresh the token everytime the user is called
-    def get_token(self, obj):
-        token = RefreshToken.for_user(obj)
+    def get_token(self, profile):
+        token = RefreshToken.for_user(profile)
         return str(token.access_token)
+
+    def get_refresh_token(self, profile):
+        token = RefreshToken.for_user(profile)
+        return str(token)
 
     def get_is_in_group(self, profile):
         return profile.member_group.all().exists()
@@ -190,10 +194,10 @@ class MatchSerializer(serializers.ModelSerializer):
         request = self.context.get("request")
         current_profile = request.user
 
-        if match.profile1 != current_profile:
+        if match.profile1 == current_profile:
             matched_profile = match.profile2
         else:
-            matched_profile = match.profile2
+            matched_profile = match.profile1
 
         #  check if the matched profile is in a group
         if matched_profile.member_group.all().exists():
