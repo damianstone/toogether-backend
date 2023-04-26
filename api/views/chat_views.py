@@ -35,7 +35,7 @@ class ConversationViewSet(GenericViewSet):
         messages = self.paginate_queryset(conversations_w_messsages)
         
         serializer = serializers.ConversationSerializer(
-            conversations_w_messsages, many=True, context={"request": request}
+            messages, many=True, context={"request": request}
         )
         
         return self.get_paginated_response(serializer.data)

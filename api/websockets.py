@@ -62,9 +62,11 @@ class ChatConsumer(AsyncWebsocketConsumer):
             },
         )
 
+
     async def disconnect(self, close_code):
         # Remove the consumer from the chat room group
         await self.channel_layer.group_discard(self.chat_room, self.channel_name)
+
 
     async def chat_message(self, event):
         # send a message to the WebSocket connection that triggered the receive() method

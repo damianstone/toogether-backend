@@ -67,8 +67,9 @@ class SocketAuthMiddleware:
 
     async def __call__(self, scope, receive, send):
 
-        # get the match id from the url
+        # get the url
         path = Path(scope["path"])
+        # get the room id: the rooms id can be the conversation id or the group id
         room_id = path.parts[-1]
 
         # check if the scope["profile"] is already populated

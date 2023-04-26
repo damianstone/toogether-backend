@@ -257,9 +257,7 @@ class Conversation(models.Model):
     def delete(self):
         # delete match and remove like relationship
         participants = self.participants.all()
-        print(participants)
         match = g.get_match(participants[0], participants[1])
-        print("MATCH --> ", match)
         if match:
             match.delete()
             
