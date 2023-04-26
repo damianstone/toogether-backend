@@ -1,11 +1,12 @@
-import datetime
 import uuid
 import shortuuid
 from django.utils import timezone
+from datetime import timedelta
 from django.contrib.gis.db import models
 from model_utils import Choices
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from django.db.models import Q
+from api.utils.generate import generate_group_code
 
 # from background_task import background
 from .managers import CustomUserManager
@@ -138,9 +139,7 @@ class VerificationCode(models.Model):
     )
     email = models.EmailField(null=False, blank=False)
     code = models.CharField(max_length=6)
-    expires_at = models.DateTimeField(
-        default=timezone.now() + timezone.timedelta(minutes=15)
-    )
+    expires_at = models.DateTimeField(default=timezone.now() + timedelta(minutes=15))
 
 
 class Match(models.Model):
@@ -200,7 +199,7 @@ class Group(models.Model):
     def save(self, *args, **kwargs):
         # set the link when the group is created
         if not self.share_link:
-            self.share_link = f"start.the.night/{shortuuid.uuid()}"
+            self.share_link = f"join.my.group/{generate_group_code()}"
 
         # get the age of the group
         if not self.age:

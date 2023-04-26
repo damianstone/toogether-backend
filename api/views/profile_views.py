@@ -6,12 +6,11 @@ from rest_framework.viewsets import ModelViewSet
 from django.core.exceptions import ObjectDoesNotExist
 from api import models, serializers
 from django.contrib.auth.hashers import make_password
-from django.db.models import Q
 from datetime import date
 from django.utils import timezone
 from django.contrib.gis.geos import GEOSGeometry
 from decimal import *
-from django.core.mail import send_mail, EmailMessage
+from django.core.mail import send_mail
 
 from api.utils.emails import send_report_email
 
@@ -54,7 +53,8 @@ def recovery_code(request):
         current_profile = models.Profile.objects.get(email=email)
     except ObjectDoesNotExist:
         return Response(
-            {"detail": "Profile does not exist"}, status=status.HTTP_400_BAD_REQUEST
+            {"detail": "There is no account associated with the email entered"},
+            status=status.HTTP_400_BAD_REQUEST,
         )
 
     # way to check in a one to one if there is already a relation
@@ -108,7 +108,8 @@ def validate_code(request):
             {"detail": "Something went wrong"}, status=status.HTTP_400_BAD_REQUEST
         )
 
-    code_is_valid = timezone.now() < verification_code.expires_at
+    code_is_valid = timezone.now() <= verification_code.expires_at
+    print(code_is_valid, verification_code.expires_at)
 
     # check that the code belongs to the user
     if verification_code == current_code and code_is_valid:
@@ -275,7 +276,7 @@ class ProfileViewSet(ModelViewSet):
             profile.has_account = True
 
         profile.save()
-        profile_serializer = serializers.ProfileSerializer(profile, many=False)
+        profile_serializer = serializers.ProfileSerializer(profile)
         return Response(profile_serializer.data)
 
     @action(detail=False, methods=["post"], url_path=r"actions/location")
