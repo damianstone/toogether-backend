@@ -221,6 +221,7 @@ class SwipeModelViewSet(ModelViewSet):
                 id__in=current_matches_ids
             ).distinct()
             likes = likes.union(current_group_likes)
+            likes = current_profile.likes.exclude(id__in=current_profile.member_group.all()[0].id)
 
         # single profile likes
         profile_likes = []
