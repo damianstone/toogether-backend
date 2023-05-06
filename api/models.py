@@ -116,7 +116,7 @@ class VerificationCode(models.Model):
     expiration = models.DateTimeField(
         default=timezone.now() + timezone.timedelta(minutes=15)
     )
-    
+
     def __str__(self):
         return self.expiration
 
