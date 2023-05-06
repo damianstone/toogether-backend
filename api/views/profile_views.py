@@ -109,8 +109,7 @@ def validate_code(request):
             {"detail": "Something went wrong"}, status=status.HTTP_400_BAD_REQUEST
         )
 
-    code_is_valid = timezone.now() <= verification_code.expires_at
-    print(code_is_valid, verification_code.expires_at)
+    code_is_valid = timezone.now() <= verification_code.expiration
 
     # check that the code belongs to the user
     if verification_code == current_code and code_is_valid:
