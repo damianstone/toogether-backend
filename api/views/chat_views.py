@@ -129,8 +129,9 @@ class ConversationViewSet(GenericViewSet):
         return Response({"detail": "Conversation deleted"}, status=status.HTTP_200_OK)
 
 
-class MyGroupViewSet(ViewSet):
+class MyGroupViewSet(GenericViewSet):
     permission_classes = [IsAuthenticated]
+    pagination_class = ChatPagination
 
     def retrieve(self, request, pk=None):
         # retrieve my group in the format of conversation for the matches screen
