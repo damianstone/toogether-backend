@@ -1,7 +1,8 @@
 from channels.db import database_sync_to_async
 from django.contrib.auth.models import AnonymousUser
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
-from api.models import Profile, Conversation, Group
+from api.models import Profile, Conversation, Group, Photo
+from api import serializers
 from pathlib import Path
 
 import urllib.parse
@@ -14,6 +15,18 @@ def get_sender(sender_id):
         return Profile.objects.get(pk=sender_id)
     except (ValidationError, Profile.DoesNotExist):
         return AnonymousUser()
+
+@database_sync_to_async
+def get_sender_photo(sender_id):
+    profile_photos = Photo.objects.filter(id=sender_id).order_by(
+        "-created_at"
+    )
+    if profile_photos.exists():
+        first_photo = profile_photos.first()
+        serializer = serializers.PhotoSerializer(first_photo, many=False)
+        return serializer.data
+    else:
+        return None
 
 
 @database_sync_to_async
@@ -82,6 +95,7 @@ class SocketAuthMiddleware:
 
             # create scope variables
             scope["sender"] = await get_sender(sender_id)
+            scope["sender_photo"] = await get_sender_photo(sender_id)
 
             if my_group_chat == "true":
                 scope["my_group_chat"] = True

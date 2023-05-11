@@ -18,6 +18,10 @@ class ChatConsumer(AsyncWebsocketConsumer):
         
         # get scope from middleware
         self.sender = self.scope["sender"]
+        
+        # get scope from middleware
+        self.sender_photo = self.scope["sender_photo"]
+        print(self.sender_photo)
 
         # get the scope from middleware
         self.model = self.scope["model"]
@@ -59,6 +63,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 "message": model.message,
                 "sent_at": model.get_sent_time(),
                 "sender_id": str(model.sender.id),
+                "sender_name": str(model.sender.name),
+                "sender_photo": self.sender_photo
             },
         )
 
