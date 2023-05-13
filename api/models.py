@@ -229,6 +229,7 @@ class MyGroupMessage(models.Model):
 
     def get_sent_time(self):
         return self.sent_at.strftime("%I:%M %p")
+    
 
 
 class Conversation(models.Model):

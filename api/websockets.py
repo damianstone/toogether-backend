@@ -18,6 +18,9 @@ class ChatConsumer(AsyncWebsocketConsumer):
         
         # get scope from middleware
         self.sender = self.scope["sender"]
+        
+        # get scope from middleware
+        self.sender_photo = self.scope["sender_photo"]
 
         # get the scope from middleware
         self.model = self.scope["model"]
@@ -49,6 +52,13 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 sender=self.sender,
                 message=message,
             )
+            
+        if self.sender_photo is not None:
+          self.sender_photo = {
+            'id': str(self.sender_photo['id']),
+            'image': str(self.sender_photo['image']),
+            'profile': str(self.sender_photo['profile'])
+        }
 
         # Broadcast the message to all WebSocket connections in the chat room group
         await self.channel_layer.group_send(
@@ -59,6 +69,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 "message": model.message,
                 "sent_at": model.get_sent_time(),
                 "sender_id": str(model.sender.id),
+                "sender_name": str(model.sender.name),
+                "sender_photo": self.sender_photo
             },
         )
 
