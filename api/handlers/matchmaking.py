@@ -113,11 +113,12 @@ def get_match(p1, p2):
     match = models.Match.objects.filter(
         Q(profile1=p1, profile2=p2) | Q(profile1=p2, profile2=p1)
     )
-    
+
     if match.exists():
         return match.first()
-    
+
     return None
+
 
 """
     Like a profile and create a match if it is a mutual like

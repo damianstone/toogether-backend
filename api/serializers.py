@@ -264,12 +264,12 @@ class MessageSerializer(serializers.ModelSerializer):
             "sent_by_current",
             "sender",
             "sender_name",
-            "sender_photo"
+            "sender_photo",
         ]
 
     def get_sender_name(self, message):
         return message.sender.name
-    
+
     def get_sender_photo(self, message):
         sender = message.sender
         sender_photos = models.Photo.objects.filter(profile=sender).order_by(

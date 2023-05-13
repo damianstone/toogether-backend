@@ -268,8 +268,7 @@ class MatchModelViewSet(ModelViewSet):
     serializer_class = serializers.MatchSerializer
     permission_classes = [IsAuthenticated]
     pagination_class = MatchPagination
-    
-    
+
     def get_permissions(self):
         if self.action == "create" or self.action == "update":
             return [IsAdminUser()]
@@ -292,13 +291,15 @@ class MatchModelViewSet(ModelViewSet):
             if not conversation:
                 matches_without_conversation.append(match)
 
-        matches_without_conversation = self.paginate_queryset(matches_without_conversation)
-        
+        matches_without_conversation = self.paginate_queryset(
+            matches_without_conversation
+        )
+
         # Context enable the access of the current user (the user that make the request) in the serializers
         serializer = serializers.MatchSerializer(
             matches_without_conversation, many=True, context={"request": request}
         )
-        
+
         return self.get_paginated_response(serializer.data)
 
     def retrieve(self, request, pk=None):
@@ -351,7 +352,7 @@ class MatchModelViewSet(ModelViewSet):
                 current_profile.likes.remove(member)
         else:
             current_profile.likes.remove(matched_profile)
-        
+
         # delete conversation
         conversation = g.get_conversation_between(current_profile, matched_profile)
         if conversation:

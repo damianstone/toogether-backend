@@ -15,10 +15,10 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
         # get from middleware
         self.my_group_chat = self.scope["my_group_chat"]
-        
+
         # get scope from middleware
         self.sender = self.scope["sender"]
-        
+
         # get scope from middleware
         self.sender_photo = self.scope["sender_photo"]
 
@@ -46,19 +46,19 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 sender=self.sender,
                 message=message,
             )
-        else:   # create a message object
+        else:  # create a message object
             model = await sync_to_async(models.Message.objects.create)(
                 conversation=self.model,
                 sender=self.sender,
                 message=message,
             )
-            
+
         if self.sender_photo is not None:
-          self.sender_photo = {
-            'id': str(self.sender_photo['id']),
-            'image': str(self.sender_photo['image']),
-            'profile': str(self.sender_photo['profile'])
-        }
+            self.sender_photo = {
+                "id": str(self.sender_photo["id"]),
+                "image": str(self.sender_photo["image"]),
+                "profile": str(self.sender_photo["profile"]),
+            }
 
         # Broadcast the message to all WebSocket connections in the chat room group
         await self.channel_layer.group_send(
@@ -70,15 +70,13 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 "sent_at": model.get_sent_time(),
                 "sender_id": str(model.sender.id),
                 "sender_name": str(model.sender.name),
-                "sender_photo": self.sender_photo
+                "sender_photo": self.sender_photo,
             },
         )
-
 
     async def disconnect(self, close_code):
         # Remove the consumer from the chat room group
         await self.channel_layer.group_discard(self.chat_room, self.channel_name)
-
 
     async def chat_message(self, event):
         # send a message to the WebSocket connection that triggered the receive() method

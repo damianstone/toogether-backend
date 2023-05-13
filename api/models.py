@@ -100,26 +100,25 @@ class Profile(AbstractBaseUser, PermissionsMixin):
 
         #  check if the user is in a group with the block profile
         group = g.get_group_between(self, blocked_profile)
-        
+
         if group:
             if group.owner == self:
                 group.members.remove(blocked_profile)
             else:
                 group.members.remove(self)
             group.save()
-                
+
         self.blocked_profiles.add(blocked_profile)
-        
+
     def delete(self):
         conversations = Conversation.objects.filter(participants=self)
-        
+
         if conversations.count() >= 1:
             for conv in conversations:
                 conv.delete()
-                
+
         super().delete()
-        
-    
+
 
 class Photo(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -234,7 +233,6 @@ class MyGroupMessage(models.Model):
 
     def get_sent_time(self):
         return self.sent_at.strftime("%I:%M %p")
-    
 
 
 class Conversation(models.Model):
@@ -259,14 +257,14 @@ class Conversation(models.Model):
         null=True,
         blank=True,
     )
-    
+
     def delete(self):
         # delete match and remove like relationship
         participants = self.participants.all()
         match = g.get_match(participants[0], participants[1])
         if match:
             match.delete()
-            
+
         super().delete()
 
 

@@ -5,7 +5,8 @@
 from django.db.models import Q
 from api import models
 
-# * -------------------------- CONVERSATIONS ----------------------------- 
+# * -------------------------- CONVERSATIONS -----------------------------
+
 
 def get_receiver(current_profile, conversation):
     receiver = conversation.participants.exclude(id=current_profile.id)
@@ -22,12 +23,13 @@ def get_conversation_between(p1, p2):
         return None
 
 
-def get_group_between(p1,p2):
+def get_group_between(p1, p2):
     group = models.Group.objects.filter(members=p1).filter(members=p2)
     if group.exists():
-          return group.first()
+        return group.first()
     else:
         return None
+
 
 def get_last_message(conversation):
     messages = models.Message.objects.filter(conversation=conversation).order_by(
@@ -38,23 +40,24 @@ def get_last_message(conversation):
     else:
         return None
 
+
 def get_mygroup_last_message(group):
-    messages = models.MyGroupMessage.objects.filter(group=group).order_by(
-        "-sent_at"
-    )
+    messages = models.MyGroupMessage.objects.filter(group=group).order_by("-sent_at")
     if messages.exists():
         return messages.first()
     else:
         return None
-    
-# * -------------------------- MATCH -----------------------------    
-    
+
+
+# * -------------------------- MATCH -----------------------------
+
+
 def get_match(p1, p2):
     match = models.Match.objects.filter(
         Q(profile1=p1, profile2=p2) | Q(profile1=p2, profile2=p1)
     )
-    
+
     if match.exists():
         return match.first()
-    
+
     return None

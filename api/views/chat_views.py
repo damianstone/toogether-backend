@@ -33,11 +33,11 @@ class ConversationViewSet(GenericViewSet):
                 conversations_w_messsages.append(conv)
 
         messages = self.paginate_queryset(conversations_w_messsages)
-        
+
         serializer = serializers.ConversationSerializer(
             messages, many=True, context={"request": request}
         )
-        
+
         return self.get_paginated_response(serializer.data)
 
     @action(detail=True, methods=["get"], url_path=r"messages")
@@ -59,7 +59,7 @@ class ConversationViewSet(GenericViewSet):
         messages = models.Message.objects.filter(conversation=conversation).order_by(
             "-sent_at"
         )
-        
+
         messages = self.paginate_queryset(messages)
 
         serializer = serializers.MessageSerializer(
@@ -174,11 +174,11 @@ class MyGroupViewSet(GenericViewSet):
         messages = models.MyGroupMessage.objects.filter(group=group).order_by(
             "-sent_at"
         )
-        
+
         messages = self.paginate_queryset(messages)
-                
+
         serializer = serializers.MessageSerializer(
             messages, many=True, context={"request": request}
         )
-        
+
         return self.get_paginated_response(serializer.data)
