@@ -16,17 +16,18 @@ def get_sender(sender_id):
     except (ValidationError, Profile.DoesNotExist):
         return AnonymousUser()
 
+
 @database_sync_to_async
-def get_sender_photo(sender_id):
-    profile_photos = Photo.objects.filter(id=sender_id).order_by(
-        "-created_at"
-    )
-    if profile_photos.exists():
-        first_photo = profile_photos.first()
-        serializer = serializers.PhotoSerializer(first_photo, many=False)
-        return serializer.data
-    else:
-        return None
+def get_sender_photo(sender_profile):
+    if sender_profile:
+        profile_photos = Photo.objects.filter(profile=sender_profile).order_by(
+            "-created_at"
+        )
+        if profile_photos.exists():
+            first_photo = profile_photos.first()
+            serializer = serializers.PhotoSerializer(first_photo, many=False)
+            return serializer.data
+    return None
 
 
 @database_sync_to_async
@@ -104,13 +105,11 @@ class SocketAuthMiddleware:
                     room_id, sender_id
                 )
                 scope["room_id"] = room_id
-                
+
             else:
                 scope["my_group_chat"] = False
                 scope["model"] = await get_conversation(room_id)
-                scope["sender_in_model"] = await check_conversation(
-                    room_id, sender_id
-                )
+                scope["sender_in_model"] = await check_conversation(room_id, sender_id)
                 scope["room_id"] = room_id
 
         return await self.app(scope, receive, send)
