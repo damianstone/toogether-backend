@@ -5,7 +5,6 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 from django.core.exceptions import ObjectDoesNotExist
 from api import models, serializers
-from service.core.pagination import CustomPagination
 from django.contrib.auth.hashers import make_password
 from datetime import date
 from django.utils import timezone
@@ -129,7 +128,6 @@ class ProfileViewSet(ModelViewSet):
     queryset = models.Profile.objects.all()
     serializer_class = serializers.ProfileSerializer
     permission_classes = [IsAuthenticated]
-    pagination_class = CustomPagination
 
     # admin actions for this model view set
     def get_permissions(self):
@@ -239,7 +237,6 @@ class ProfileViewSet(ModelViewSet):
                 },
                 status=status.HTTP_401_UNAUTHORIZED,
             )
-
         profile.delete()
         return Response(
             {"detail": "User deleted successfully"}, status=status.HTTP_200_OK

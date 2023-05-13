@@ -3,7 +3,6 @@ import shortuuid
 from django.utils import timezone
 from datetime import timedelta
 from django.contrib.gis.db import models
-from django.contrib.gis.geos import Point
 from model_utils import Choices
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from django.db.models import Q
@@ -11,6 +10,8 @@ from api.utils.generate import generate_group_code
 
 # from background_task import background
 from .managers import CustomUserManager
+
+import api.utils.gets as g
 
 
 class Profile(AbstractBaseUser, PermissionsMixin):
@@ -92,8 +93,33 @@ class Profile(AbstractBaseUser, PermissionsMixin):
         if match_qs.exists():
             match_qs.delete()
 
-        self.blocked_profiles.add(blocked_profile)
+        # check is there is any conversation between and delete it
+        conversation = g.get_conversation_between(self, blocked_profile)
+        if conversation:
+            conversation.delete()
 
+        #  check if the user is in a group with the block profile
+        group = g.get_group_between(self, blocked_profile)
+        
+        if group:
+            if group.owner == self:
+                group.members.remove(blocked_profile)
+            else:
+                group.members.remove(self)
+            group.save()
+                
+        self.blocked_profiles.add(blocked_profile)
+        
+    def delete(self):
+        conversations = Conversation.objects.filter(participants=self)
+        
+        if conversations.count() >= 1:
+            for conv in conversations:
+                conv.delete()
+                
+        super().delete()
+        
+    
 
 class Photo(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -191,3 +217,67 @@ class Group(models.Model):
         self.total_members = self.members.count()
 
         super().save(*args, **kwargs)
+
+
+class MyGroupMessage(models.Model):
+    """
+    The group itself works as a chat_room and this model as its message
+    The group does not require another separate model for the conversation, since our
+    application only allows users to be in one group at a time
+    """
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    group = models.ForeignKey(Group, default=None, on_delete=models.CASCADE)
+    sender = models.ForeignKey(Profile, default=None, on_delete=models.CASCADE)
+    message = models.TextField(null=True, blank=True)
+    sent_at = models.DateTimeField(default=timezone.now)
+
+    def get_sent_time(self):
+        return self.sent_at.strftime("%I:%M %p")
+    
+
+
+class Conversation(models.Model):
+    """
+    This model acts as the chat_room between the users belonging to a match
+    The model is separated from the match
+    For now the application only supports conversations type 1-1 (private)
+    """
+
+    TYPES = Choices(
+        ("PRIVATE", "private"),
+        ("GROUP", "group"),
+    )
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    participants = models.ManyToManyField(Profile, related_name="conversations")
+    created_at = models.DateTimeField(default=timezone.now)
+    type = models.CharField(
+        choices=TYPES,
+        default=TYPES.PRIVATE,
+        max_length=10,
+        null=True,
+        blank=True,
+    )
+    
+    def delete(self):
+        # delete match and remove like relationship
+        participants = self.participants.all()
+        match = g.get_match(participants[0], participants[1])
+        if match:
+            match.delete()
+            
+        super().delete()
+
+
+class Message(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    conversation = models.ForeignKey(
+        Conversation, default=None, on_delete=models.CASCADE
+    )
+    sender = models.ForeignKey(Profile, default=None, on_delete=models.CASCADE)
+    message = models.TextField(null=True, blank=True)
+    sent_at = models.DateTimeField(default=timezone.now)
+
+    def get_sent_time(self):
+        return self.sent_at.strftime("%I:%M %p")
