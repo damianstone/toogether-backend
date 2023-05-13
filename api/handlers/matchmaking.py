@@ -109,20 +109,15 @@ def check_two_group_has_match(group1, group2):
 """
 
 
-def get_match(profile1_id, profile2_id):
-    current_matches = models.Match.objects.filter(
-        Q(profile1=profile1_id) | Q(profile2=profile1_id)
+def get_match(p1, p2):
+    match = models.Match.objects.filter(
+        Q(profile1=p1, profile2=p2) | Q(profile1=p2, profile2=p1)
     )
 
-    liked_matches = models.Match.objects.filter(
-        Q(profile1=profile2_id) | Q(profile2=profile2_id)
-    )
+    if match.exists():
+        return match.first()
 
-    if current_matches.filter(id__in=liked_matches).exists():
-        match = current_matches.filter(id__in=liked_matches)
-        return match[0]
-
-    return False
+    return None
 
 
 """

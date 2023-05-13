@@ -64,6 +64,7 @@ AUTH_USER_MODEL = "api.Profile"
 
 # Application definition
 INSTALLED_APPS = [
+    "channels",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -86,7 +87,16 @@ REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ],
-    "DEFAULT_PAGINATION_CLASS": "service.core.pagination.CustomPagination",
+    "DEFAULT_PAGINATION_CLASS": "service.core.pagination.CustomNumberPagination",
+}
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("127.0.0.1", 6379)],
+        },
+    },
 }
 
 # SIMPLE JWT TO CREATE JSON ACCESS TOKENS
@@ -125,7 +135,7 @@ MIDDLEWARE = [
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     # "django.middleware.csrf.CsrfViewMiddleware",
-    "service.core.middleware.DisableCSRFMiddleware",
+    "service.core.CSRFMiddleware.DisableCSRFMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
@@ -151,6 +161,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = "service.wsgi.application"
+ASGI_APPLICATION = "service.asgi.application"
 
 
 # Database
