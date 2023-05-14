@@ -3,6 +3,9 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from django.db.models import Q
 from api import models
 
+import api.utils.gets as g
+import api.utils.checks as c
+
 
 class ChoicesField(serializers.Field):
     def __init__(self, choices, **kwargs):
@@ -20,7 +23,7 @@ class ChoicesField(serializers.Field):
         raise serializers.ValidationError(["choice not valid"])
 
 
-# -------------------------- MODELS SERIALIZERS ----------------------------
+# -------------------------- PROFILE SERIALIZER ----------------------------
 class PhotoSerializer(serializers.ModelSerializer):
     image = serializers.ImageField(
         required=True, allow_null=False, max_length=None, use_url=True
@@ -129,12 +132,6 @@ class SwipeProfileSerializer(serializers.ModelSerializer):
         return profile.member_group.all().exists()
 
 
-""" 
-    Swipe group serializer show a owner property and show 
-    all the members (including the owner) in the members property 
-"""
-
-
 class SwipeGroupSerializer(serializers.ModelSerializer):
     owner = SwipeProfileSerializer(read_only=True, many=False)
     members = SwipeProfileSerializer(read_only=True, many=True)
@@ -157,7 +154,7 @@ class GroupSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Group
-        fields = "__all__"
+        fields = ["id", "gender", "total_members", "share_link", "owner", "members"]
 
     # Exclude the owner from members
     def get_members(self, group):
@@ -216,6 +213,128 @@ class MatchSerializer(serializers.ModelSerializer):
             "matched_profile": serializer.data,
             "is_group_match": False,
         }
+
+
+# -------------------------- CONVERSATION SERIALIZERS --------------------------------
+
+
+class ReceiverSerializer(serializers.ModelSerializer):
+    photo = serializers.SerializerMethodField()
+    is_in_group = serializers.SerializerMethodField()
+    member_count = serializers.SerializerMethodField()
+
+    class Meta:
+        model = models.Profile
+        fields = ["id", "name", "email", "photo", "is_in_group", "member_count"]
+
+    def get_is_in_group(self, profile):
+        return profile.member_group.all().exists()
+
+    def get_photo(self, profile):
+        profile_photos = models.Photo.objects.filter(profile=profile).order_by(
+            "-created_at"
+        )
+        if profile_photos.exists():
+            first_photo = profile_photos.first()
+            serializer = PhotoSerializer(first_photo, many=False)
+            return serializer.data
+        else:
+            return None
+
+    def get_member_count(self, profile):
+        if profile.member_group.all().exists():
+            group = profile.member_group.all()[0]
+            count_members = group.members.count()
+            return count_members
+        return None
+
+
+class MessageSerializer(serializers.ModelSerializer):
+    sender_name = serializers.SerializerMethodField()
+    sender_photo = serializers.SerializerMethodField()
+    sent_by_current = serializers.SerializerMethodField()
+    sent_at = serializers.SerializerMethodField()
+
+    class Meta:
+        model = models.Message
+        fields = [
+            "id",
+            "message",
+            "sent_at",
+            "sent_by_current",
+            "sender",
+            "sender_name",
+            "sender_photo",
+        ]
+
+    def get_sender_name(self, message):
+        return message.sender.name
+
+    def get_sender_photo(self, message):
+        sender = message.sender
+        sender_photos = models.Photo.objects.filter(profile=sender).order_by(
+            "-created_at"
+        )
+        if sender_photos.exists():
+            first_photo = sender_photos.first()
+            serializer = PhotoSerializer(first_photo, many=False)
+            return serializer.data
+        else:
+            return None
+
+    def get_sent_at(self, message):
+        return message.get_sent_time()
+
+    def get_sent_by_current(self, message):
+        request = self.context.get("request")
+        current_profile = request.user
+        return message.sender == current_profile
+
+
+class ConversationSerializer(serializers.ModelSerializer):
+    receiver = serializers.SerializerMethodField()
+    last_message = serializers.SerializerMethodField()
+
+    class Meta:
+        model = models.Conversation
+        fields = ["id", "type", "receiver", "last_message"]
+
+    def get_receiver(self, conversation):
+        request = self.context.get("request")
+        current_profile = request.user
+        receiver = g.get_receiver(current_profile, conversation)
+        serializer = ReceiverSerializer(receiver, many=False)
+        return serializer.data
+
+    def get_last_message(self, conversation):
+        request = self.context.get("request")
+        has_messages = c.check_conversation_with_messages(conversation)
+        if has_messages:
+            last_message = g.get_last_message(conversation)
+            serializer = MessageSerializer(
+                last_message, many=False, context={"request": request}
+            )
+            return serializer.data
+        return None
+
+
+class MyGroupConversationSerializer(serializers.ModelSerializer):
+    last_message = serializers.SerializerMethodField()
+
+    class Meta:
+        model = models.Group
+        fields = ["id", "last_message"]
+
+    def get_last_message(self, group):
+        request = self.context.get("request")
+        has_messages = c.check_mygroup_messages(group)
+        if has_messages:
+            last_message = g.get_mygroup_last_message(group)
+            serializer = MessageSerializer(
+                last_message, many=False, context={"request": request}
+            )
+            return serializer.data
+        return None
 
 
 # -------------------------- DATA ACTIONS SERIALIZERS -----------------------------

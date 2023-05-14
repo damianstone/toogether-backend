@@ -8,9 +8,13 @@ from django.contrib.gis.measure import D
 from django.db.models import Q
 from itertools import chain
 
+from service.core.pagination import MatchPagination
 from api import models, serializers
 import api.handlers.matchmaking as matchmaking
 import api.handlers.swipe_filters as swipefilters
+
+import api.utils.gets as g
+import api.utils.checks as c
 
 
 class SwipeModelViewSet(ModelViewSet):
@@ -263,6 +267,7 @@ class MatchModelViewSet(ModelViewSet):
     queryset = models.Match.objects.all()
     serializer_class = serializers.MatchSerializer
     permission_classes = [IsAuthenticated]
+    pagination_class = MatchPagination
 
     def get_permissions(self):
         if self.action == "create" or self.action == "update":
@@ -272,18 +277,30 @@ class MatchModelViewSet(ModelViewSet):
     # list the current profile matches
     def list(self, request):
         current_profile = request.user
+
         matches = models.Match.objects.filter(
             Q(profile1=current_profile.id) | Q(profile2=current_profile.id)
         )
 
+        matches_without_conversation = []
+        for match in matches:
+            # check if there is a conversation between the profiles and if there are messsages
+            conversation = c.check_profiles_with_messages(
+                match.profile1, match.profile2
+            )
+            if not conversation:
+                matches_without_conversation.append(match)
+
+        matches_without_conversation = self.paginate_queryset(
+            matches_without_conversation
+        )
+
         # Context enable the access of the current user (the user that make the request) in the serializers
         serializer = serializers.MatchSerializer(
-            matches, many=True, context={"request": request}
+            matches_without_conversation, many=True, context={"request": request}
         )
-        return Response(
-            {"count": matches.count(), "results": serializer.data},
-            status=status.HTTP_200_OK,
-        )
+
+        return self.get_paginated_response(serializer.data)
 
     def retrieve(self, request, pk=None):
         current_profile = request.user
@@ -335,6 +352,11 @@ class MatchModelViewSet(ModelViewSet):
                 current_profile.likes.remove(member)
         else:
             current_profile.likes.remove(matched_profile)
+
+        # delete conversation
+        conversation = g.get_conversation_between(current_profile, matched_profile)
+        if conversation:
+            conversation.delete()
 
         matched_profile.likes.remove(current_profile)
         match.delete()

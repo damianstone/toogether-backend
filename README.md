@@ -74,6 +74,20 @@ python manage.py createsuperuser
 python manage.py runserver
 ```
 
+### Install Redis for WebSockets connectios
+In the following link you can see the different installations for different operating systems
+`https://redis.io/docs/getting-started/installation/`
+
+### Run Redis
+```bash
+redis-server
+```
+
+### Stop Redis
+```bash
+killall redis-server
+```
+
 ## Style Standards
 To format the code in the project, simply run the following command in the root directory of the project:
 

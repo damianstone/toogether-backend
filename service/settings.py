@@ -36,7 +36,6 @@ if "PRODUCTION" in os.environ:
 
     ALLOWED_HOSTS = [
         "mobile-api.toogether.app",
-        "toogether.eu-west-1.elasticbeanstalk.com",
     ]
 
     CORS_ORIGIN_ALLOW_ALL = False
@@ -64,6 +63,7 @@ AUTH_USER_MODEL = "api.Profile"
 
 # Application definition
 INSTALLED_APPS = [
+    "channels",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -86,8 +86,27 @@ REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ],
-    "DEFAULT_PAGINATION_CLASS": "service.core.pagination.CustomPagination",
+    "DEFAULT_PAGINATION_CLASS": "service.core.pagination.CustomNumberPagination",
 }
+
+if "PRODUCTION" in os.environ:
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels_redis.core.RedisChannelLayer",
+            "CONFIG": {
+                "hosts": [(os.environ["REDIS_CLUSTER_URL"], 6379)],
+            },
+        },
+    }
+else:
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels_redis.core.RedisChannelLayer",
+            "CONFIG": {
+                "hosts": [("127.0.0.1", 6379)],
+            },
+        },
+    }
 
 # SIMPLE JWT TO CREATE JSON ACCESS TOKENS
 SIMPLE_JWT = {
@@ -125,7 +144,7 @@ MIDDLEWARE = [
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     # "django.middleware.csrf.CsrfViewMiddleware",
-    "service.core.middleware.DisableCSRFMiddleware",
+    "service.core.CSRFMiddleware.DisableCSRFMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
@@ -151,6 +170,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = "service.wsgi.application"
+ASGI_APPLICATION = "service.asgi.application"
 
 
 # Database
