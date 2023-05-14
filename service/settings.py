@@ -98,7 +98,7 @@ if "PRODUCTION" in os.environ:
             },
         },
     }
-else :
+else:
     CHANNEL_LAYERS = {
         "default": {
             "BACKEND": "channels_redis.core.RedisChannelLayer",
