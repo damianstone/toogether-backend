@@ -102,7 +102,6 @@ if "PRODUCTION" in os.environ:
             "BACKEND": "channels_redis.core.RedisChannelLayer",
             "CONFIG": {
                 "hosts": [(redis_host, redis_port)],
-                "password": redis_password,
             },
         },
     }
