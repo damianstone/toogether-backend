@@ -56,7 +56,7 @@ else:
     ALLOWED_HOSTS = ["*", "127.0.0.1"]
 
     CORS_ORIGIN_ALLOW_ALL = True
-    SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY")
+    SECRET_KEY = "django-insecure-!htm_cu+s2g0c7wdk())m$3zk!u2ldj#9alx=a-n-&*uepr6-2"
 
 
 AUTH_USER_MODEL = "api.Profile"

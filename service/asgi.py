@@ -9,6 +9,9 @@ https://docs.djangoproject.com/en/4.0/howto/deployment/asgi/
 
 import os
 import django
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "service.settings")
+django.setup()
+
 from channels.routing import ProtocolTypeRouter, URLRouter, get_default_application
 from django.core.asgi import get_asgi_application
 from django.urls import path
@@ -16,8 +19,6 @@ from django.urls import path
 from api.websockets import ChatConsumer
 from service.core.SocketMiddleware import SocketAuthMiddleware
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "service.settings")
-django.setup()
 
 django_asgi_app = get_asgi_application()
 
