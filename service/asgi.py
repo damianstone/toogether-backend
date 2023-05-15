@@ -17,6 +17,7 @@ from api.websockets import ChatConsumer
 from service.core.SocketMiddleware import SocketAuthMiddleware
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "service.settings")
+django.setup()
 
 django_asgi_app = get_asgi_application()
 
