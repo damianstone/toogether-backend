@@ -101,7 +101,7 @@ if "PRODUCTION" in os.environ:
         "default": {
             "BACKEND": "channels_redis.core.RedisChannelLayer",
             "CONFIG": {
-                "hosts": [(redis_host, redis_port)],
+                "hosts": [(redis_url)],
             },
         },
     }
