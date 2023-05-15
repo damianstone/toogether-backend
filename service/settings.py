@@ -94,11 +94,11 @@ if "PRODUCTION" in os.environ:
         "default": {
             "BACKEND": "channels_redis.core.RedisChannelLayer",
             "CONFIG": {
-                "hosts": [(os.environ["REDIS_CLUSTER_URL"], 6379)],
+                "hosts": [os.environ["REDIS_URL"]],
             },
         },
     }
-else :
+else:
     CHANNEL_LAYERS = {
         "default": {
             "BACKEND": "channels_redis.core.RedisChannelLayer",

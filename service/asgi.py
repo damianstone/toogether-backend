@@ -8,9 +8,8 @@ https://docs.djangoproject.com/en/4.0/howto/deployment/asgi/
 """
 
 import os
-
-from channels.routing import ProtocolTypeRouter, URLRouter
-from channels.security.websocket import AllowedHostsOriginValidator, OriginValidator
+import django
+from channels.routing import ProtocolTypeRouter, URLRouter, get_default_application
 from django.core.asgi import get_asgi_application
 from django.urls import path
 
