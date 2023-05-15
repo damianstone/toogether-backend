@@ -11,7 +11,7 @@ https://docs.djangoproject.com/en/4.0/ref/settings/
 """
 
 import os
-import platform
+import urllib
 from pathlib import Path
 from datetime import timedelta
 
@@ -90,11 +90,19 @@ REST_FRAMEWORK = {
 }
 
 if "PRODUCTION" in os.environ:
+    
+    redis_url = os.environ["REDIS_URL"]
+    redis_parsed = urllib.parse.urlparse(redis_url)
+    redis_password = redis_parsed.password
+    redis_host = redis_parsed.hostname
+    redis_port = redis_parsed.port
+
     CHANNEL_LAYERS = {
         "default": {
             "BACKEND": "channels_redis.core.RedisChannelLayer",
             "CONFIG": {
-                "hosts": [os.environ["REDIS_URL"]],
+                "hosts": [(redis_host, redis_port)],
+                "password": redis_password,
             },
         },
     }
