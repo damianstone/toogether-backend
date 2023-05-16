@@ -11,7 +11,6 @@ https://docs.djangoproject.com/en/4.0/ref/settings/
 """
 
 import os
-import urllib
 from pathlib import Path
 from datetime import timedelta
 
@@ -41,7 +40,6 @@ if "PRODUCTION" in os.environ:
     CORS_ORIGIN_ALLOW_ALL = False
     CORS_ORIGIN_WHITELIST = [
         "https://mobile-api.toogether.app",
-        "http://toogether.eu-west-1.elasticbeanstalk.com",
     ]
     CORS_ALLOWED_ORIGINS = [
         "toogether.app" "https://mobile-api.toogether.app",
@@ -90,12 +88,8 @@ REST_FRAMEWORK = {
 }
 
 if "PRODUCTION" in os.environ:
-    
+
     redis_url = os.environ["REDIS_URL"]
-    redis_parsed = urllib.parse.urlparse(redis_url)
-    redis_password = redis_parsed.password
-    redis_host = redis_parsed.hostname
-    redis_port = redis_parsed.port
 
     CHANNEL_LAYERS = {
         "default": {
