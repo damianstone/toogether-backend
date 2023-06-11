@@ -84,7 +84,6 @@ urlpatterns = [
         internal_group.ungroup_users,
         name="ungroup_users",
     ),
-    
     # !!Internal development endpoints - groups
     path(
         "internal/generate-groups/",

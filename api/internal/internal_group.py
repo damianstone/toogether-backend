@@ -165,7 +165,7 @@ def check_groups(request):
 @permission_classes([IsAdminUser])
 def ungroup_users(request):
     groups = models.Group.objects.all()
-    
+
     ungroupped = 0
 
     for group in groups:
