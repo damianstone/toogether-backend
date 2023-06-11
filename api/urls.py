@@ -50,7 +50,7 @@ router.register(
 )
 
 urlpatterns = [
-    # Internal endpoints - profiles
+    # !!Internal endpoints - profiles
     path("internal/profiles/", internal_profile.list_profiles, name="list_profiles"),
     path(
         "internal/profiles/<pk>/",
@@ -67,7 +67,7 @@ urlpatterns = [
         internal_profile.delete_all_profiles,
         name="delete_all_profiles",
     ),
-    # Internal endpoints - groups
+    # !!Internal production endpoints - groups
     path("internal/groups/", internal_group.list_groups, name="list_groups"),
     path(
         "internal/groups/<pk>/",
@@ -79,6 +79,13 @@ urlpatterns = [
         internal_group.add_member,
         name="add_member",
     ),
+    path(
+        "internal/groups/actions/ungroup-users/",
+        internal_group.ungroup_users,
+        name="ungroup_users",
+    ),
+    
+    # !!Internal development endpoints - groups
     path(
         "internal/generate-groups/",
         internal_group.generate_groups,
@@ -94,7 +101,7 @@ urlpatterns = [
         internal_group.check_groups,
         name="check_groups",
     ),
-    # Internal endpoints - swipe
+    # !!Internal endpoints - swipe
     path("internal/matches/", internal_swipe.list_matches, name="list_matches"),
     path(
         "internal/matches/<pk>/",
@@ -116,7 +123,7 @@ urlpatterns = [
         internal_swipe.unlike_all,
         name="unlike_all",
     ),
-    # Public endpoints - authentication
+    # !!Public endpoints - authentication
     path("token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
     path(
         "users/login/",
@@ -125,6 +132,6 @@ urlpatterns = [
     ),
     path("users/recovery-code/", profile_views.recovery_code, name="recovery_code"),
     path("users/validate-code/", profile_views.validate_code, name="validate_code"),
-    # Public endpoints -  ModelViewSets
+    # !!Public endpoints -  ModelViewSets
     path("", include(router.urls)),
 ]
