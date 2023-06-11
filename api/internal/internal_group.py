@@ -5,6 +5,8 @@ from rest_framework.permissions import IsAdminUser
 from django.core.exceptions import ObjectDoesNotExist
 from django.conf import settings
 from api import models, serializers
+from django.utils import timezone
+from datetime import timedelta
 import random
 
 
@@ -156,3 +158,25 @@ def check_groups(request):
     return Response(
         {"detail": f"{len(num_of_fails)} profiles belong to more than one group"}
     )
+
+
+# * Ungroup groups with just 1 member
+@api_view(["POST"])
+@permission_classes([IsAdminUser])
+def ungroup_users(request):
+    groups = models.Group.objects.all()
+    
+    ungroupped = 0
+
+    for group in groups:
+        if group.members.all().count() == 1:
+            print(group.members.all().count() == 1)
+            # check when the group was created and delete it if it was created more than 1 day ago
+            if group.created_at < timezone.now() - timedelta(days=1):
+                for member in group.members.all():
+                    member.is_in_group = False
+                    member.save()
+                group.delete()
+                ungroupped += 1
+
+    return Response({"detail": f"{ungroupped} groups with just 1 member deleted"})
