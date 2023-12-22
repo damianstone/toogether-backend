@@ -4,7 +4,11 @@
 </p>
 
 ## What's Toogerher app?
-An app where users can create a group with their friends, match with other groups and hang out 
+An app where users can create a group with their friends, match with other groups and hang out
+<br>
+<br>
+**This is just the backend of the app, if you're looking for the frontend: https://github.com/toogether-app/toogether-mobile**
+
 
 ## Technologies
 - ⚛️  Django REST framework
@@ -32,15 +36,6 @@ An app where users can create a group with their friends, match with other group
 - Like
 - Unlike
 - Undo
-  
-### 🔗 Matchmaking algorithm
-List based on
-- Your location
-- Age
-- Gender
-- Preferences
-- Group sizes
-- More above in this documentation!
 
 ### 🕺🏼 Create a group profile with your friends
 - Create a groups
@@ -56,6 +51,15 @@ List based on
 - Chat with your matches
 - Delete matches
 - Report and block profiles
+
+### 🔗 Matchmaking algorithm
+List based on
+- Your location
+- Age
+- Gender
+- Preferences
+- Group sizes
+- More above in this documentation!
 
 mailto: damianstonedev@gmail.com
 
