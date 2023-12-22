@@ -11,7 +11,7 @@ An app where users can create a group with their friends, match with other group
 
 
 ## Technologies
-- ⚛️  Django REST framework
+- 🐍 Django REST framework
 - 🔥 Websocket (channels)
 - 📍 Geolocation with Gdal, Geos and Postgis
 - 🧹 Frake8 and black
