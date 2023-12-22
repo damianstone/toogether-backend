@@ -6,23 +6,62 @@
 ## What's Toogerher app?
 An app where users can create a group with their friends, match with other groups and hang out 
 
-<img width="3000" alt="toogether" src="https://github.com/toogether-app/toogether-backend/assets/63305840/8a984fe7-a470-47b7-bccc-2e550dac6352">
-
 ## Technologies
-- React Native bare workflow 
-- Redux
-- Redux thunk
+- ⚛️  Django REST framework
+- 🔥 Websocket (channels)
+- 📍 Geolocation with Gdal, Geos and Postgis
+- 🧹 Frake8 and black
+- 🐘 PostgreSQL
+- 🖼️ Amazon S3
+- 🔒 Token authentication
 
 ## Featues
-- CD pipeline for iOS and Android deployment with eas
-- Swipe: like, dislike, and undo
-- Create a group sending an unique link
-- Group chat with your current group
-- Chat with your matches
+### 👀 Basic
+- Login and registration with auth token
+- Create profile
+- Report profiles
+- Block profiles
+- Password recovery with email verification
+
+### 👤 Your profile
+- Update your personal information
+- Add photos
+
+### 💃 Swipe single and group profiles
 - Support single and group profiles
+- Like
+- Unlike
+- Undo
+  
+### 🔗 Matchmaking algorithm
+List based on
+- Your location
+- Age
+- Gender
+- Preferences
+- Group sizes
+- More above in this documentation!
 
+### 🕺🏼 Create a group profile with your friends
+- Create a groups
+- Invite friends using unique link
+- If admin (creator of the group): remove and add members
+- If not admin, join to group using the link and leave 
 
-## Initialization
+### 💬 Group chat
+- Group chat generated autmatically when joining our creating a group
+- For know the chat just support text messages
+
+### 💬 Matches and chats
+- Chat with your matches
+- Delete matches
+- Report and block profiles
+
+mailto: damianstonedev@gmail.com
+
+<img width="3000" alt="toogether" src="https://github.com/toogether-app/toogether-backend/assets/63305840/8a984fe7-a470-47b7-bccc-2e550dac6352">
+
+# Initialization
 
 ### Create a virtual environment
 
