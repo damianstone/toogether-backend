@@ -3,6 +3,24 @@
   <img src="https://user-images.githubusercontent.com/63305840/150650911-a3aba1cc-c2dd-4ced-9d60-0bd5ea1cfc8e.png" width="300" />
 </p>
 
+## What's Toogerher app?
+An app where users can create a group with their friends, match with other groups and hang out 
+
+<img width="3000" alt="toogether" src="https://github.com/toogether-app/toogether-backend/assets/63305840/8a984fe7-a470-47b7-bccc-2e550dac6352">
+
+## Technologies
+- React Native bare workflow 
+- Redux
+- Redux thunk
+
+## Featues
+- CD pipeline for iOS and Android deployment with eas
+- Swipe: like, dislike, and undo
+- Create a group sending an unique link
+- Group chat with your current group
+- Chat with your matches
+- Support single and group profiles
+
 
 ## Initialization
 
