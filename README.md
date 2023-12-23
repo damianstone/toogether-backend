@@ -7,7 +7,7 @@
 An app where users can create a group with their friends, match with other groups and hang out
 <br>
 <br>
-**This is just the backend of the app, if you're looking for the frontend: https://github.com/toogether-app/toogether-mobile**
+**This is just the backend of the app, if you're looking for the frontend: https://github.com/damianstone/toogether-mobile**
 
 
 ## Technologies
