@@ -19,6 +19,8 @@ An app where users can create a group with their friends, match with other group
 - 🖼️ Amazon S3
 - 🔒 Token authentication
 
+<img src="https://github.com/damianstone/toogether-backend/assets/63305840/6c31f272-addc-47e2-bd72-a26a71a46094" width="3000" />
+
 ## Featues
 ### 👀 Basic
 - Login and registration with auth token
@@ -62,8 +64,6 @@ List based on
 - More above in this documentation!
 
 mailto: damianstonedev@gmail.com
-
-<img width="3000" alt="toogether" src="https://github.com/toogether-app/toogether-backend/assets/63305840/8a984fe7-a470-47b7-bccc-2e550dac6352">
 
 # Initialization
 
