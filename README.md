@@ -3,7 +3,7 @@
   <img src="https://user-images.githubusercontent.com/63305840/150650911-a3aba1cc-c2dd-4ced-9d60-0bd5ea1cfc8e.png" width="300" />
 </p>
 
-## What's Toogerher app?
+## What's Toogether app?
 An app where users can create a group with their friends, match with other groups and hang out
 <br>
 <br>
@@ -12,16 +12,21 @@ An app where users can create a group with their friends, match with other group
 
 ## Technologies
 - 🐍 Django REST framework
-- 🔥 Websocket (channels)
+- 🔥 Websockets (channels)
 - 📍 Geolocation with Gdal, Geos and Postgis
-- 🧹 Frake8 and black
 - 🐘 PostgreSQL
+- 🏓 Redis
+- 🐬 Daphne
 - 🖼️ Amazon S3
-- 🔒 Token authentication
+- 🧹 Frake8 and black
+- 🔒 Token authentication (JWT)
+- 👥 Faker
+- 📸 Pillow
+- ☁️ Heroku
 
 <img src="https://github.com/damianstone/toogether-backend/assets/63305840/6c31f272-addc-47e2-bd72-a26a71a46094" width="3000" />
 
-## Featues
+# Featues
 ### 👀 Basic
 - Login and registration with auth token
 - Create profile
@@ -47,7 +52,7 @@ An app where users can create a group with their friends, match with other group
 
 ### 💬 Group chat
 - Group chat generated autmatically when joining our creating a group
-- For know the chat just support text messages
+- For now the chat just support text messages
 
 ### 💬 Matches and chats
 - Chat with your matches
@@ -61,7 +66,11 @@ List based on
 - Gender
 - Preferences
 - Group sizes
-- More above in this documentation!
+- More below in this documentation!
+
+### 🕵️‍♂️ Internal endpoints
+- Create fake data for the whole app using Faker
+- Admin restricted endpoints for the models
 
 mailto: damianstonedev@gmail.com
 
@@ -149,31 +158,7 @@ redis-server
 killall redis-server
 ```
 
-## Style Standards
-To format the code in the project, simply run the following command in the root directory of the project:
-
-```bash
-black .
-```
-This command will automatically format all .py files in the project according to the black style guide, which adheres to the PEP 8 style guide
-
-**Make sure you run this command before any pull request**
-
-## Pull Requests
-
-Before any merge to develop or rocket, it will be necessary to make a Pull Request and a code review.
-
-Basic PR structure:
-
-`your-branch` -> `feature-branch` -> `develop` -> `rocket`
-
-### Steps for a Pull Request
-1. Push your branch to the remote repository: git push
-2.  Navigate to the GitHub website
-3.  Create the pull request (PR) manually by selecting the correct `feature-branch` you are working on and clicking on the "New pull request" button
-4.  Notify the team about your PR through our communication channel: Discord
-
-## Deployment with Heroku
+# Deployment with Heroku
 
 ### Buildpakcs information
 
@@ -234,12 +219,32 @@ To check the logs
 ```bash
 heroku logs --tail --app toogether-api
 ```
-## Project structure
 
-### Views / Endpoints
+# Style Standards
+To format the code in the project, simply run the following command in the root directory of the project:
 
-The views in Together are divided into three main areas to cover the application's 
-features: Profile views, Group views, and Swipe views.
+```bash
+black .
+```
+This command will automatically format all .py files in the project according to the black style guide, which adheres to the PEP 8 style guide
+
+**Make sure you run this command before any pull request**
+
+# Pull Requests
+
+Before any merge to develop or rocket, it will be necessary to make a Pull Request and a code review.
+
+Basic PR structure:
+
+`your-branch` -> `feature-branch` -> `develop` -> `rocket`
+
+### Steps for a Pull Request
+1. Push your branch to the remote repository: git push
+2.  Navigate to the GitHub website
+3.  Create the pull request (PR) manually by selecting the correct `feature-branch` you are working on and clicking on the "New pull request" button
+4.  Notify the team about your PR through our communication channel: Discord
+
+# Project structure
 
 ### Profile views
 
@@ -271,8 +276,6 @@ The algorithm is implemented in the like function and uses several checks to det
 4. A group to another group
 
 Each scenario is handled by a different function that performs the necessary operations to determine the match.
-
-## Function Structure
 
 ### Inputs
 - `request`: a Django request object
