@@ -162,7 +162,7 @@ class SwipeModelViewSet(ModelViewSet):
 
         try:
             unliked_profile = models.Profile.objects.get(pk=pk)
-        except:
+        except ObjectDoesNotExist:
             try:
                 unliked_profile = models.Group.objects.get(pk=pk)
             except ObjectDoesNotExist:
